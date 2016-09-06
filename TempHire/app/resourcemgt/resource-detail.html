@@ -1,0 +1,36 @@
+﻿<hr />
+<div class="detail" *ngIf="model">
+    <div class="btn-group">
+        <button class="btn btn-primary" [disabled]="!canSave" (click)="save()"><i class="fa fa-floppy-o" aria-hidden="true"></i>&nbsp;Save</button>
+        <button class="btn btn-primary" style="margin-left: 15px" [disabled]="!canSave" (click)="cancel()"><i class="fa fa-undo" aria-hidden="true"></i>&nbsp;Cancel</button>
+    </div>
+
+    <h2>{{ model.fullName }}&nbsp;<button class="btn btn-default bt-lg" style="margin-top: -5px" title="Edit..." (click)="editName()"><i class="fa fa-pencil" aria-hidden="true"></i></button></h2>
+    <textarea class="form-control" rows="5" [(ngModel)]="model.summary"></textarea>
+
+    <div class="panel">
+        <div style="margin-top: 15px">
+            <tab-container>
+                <template tab-pane active="true" title="Contact Info">
+                    <resource-contacts [model]="model"></resource-contacts>
+                </template>
+                <template tab-pane title="Rates">
+                    <span>Placeholder...</span>
+                </template>
+                <template tab-pane title="Work Experience">
+                    <span>Placeholder...</span>
+                </template>
+                <template tab-pane title="Skills">
+                    <span>Placeholder...</span>
+                </template>
+            </tab-container>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn btn-primary" [disabled]="!canSave" (click)="save()"><i class="fa fa-floppy-o" aria-hidden="true"></i>&nbsp;Save</button>
+        <button class="btn btn-primary" style="margin-left: 15px" [disabled]="!canSave" (click)="cancel()"><i class="fa fa-undo" aria-hidden="true"></i>&nbsp;Cancel</button>
+    </div>
+</div>
+
+<resource-name-editor [model]="model"></resource-name-editor>

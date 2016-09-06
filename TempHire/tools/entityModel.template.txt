@@ -1,0 +1,3 @@
+{{#modules}}export { {{path}} } from './{{moduleName}}';
+{{/modules}}
+

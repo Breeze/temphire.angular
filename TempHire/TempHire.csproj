@@ -1,0 +1,341 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props')" />
+  <Import Project="..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.1\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props" Condition="Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.1\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" />
+  <Import Project="..\packages\Microsoft.Net.Compilers.1.3.2\build\Microsoft.Net.Compilers.props" Condition="Exists('..\packages\Microsoft.Net.Compilers.1.3.2\build\Microsoft.Net.Compilers.props')" />
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{0A0DFC6D-4DC2-4C0D-8549-30B17C1F4521}</ProjectGuid>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>TempHire</RootNamespace>
+    <AssemblyName>TempHire</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <UseIISExpress>true</UseIISExpress>
+    <IISExpressSSLPort />
+    <IISExpressAnonymousAuthentication />
+    <IISExpressWindowsAuthentication />
+    <IISExpressUseClassicPipelineMode />
+    <UseGlobalApplicationHostFile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <TypeScriptToolsVersion>1.8</TypeScriptToolsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Breeze.ContextProvider, Version=1.5.5.0, Culture=neutral, PublicKeyToken=f6085f1a45e2ac59, processorArchitecture=MSIL">
+      <HintPath>..\packages\Breeze.Server.ContextProvider.1.5.5\lib\Breeze.ContextProvider.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Breeze.ContextProvider.EF6, Version=1.5.5.0, Culture=neutral, PublicKeyToken=f6085f1a45e2ac59, processorArchitecture=MSIL">
+      <HintPath>..\packages\Breeze.Server.ContextProvider.EF6.1.5.5\lib\Breeze.ContextProvider.EF6.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Breeze.WebApi2, Version=1.5.5.0, Culture=neutral, PublicKeyToken=f6085f1a45e2ac59, processorArchitecture=MSIL">
+      <HintPath>..\packages\Breeze.Server.WebApi2.1.5.5\lib\Breeze.WebApi2.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServerCompact, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.SqlServerCompact.6.1.3\lib\net45\EntityFramework.SqlServerCompact.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.1\lib\net45\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.Data.Edm, Version=5.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Data.Edm.5.7.0\lib\net40\Microsoft.Data.Edm.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Data.OData, Version=5.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Data.OData.5.7.0\lib\net40\Microsoft.Data.OData.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Data.SqlServerCe, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.SqlServer.Compact.4.0.8876.1\lib\net40\System.Data.SqlServerCe.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Spatial, Version=5.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Spatial.5.7.0\lib\net40\System.Spatial.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.DynamicData" />
+    <Reference Include="System.Web.Entity" />
+    <Reference Include="System.Web.ApplicationServices" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Web.Http.OData, Version=5.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.OData.5.7.0\lib\net45\System.Web.Http.OData.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.Providers, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Providers.Core.2.0.0\lib\net40\System.Web.Providers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web.Services" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="WebActivatorEx, Version=2.0.0.0, Culture=neutral, PublicKeyToken=7b26dc2a43f6a0d4, processorArchitecture=MSIL">
+      <HintPath>..\packages\WebActivatorEx.2.1.0\lib\net40\WebActivatorEx.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Net.Http.Formatting">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.3\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.3\lib\net45\System.Web.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http.WebHost">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.WebHost.5.2.3\lib\net45\System.Web.Http.WebHost.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="app\app.html" />
+    <Content Include="app\core\services\message-box.html" />
+    <Content Include="app\home.html" />
+    <Content Include="app\login.html" />
+    <Content Include="app\nav-bar.html" />
+    <Content Include="app\resourcemgt\resource-contacts.html" />
+    <Content Include="app\resourcemgt\resource-detail.html" />
+    <Content Include="app\resourcemgt\resource-mgt.html" />
+    <Content Include="app\resourcemgt\resource-name-editor.html" />
+    <Content Include="App_Data\ReadMe.txt" />
+    <Content Include="Content\app.css" />
+    <Content Include="Content\font-awesome-4.6.3\css\font-awesome.css" />
+    <Content Include="Content\font-awesome-4.6.3\css\font-awesome.min.css" />
+    <Content Include="Content\font-awesome-4.6.3\fonts\fontawesome-webfont.svg" />
+    <Content Include="Content\font-awesome-4.6.3\HELP-US-OUT.txt" />
+    <Content Include="favicon.ico" />
+    <Content Include="index.html" />
+    <Content Include="systemjs.config.js" />
+    <Content Include="Web.config" />
+    <Content Include="Content\font-awesome-4.6.3\fonts\fontawesome-webfont.eot" />
+    <Content Include="Content\font-awesome-4.6.3\fonts\fontawesome-webfont.ttf" />
+    <Content Include="Content\font-awesome-4.6.3\fonts\fontawesome-webfont.woff" />
+    <Content Include="Content\font-awesome-4.6.3\fonts\fontawesome-webfont.woff2" />
+    <Content Include="Content\font-awesome-4.6.3\fonts\FontAwesome.otf" />
+    <Content Include="Content\font-awesome-4.6.3\less\animated.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\bordered-pulled.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\core.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\fixed-width.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\font-awesome.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\icons.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\larger.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\list.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\mixins.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\path.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\rotated-flipped.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\screen-reader.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\stacked.less" />
+    <Content Include="Content\font-awesome-4.6.3\less\variables.less" />
+    <Content Include="Content\font-awesome-4.6.3\scss\font-awesome.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_animated.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_bordered-pulled.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_core.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_fixed-width.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_icons.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_larger.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_list.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_mixins.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_path.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_rotated-flipped.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_screen-reader.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_stacked.scss" />
+    <Content Include="Content\font-awesome-4.6.3\scss\_variables.scss" />
+    <None Include="_bin_deployableAssemblies\x86\sqlcese40.dll" />
+    <None Include="_bin_deployableAssemblies\x86\sqlceqp40.dll" />
+    <None Include="_bin_deployableAssemblies\x86\sqlceme40.dll" />
+    <None Include="_bin_deployableAssemblies\x86\sqlceer40EN.dll" />
+    <None Include="_bin_deployableAssemblies\x86\sqlcecompact40.dll" />
+    <None Include="_bin_deployableAssemblies\x86\sqlceca40.dll" />
+    <None Include="_bin_deployableAssemblies\x86\Microsoft.VC90.CRT\README_ENU.txt" />
+    <None Include="_bin_deployableAssemblies\x86\Microsoft.VC90.CRT\msvcr90.dll" />
+    <None Include="_bin_deployableAssemblies\amd64\sqlcese40.dll" />
+    <None Include="_bin_deployableAssemblies\amd64\sqlceqp40.dll" />
+    <None Include="_bin_deployableAssemblies\amd64\sqlceme40.dll" />
+    <None Include="_bin_deployableAssemblies\amd64\sqlceer40EN.dll" />
+    <None Include="_bin_deployableAssemblies\amd64\sqlcecompact40.dll" />
+    <None Include="_bin_deployableAssemblies\amd64\sqlceca40.dll" />
+    <None Include="_bin_deployableAssemblies\amd64\Microsoft.VC90.CRT\README_ENU.txt" />
+    <None Include="_bin_deployableAssemblies\amd64\Microsoft.VC90.CRT\msvcr90.dll" />
+    <None Include="_bin_deployableAssemblies\x86\Microsoft.VC90.CRT\Microsoft.VC90.CRT.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="App_Start\BreezeWebApiConfig.cs" />
+    <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\Credential.cs" />
+    <Compile Include="Controllers\DefaultController.cs" />
+    <Compile Include="Controllers\LookupBundle.cs" />
+    <Compile Include="Controllers\ResourceMgtController.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\IRepository.cs" />
+    <Compile Include="Services\IStaffingResourceListItemRepository.cs" />
+    <Compile Include="Services\Repository.cs" />
+    <Compile Include="Services\StaffingResourceListItemRepository.cs" />
+    <Compile Include="Services\UnitOfWork.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="packages.config" />
+    <Content Include="package.json" />
+    <Content Include="tsconfig.json" />
+    <Content Include="typings.json" />
+    <None Include="Web.Debug.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+    <None Include="Web.Release.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+    <None Include="_bin_deployableAssemblies\amd64\Microsoft.VC90.CRT\Microsoft.VC90.CRT.manifest" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <TypeScriptCompile Include="app\app.component.ts" />
+    <TypeScriptCompile Include="app\app.module.ts" />
+    <TypeScriptCompile Include="app\app.routes.ts" />
+    <TypeScriptCompile Include="app\core\core.module.ts" />
+    <TypeScriptCompile Include="app\core\entities\address-type.ts" />
+    <TypeScriptCompile Include="app\core\entities\address.ts" />
+    <TypeScriptCompile Include="app\core\entities\entity-base.ts" />
+    <TypeScriptCompile Include="app\core\entities\entity-model.ts" />
+    <TypeScriptCompile Include="app\core\entities\entity-type-annotation.ts" />
+    <TypeScriptCompile Include="app\core\entities\metadata.ts" />
+    <TypeScriptCompile Include="app\core\entities\phone-number-type.ts" />
+    <TypeScriptCompile Include="app\core\entities\phone-number.ts" />
+    <TypeScriptCompile Include="app\core\entities\rate-type.ts" />
+    <TypeScriptCompile Include="app\core\entities\rate.ts" />
+    <TypeScriptCompile Include="app\core\entities\registration-helper.ts" />
+    <TypeScriptCompile Include="app\core\entities\skill.ts" />
+    <TypeScriptCompile Include="app\core\entities\staffing-resource.ts" />
+    <TypeScriptCompile Include="app\core\entities\state.ts" />
+    <TypeScriptCompile Include="app\core\entities\work-experience-item.ts" />
+    <TypeScriptCompile Include="app\core\services\auth.service.ts" />
+    <TypeScriptCompile Include="app\core\services\busy.service.ts" />
+    <TypeScriptCompile Include="app\core\services\common.ts" />
+    <TypeScriptCompile Include="app\core\services\custom-exception-handler.ts" />
+    <TypeScriptCompile Include="app\core\services\dialog.service.ts" />
+    <TypeScriptCompile Include="app\core\services\entity-manager-provider.ts" />
+    <TypeScriptCompile Include="app\core\services\error-handler.ts" />
+    <TypeScriptCompile Include="app\core\services\guards.ts" />
+    <TypeScriptCompile Include="app\home.component.ts" />
+    <TypeScriptCompile Include="app\login.component.ts" />
+    <TypeScriptCompile Include="app\main.ts" />
+    <TypeScriptCompile Include="app\nav-bar.component.ts" />
+    <TypeScriptCompile Include="app\resourcemgt\resource-contacts.component.ts" />
+    <TypeScriptCompile Include="app\resourcemgt\resource-detail.component.ts" />
+    <TypeScriptCompile Include="app\resourcemgt\resource-mgt-unit-of-work.ts" />
+    <TypeScriptCompile Include="app\resourcemgt\resource-mgt.component.ts" />
+    <TypeScriptCompile Include="app\resourcemgt\resource-mgt.module.ts" />
+    <TypeScriptCompile Include="app\resourcemgt\resource-mgt.routes.ts" />
+    <TypeScriptCompile Include="app\resourcemgt\resource-name-editor.component.ts" />
+    <TypeScriptCompile Include="app\shared\controls\modal-dialog.ts" />
+    <TypeScriptCompile Include="app\shared\controls\tab-container.component.ts" />
+    <TypeScriptCompile Include="app\shared\controls\tab-pane.directive.ts" />
+    <TypeScriptCompile Include="app\shared\directives\common.ts" />
+    <TypeScriptCompile Include="app\shared\directives\new-line.directive.ts" />
+    <TypeScriptCompile Include="app\shared\directives\scroll-to-top.directive.ts" />
+    <TypeScriptCompile Include="app\shared\services\common.ts" />
+    <TypeScriptCompile Include="app\shared\services\provide-parent.ts" />
+    <TypeScriptCompile Include="app\shared\services\repository.ts" />
+    <TypeScriptCompile Include="app\shared\services\unit-of-work.ts" />
+    <TypeScriptCompile Include="app\shared\shared.module.ts" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DomainModel\DomainModel.csproj">
+      <Project>{58f6da15-8c8c-4fc0-a277-a6ffcdedbf24}</Project>
+      <Name>DomainModel</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets')" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>True</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>53605</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost:49795/</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>False</UseCustomServer>
+          <CustomServerUrl>
+          </CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Microsoft.Net.Compilers.1.3.2\build\Microsoft.Net.Compilers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Net.Compilers.1.3.2\build\Microsoft.Net.Compilers.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.1\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.1\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props'))" />
+  </Target>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

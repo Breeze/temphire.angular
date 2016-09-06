@@ -1,0 +1,130 @@
+﻿<div class="container-fluid" style="margin-top: 10px">
+    <div class="row">
+        <!--Addresses-->
+        <div class="col-sm-6">
+            <div class="row">
+                <div class="col-sm-1">
+                    <div class="btn-group" style="margin-top: 4px">
+                        <button type="button" class="btn btn-success dropdown-toggle btn-sm" data-toggle="dropdown" title="New...">
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li class="selectable" *ngFor="let addressType of addressTypes">
+                                <a (click)="addAddress(addressType)">
+                                    <i class="fa" style="width: 20px; text-align: center" [ngClass]="{ 'fa-envelope-o': addressType.name == 'Mailing', 'fa-building-o': addressType.name == 'Work', 'fa-home': addressType.name == 'Home' }"
+                                       aria-hidden="true">
+                                    </i>
+                                    New {{ addressType.displayName }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-sm-11">
+                    <h4>Addresses</h4>
+                </div>
+            </div>
+            <div class="row" *ngFor="let address of model.addresses" style="margin-top: 20px">
+                <div class="col-sm-10 form-horizontal">
+                    <h4>{{ address.addressType.displayName }}</h4>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">Address 1</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" placeholder="Address 1" [(ngModel)]="address.address1" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">Address 2</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" placeholder="Address 2" [(ngModel)]="address.address2" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">City</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" placeholder="City" [(ngModel)]="address.city" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">State</label>
+                        <div class="col-sm-9">
+                            <select class="form-control" [(ngModel)]="address.stateId">
+                                <option *ngFor="let state of states" [ngValue]="state.id">{{ state.name }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">Zipcode</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" placeholder="Zipcode" [(ngModel)]="address.zipcode" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-3 col-sm-9">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" [checked]="address.primary" (click)="setPrimaryAddress(address)" [disabled]="address.primary"> Primary
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-2">
+                    <button class="btn btn-danger" title="Delete..." style="margin-top:10px" [disabled]="address.primary || model.addresses.length === 1" (click)="deleteAddress(address)"><i class="fa fa-trash-o" aria-hidden="true"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!--Phone Numbers-->
+        <div class="col-sm-6">
+            <div class="row">
+                <div class="col-sm-1">
+                    <div class="btn-group" style="margin-top: 4px">
+                        <button type="button" class="btn btn-success dropdown-toggle btn-sm" data-toggle="dropdown" title="New...">
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" role="menu">
+                            <li class="selectable" *ngFor="let phoneNumberType of phoneNumberTypes">
+                                <a (click)="addPhoneNumber(phoneNumberType)">
+                                    <i class="fa" style="width: 20px; text-align: center" [ngClass]="{ 'fa-mobile': phoneNumberType.name == 'Mobile', 'fa-building-o': phoneNumberType.name == 'Work', 'fa-home': phoneNumberType.name == 'Home' }"
+                                       aria-hidden="true">
+                                    </i>
+                                    New {{ phoneNumberType.name }} Phone
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-sm-11">
+                    <h4>Phone Numbers</h4>
+                </div>
+            </div>
+            <div class="row" *ngFor="let phoneNumber of model.phoneNumbers" style="margin-top: 20px">
+                <div class="col-sm-10 form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">{{ phoneNumber.phoneNumberType.name }}</label>
+                        <div class="col-sm-3">
+                            <input type="text" class="form-control" [(ngModel)]="phoneNumber.areaCode" />
+                        </div>
+                        <div class="col-sm-6">
+                            <input type="text" class="form-control" [(ngModel)]="phoneNumber.number" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-3 col-sm-9">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" [checked]="phoneNumber.primary" (click)="setPrimaryPhoneNumber(phoneNumber)" [disabled]="phoneNumber.primary"> Primary
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-2">
+                    <button class="btn btn-danger" title="Delete..." style="margin-left: 5px" [disabled]="phoneNumber.primary || model.phoneNumbers.length === 1" (click)="deletePhoneNumber(phoneNumber)"><i class="fa fa-trash-o" aria-hidden="true"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

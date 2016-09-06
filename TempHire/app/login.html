@@ -1,0 +1,28 @@
+﻿<div scrollToTop>
+    <h3>Enter your login credentials:</h3>
+    <div class="form-horizontal">
+        <div class="form-group">
+            <label for="username" class="col-sm-1 control-label">Username</label>
+            <div class="col-sm-5">
+                <input type="text" class="form-control" id="username" placeholder="Username" [(ngModel)]="username" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="password" class="col-sm-1 control-label">Password</label>
+            <div class="col-sm-5">
+                <input type="password" class="form-control" id="password" placeholder="Password" [(ngModel)]="password" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-1 col-sm-10">
+                <button type="button" class="btn btn-default" (click)="loginUser()">Sign in</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+

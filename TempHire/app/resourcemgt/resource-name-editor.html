@@ -1,0 +1,37 @@
+﻿<div class="modal" id="resource-name-editor" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit resource name</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-horizontal">
+                    <div class="form-group">
+                        <label for="firstName" class="col-sm-3 control-label">First name</label>
+                        <div class="col-sm-7">
+                            <input name="firstName" type="text" id="firstName" class="form-control" [(ngModel)]="name.firstName" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="middleName" class="col-sm-3 control-label">Middle name</label>
+                        <div class="col-sm-7">
+                            <input name="middleName" type="text" id="middleName" class="form-control" [(ngModel)]="name.middleName" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName" class="col-sm-3 control-label">Last name</label>
+                        <div class="col-sm-7">
+                            <input name="lastName" type="text" id="lastName" class="form-control" [(ngModel)]="name.lastName" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button (click)="ok()" type="button" class="btn btn-primary">Ok</button>
+                <button (click)="cancel()" type="button" class="btn btn-primary">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
