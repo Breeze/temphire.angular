@@ -30,7 +30,7 @@ export class LoginComponent {
             });
     }
 
-    private isValid(): boolean {
+    get isValid(): boolean {
         return !!this.username && !!this.password;
     }
 }

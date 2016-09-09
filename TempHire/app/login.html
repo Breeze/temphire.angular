@@ -16,7 +16,7 @@
 
         <div class="form-group">
             <div class="col-sm-offset-1 col-sm-10">
-                <button type="button" class="btn btn-default" (click)="loginUser()">Sign in</button>
+                <button type="button" class="btn btn-default" (click)="loginUser()" [disabled]="!isValid">Sign in</button>
             </div>
         </div>
     </div>

@@ -29,7 +29,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button (click)="ok()" type="button" class="btn btn-primary">Ok</button>
+                <button (click)="ok()" type="button" class="btn btn-primary" [disabled]="!canOk">Ok</button>
                 <button (click)="cancel()" type="button" class="btn btn-primary">Cancel</button>
             </div>
         </div>
