@@ -61,7 +61,7 @@
     "protractor": "^3.3.0",
     "rimraf": "^2.5.2",
     "tslint": "^3.7.4",
-    "typescript": "^1.8.10",
+    "typescript": "^2.0.2",
     "typings": "^1.0.4"
   },
   "repository": {}
