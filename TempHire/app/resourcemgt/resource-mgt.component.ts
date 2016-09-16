@@ -1,5 +1,6 @@
 ﻿import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs/Subscription';
 
 import { ResourceMgtUnitOfWork, StaffingResourceListItem } from './resource-mgt-unit-of-work';
 import { BusyService } from '../core/services/common';
@@ -13,7 +14,7 @@ export class ResourceMgtComponent implements OnInit, OnDestroy {
     staffingResources: StaffingResourceListItem[];
     staffingResourceId: string;
 
-    private unsubscribeFromEvents: () => void;
+    private savedOrRejectedSub: Subscription;
 
     constructor(private unitOfWork: ResourceMgtUnitOfWork, private busyService: BusyService, private router: Router, private route: ActivatedRoute) { }
 
@@ -24,18 +25,14 @@ export class ResourceMgtComponent implements OnInit, OnDestroy {
             });
         }
 
-        let subscription = ResourceMgtUnitOfWork.savedOrRejected.subscribe(() => {
+        this.savedOrRejectedSub = ResourceMgtUnitOfWork.savedOrRejected.subscribe(() => {
             this.loadList();
         });
-        this.unsubscribeFromEvents = () => {
-            ResourceMgtUnitOfWork.savedOrRejected.unsubscribe(subscription);
-        };
-
         this.loadList();
     }
 
     ngOnDestroy() {
-        this.unsubscribeFromEvents();
+        this.savedOrRejectedSub.unsubscribe();
     }
 
     onSelect(staffingResource: StaffingResourceListItem) {

@@ -1,5 +1,6 @@
 ﻿import { Injectable } from '@angular/core';
-import { EntityManager, Entity, EntityQuery, FetchStrategy, SaveOptions, core } from 'breeze-client';
+import { EntityManager, Entity, EntityQuery, FetchStrategy, SaveOptions, EntityChangedEventArgs } from 'breeze-client';
+import { Subject } from 'rxjs/Subject';
 
 import { EntityManagerProvider } from '../../core/services/common';
 import { IRepository, Repository} from './repository';
@@ -24,14 +25,9 @@ export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
     }
 }
 
-export class SavedOrRejectedEventArgs {
+export class SavedOrRejectedArgs {
     entities: Entity[];
-}
-
-export class SavedOrRejectedEvent extends core.Event {
-    subscribe(callback?: (data: SavedOrRejectedEventArgs) => void): number {
-        return super.subscribe(callback);
-    }
+    rejected: boolean;
 }
 
 @Injectable()
@@ -40,17 +36,31 @@ export class UnitOfWork {
     private _manager: EntityManager;
     private static shelveSets = {};
 
-    static savedOrRejected: SavedOrRejectedEvent = new SavedOrRejectedEvent('savedOrEjected', {});
+    private entityChangedSubject: Subject<EntityChangedEventArgs>;
+    private static savedOrRejectedSubject = new Subject<SavedOrRejectedArgs>();
 
     protected get manager(): EntityManager {
-        return this._manager || (this._manager = this._emProvider.newManager());
+        if (!this._manager) {
+            this._manager = this._emProvider.newManager();
+
+            this._manager.entityChanged.subscribe(args => {
+                this.entityChangedSubject.next(args);
+            });
+        }
+        return this._manager;
     }
 
     get entityChanged() {
-        return this.manager.entityChanged;
+        return this.entityChangedSubject.asObservable();
     }
 
-    constructor(private _emProvider: EntityManagerProvider) { }
+    static get savedOrRejected() {
+        return UnitOfWork.savedOrRejectedSubject.asObservable();
+    }
+
+    constructor(private _emProvider: EntityManagerProvider) {
+        this.entityChangedSubject = new Subject<EntityChangedEventArgs>();
+    }
 
     hasChanges(): boolean {
         return this.manager.hasChanges();
@@ -65,8 +75,9 @@ export class UnitOfWork {
 
         return this.manager.saveChanges(null, saveOptions)
             .then((saveResult) => {
-                UnitOfWork.savedOrRejected.publish({
-                    entities: saveResult.entities
+                UnitOfWork.savedOrRejectedSubject.next({
+                    entities: saveResult.entities,
+                    rejected: false
                 });
 
                 return saveResult.entities;
@@ -76,8 +87,9 @@ export class UnitOfWork {
     rollback(): void {
         let pendingChanges = this.manager.getChanges();
         this.manager.rejectChanges();
-        UnitOfWork.savedOrRejected.publish({
-            entities: pendingChanges
+        UnitOfWork.savedOrRejectedSubject.next({
+            entities: pendingChanges,
+            rejected: true
         });
     }
 
