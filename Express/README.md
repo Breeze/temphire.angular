@@ -30,16 +30,17 @@ Other methods are for saving and for special query scenarios.
 
 Follow the instructions in the TempHire directory for building the client-side app code.
 
-Currently, the `docRoot` (the location of the TempHire/index.html file) is hardcoded in server.js.  Change this to match the TempHire directory in your local path.
+Currently, the `docRoot` (the location of the TempHire directory) is hardcoded in server.js.  Change this to match the TempHire directory in your local path.
 
 In the Express directory:
 
-1. npm install
-2. node server
-3. Open browser to http://localhost:3000/
+1. Edit **server.js** to change the `docRoot` to the path to your *TempHire* directory.
+2. `npm install`
+3. `node server`
+4. Open browser to http://localhost:3000/
 
 ## Refreshing the database
 
 1. Stop the server
-2. Move/rename the existing temphire.db
-3. node import.js 
+2. Move/rename the existing **temphire.db**
+3. `node import.js` 

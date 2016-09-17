@@ -7,6 +7,6 @@
         "breeze-client":  "*",
         "breeze-sequelize": "*",
         "express": "^3.21",
-        "sqlite3": "*"
+        "sqlite3": "^3.1.4"
     }
 }
