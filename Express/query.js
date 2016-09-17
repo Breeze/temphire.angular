@@ -1,3 +1,6 @@
+/**
+ * Script to perform queries against a sqlite database
+ */
 var fs = require('fs');
 var sqlite3 = require('sqlite3').verbose();
 

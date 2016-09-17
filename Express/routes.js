@@ -1,4 +1,6 @@
-
+/**
+ * Define the query and save handlers for the routes in the application
+ */
 var fs = require('fs');
 var Promise = require("bluebird");
 var breezeSequelize = require('breeze-sequelize');
