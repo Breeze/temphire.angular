@@ -1,0 +1,12 @@
+{
+    "name": "temphire-express-server",
+    "description": "Backend Express server for Temphire application",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "breeze-client":  "*",
+        "breeze-sequelize": "*",
+        "express": "^3.21",
+        "sqlite3": "*"
+    }
+}

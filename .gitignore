@@ -9,8 +9,8 @@
 *.old
 *.suo
 *.zip
-*.js
 *.map
+*/app/**/*.js
 
 [Tt]humbs.db
 

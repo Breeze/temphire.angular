@@ -16,9 +16,13 @@ export class EntityManagerProvider {
     prepare(): Promise<any> {
         if (!EntityManagerProvider._preparePromise) {
             NamingConvention.camelCase.setAsDefault();
-            let dataService = new DataService({
+            let dsconfig: any = {
                 serviceName: 'breeze'
-            });
+            };
+            if (location.port == '3000') {
+                dsconfig.uriBuilderName = 'json'; // for breeze-sequelize server
+            }
+            let dataService = new DataService(dsconfig);
 
             let masterManager = EntityManagerProvider._masterManager = new EntityManager({
                 dataService: dataService
