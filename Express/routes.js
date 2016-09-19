@@ -22,9 +22,11 @@ var _seqOpts = {
   dialect: "sqlite",
   storage: "temphire.db",
   define: {
-      //prevent sequelize from pluralizing table names
-      freezeTableName: false
-  }  
+      freezeTableName: false  // let sequelize pluralize table names
+  },
+  logging: function(msg) {
+      console.log(msg.substring(0, 100) + '...');  // truncate sequelize info messages
+  }
 }
 
 var _sequelizeManager = createSequelizeManager();
@@ -45,8 +47,8 @@ exports.getMetadata = function(req, res, next) {
     if (!fs.existsSync(metafile)) {
       next(new Error("Unable to locate file: " + metafile));
     }
-    var metadata = fs.readFileSync(metafile, 'utf8');
-    res.sendfile(metafile);
+    // var metadata = fs.readFileSync(metafile, 'utf8');
+    res.sendFile(metafile, { root: __dirname });
 }
 
 exports.lookups = function(req, res, next) {
@@ -151,7 +153,7 @@ namedQuery.lookups = function(req, res, next) {
   
   Promise.all(arr).then(function(r2) {
     returnResults( result, res);
-  });
+  }).catch(next);
 }
 
 function beforeSaveEntity(entityInfo) {
