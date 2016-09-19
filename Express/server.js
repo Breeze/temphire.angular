@@ -3,10 +3,11 @@
  */
 var fs = require("fs");
 var express = require('express');
+var path = require('path');
 var routes = require('./routes');
 
 var app = express();
-var docRoot = "C:/git/Breeze/temphire.angular2/TempHire/";
+var docRoot = path.join(__dirname, '../TempHire/');
 
 //Set Request Size Limit
 app.use(express.bodyParser({limit: '50mb'}));

@@ -6,9 +6,28 @@ The application demonstrates common scenarios found in these types of applicatio
 
 ### Prerequisites ###
 
-Currently the backend is writting in .NET and requires Visual Studio 2015 Update 3.
+TempHire is available with both a .NET server and a Node server. Pick the technology you are familiar with. 
 
-### Running the application ###
+#### Node requirements ####
+
+1. Node 4.4.5 or higher
+2. Npm 3.0 or higher
+
+#### .NET requirements ####
+
+1. Visual Studio 2015 Update 3
+
+### Build and run the application ###
+
+#### Node ####
+
+1. `npm install`
+2. `gulp`
+3. Open browser to http://localhost:3000/
+
+For more information on the node server, read the [Server Readme](./Express/README.md).
+
+#### Visual Studio ####
 
 Open the solution in Visual Studio, build and run. It should automatically restore all npm and NuGet packages. The database gets automatically created. 
 
