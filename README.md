@@ -16,6 +16,7 @@ TempHire is available with both a .NET server and a Node server. Pick the techno
 #### .NET requirements ####
 
 1. Visual Studio 2015 Update 3
+2. [TypeScript 2 RC](https://blogs.msdn.microsoft.com/typescript/2016/08/30/announcing-typescript-2-0-rc/)
 
 ### Build and run the application ###
 
