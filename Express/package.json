@@ -8,6 +8,9 @@
         "breeze-sequelize": "^0.1.0",
         "express": "^4.14",
         "body-parser": "^1.15.2",
+        "express-session": "^1.14.1",
+        "passport": "^0.3.2",
+        "passport-local": "^1.0.0",
         "sqlite3": "^3.1.4"
     }
 }
