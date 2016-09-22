@@ -37,17 +37,3 @@ export class PrepareGuard implements CanActivate {
     }
 }
 
-export function installGuards(routes: Routes): Routes {
-    if (!routes) return routes;
-
-    routes.forEach(route => {
-        // No guards on login route
-        if (route.path == 'login') return;
-
-        route.canDeactivate = [CanDeactivateGuard];
-        route.canActivate = [PrepareGuard];
-
-        installGuards(route.children);
-    });
-    return routes;
-}

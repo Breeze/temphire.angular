@@ -1,9 +1,10 @@
 var gulp    = require('gulp');
 var shell = require('gulp-shell');
-var install = require("gulp-install");
+var install = require('gulp-install');
+var path = require('path');
 
-var clientDir = './TempHire/';
-var serverDir = './Express/';
+var clientDir = path.join('.', 'TempHire');
+var serverDir = path.join('.', 'Express');
 
 // client npm install
 gulp.task('client-install', function() {
@@ -18,12 +19,12 @@ gulp.task('server-install', function() {
 });
 
 // build client code
-gulp.task('build', ['client-install', 'server-install'],
-  shell.task(['tsc'], { cwd: clientDir })
+gulp.task('client-build', ['client-install'],
+  shell.task(['gulp'], { cwd: clientDir })
 );
 
 // run server
-gulp.task('run', ['build'],
+gulp.task('run', ['server-install', 'client-build'],
   shell.task('node server', { cwd: serverDir })
 );
 
@@ -31,8 +32,8 @@ gulp.task('default', ['run'], function() {
 
 });
 
-function mapPath(dir, fileNames) {
-  return fileNames.map(function(fileName) {
-    return dir + fileName;
+function mapPath(dir, filenames) {
+  return filenames.map(function(filename) {
+    return path.join(dir, filename);
   });
 };

@@ -1,6 +1,6 @@
 ﻿import { RouterModule, Routes } from '@angular/router';
 
-import { installGuards } from './core/services/common';
+import { PrepareGuard, CanDeactivateGuard } from './core/services/common';
 
 import { LoginComponent } from './login.component';
 import { HomeComponent } from './home.component';
@@ -17,8 +17,9 @@ export const routes: Routes = [
     },
     {
         path: 'home',
-        component: HomeComponent
+        component: HomeComponent,
+        canActivate: [PrepareGuard]
     }
 ];
 
-export const routing = RouterModule.forRoot(installGuards(routes), { enableTracing: true, useHash: true });
+export const routing = RouterModule.forRoot(routes, { enableTracing: true, useHash: true });

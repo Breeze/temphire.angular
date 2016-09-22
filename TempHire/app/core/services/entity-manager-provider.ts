@@ -1,5 +1,14 @@
 ﻿import { Injectable} from '@angular/core';
-import { EntityManager, NamingConvention, DataService, DataType, MetadataStore, EntityType, NavigationProperty, DataProperty, EntityQuery } from 'breeze-client';
+import { 
+    EntityManager, NamingConvention, DataService, DataType, MetadataStore,
+    EntityType, NavigationProperty, DataProperty, EntityQuery 
+} from 'breeze-client';
+
+// Import breeze adapters
+import 'breeze-client/breeze.dataService.webApi';
+import 'breeze-client/breeze.modelLibrary.backingStore';
+import 'breeze-client/breeze.uriBuilder.json';
+import 'breeze-client/breeze.uriBuilder.odata';
 
 import { EntityTypeAnnotation } from '../entities/entity-type-annotation';
 import { RegistrationHelper } from '../entities/registration-helper';

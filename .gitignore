@@ -11,11 +11,13 @@
 *.zip
 *.map
 */app/**/*.js
+*/aot/**/*.js
 
 [Tt]humbs.db
 
 typings
 node_modules
+dist
 bin
 obj
 packages

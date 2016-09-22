@@ -6,17 +6,18 @@ The application demonstrates common scenarios found in these types of applicatio
 
 ### Prerequisites ###
 
-TempHire is available with both a .NET server and a Node server. Pick the technology you are familiar with. 
+TempHire is available with both a .NET server and a Node.js server. Pick the technology you are familiar with. 
 
 #### Node requirements ####
 
-1. Node 4.4.5 or higher
+1. Node 4.5.0 or higher
 2. Npm 3.0 or higher
+3. Gulp
 
 #### .NET requirements ####
 
 1. Visual Studio 2015 Update 3
-2. [TypeScript 2 RC](https://blogs.msdn.microsoft.com/typescript/2016/08/30/announcing-typescript-2-0-rc/)
+2. [TypeScript 2](https://blogs.msdn.microsoft.com/typescript/2016/09/22/announcing-typescript-2-0/)
 
 ### Build and run the application ###
 
@@ -32,8 +33,12 @@ For more information on the node server, read the [Server Readme](./Express/READ
 
 Open the solution in Visual Studio, build and run. It should automatically restore all npm and NuGet packages. The database gets automatically created. 
 
-If there are issues with building the solution, then it's mostly likely because Visual Studio is using an outdated version of npm, or npm is not installed. In this case install the latest Node 4.x from [https://nodejs.org](https://nodejs.org) and make sure you choose to add it to your path. We've made the best experience with npm v3 or higher. To update to npm v3 use the following utlity [https://www.npmjs.com/package/npm-windows-upgrade](https://www.npmjs.com/package/npm-windows-upgrade). 
+If there are issues with building the solution, then it's mostly likely because Visual Studio is using outdated versions of the web tools or is missing them. In this case install the latest Node 4.x from [https://nodejs.org](https://nodejs.org) and make sure you choose to add it to your path. We've made the best experience with npm v3 or higher. To update to npm v3 use the following utlity [https://www.npmjs.com/package/npm-windows-upgrade](https://www.npmjs.com/package/npm-windows-upgrade). 
 
-Once everything is installed, in Visual Studio go to Tools|Options|Project and Solutions|External Web Tools and make sure Visual Studio is configured to use $(PATH) first to look for npm etc.
+You will also need to install Gulp globally, so that Visual Studio will find it in your path.
+
+`npm install gulp -g`
+
+Once everything is installed, in Visual Studio go to Tools|Options|Project and Solutions|External Web Tools and make sure Visual Studio is using $(PATH) as seen below as the location for the external web tools.
 
 ![External Web Tools](vs-config.png?raw=true "External Web Tools")

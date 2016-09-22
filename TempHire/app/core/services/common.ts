@@ -1,4 +1,4 @@
-﻿export { PrepareGuard, CanComponentDeactivate, CanDeactivateGuard, installGuards } from './guards';
+﻿export { PrepareGuard, CanComponentDeactivate, CanDeactivateGuard } from './guards';
 export { customExceptionHandlerProvider } from './custom-exception-handler';
 export { DialogService, MessageBoxComponent } from './dialog.service';
 export { EntityManagerProvider } from './entity-manager-provider';

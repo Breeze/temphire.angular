@@ -1,7 +1,7 @@
 ﻿import { ErrorHandler as ExceptionHandler } from '@angular/core';
 import { ErrorHandler } from './error-handler';
 
-function CustomExceptionHandlerFactory(errorHandler: ErrorHandler) {
+export function CustomExceptionHandlerFactory(errorHandler: ErrorHandler) {
 
     class CustomExceptionHandler implements ExceptionHandler {
         handleError(exception: any): void {

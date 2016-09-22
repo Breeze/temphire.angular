@@ -35,8 +35,8 @@
     "@angular/router": "3.0.0",
     "@angular/upgrade": "2.0.0",
     "bootstrap": "^3.3.7",
-    "breeze-bridge-angular2": "^0.3.1",
-    "breeze-client": "^1.5.11",
+    "breeze-bridge-angular2": "^0.3.2",
+    "breeze-client": "^1.5.12",
     "core-js": "^2.4.1",
     "jquery": "^3.1.0",
     "lodash": "^4.15.0",
@@ -46,6 +46,8 @@
     "zone.js": "^0.6.23"
   },
   "devDependencies": {
+    "@angular/compiler-cli": "^0.6.2",
+    "@angular/platform-server": "^2.0.0",
     "canonical-path": "0.0.2",
     "concurrently": "^2.2.0",
     "handlebars": "^4.0.5",
@@ -60,10 +62,17 @@
     "lodash": "^4.11.1",
     "protractor": "^3.3.0",
     "rimraf": "^2.5.2",
+    "rollup": "^0.36.0",
+    "rollup-plugin-commonjs": "^5.0.4",
+    "rollup-plugin-node-resolve": "^2.0.0",
+    "rollup-plugin-replace": "^1.1.1",
+    "rollup-plugin-uglify": "^1.0.1",
     "tslint": "^3.7.4",
     "typescript": "^2.0.2",
-    "typings": "^1.0.4"
+    "typings": "^1.0.4",
+    "gulp": "^3.9.1",
+    "gulp-shell": "^0.5.2",
+    "gulp-watch": "^4.3.9"
   },
   "repository": {}
-, "-vs-binding":{"ProjectOpened":["tsc:w"]}
 }

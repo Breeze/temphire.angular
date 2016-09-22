@@ -53,7 +53,7 @@
                 defaultExtension: 'js'
             },
             'breeze-client': {
-                main: 'breeze.debug.js',
+                main: 'breeze.base.debug.js',
                 defaultExtension: 'js'
             },
             'breeze-bridge-angular2': {

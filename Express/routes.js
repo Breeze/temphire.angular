@@ -3,6 +3,8 @@
  */
 var fs = require('fs');
 var Promise = require("bluebird");
+
+var modelLibrary = require('breeze-client/breeze.modelLibrary.backingStore');
 var breezeSequelize = require('breeze-sequelize');
 
 var SequelizeManager = breezeSequelize.SequelizeManager;
@@ -14,6 +16,9 @@ var SequelizeSaveHandler = breezeSequelize.SequelizeSaveHandler;
 // Use this
 var breeze = breezeSequelize.breeze;
 var EntityQuery = breeze.EntityQuery;
+
+// Initialize modelLibrary adapter
+breeze.config.initializeAdapterInstance("modelLibrary", "backingStore");
 
 var dbfile = "temphire.db";
 var metafile = "metadata.json";

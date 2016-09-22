@@ -1,4 +1,4 @@
-﻿import { Directive, OnChanges, Input, ElementRef } from '@angular/core'
+﻿import { Directive, OnChanges, Input, ElementRef, SimpleChanges } from '@angular/core'
 
 // A directive that replaces \n with <br>
 // 
@@ -14,7 +14,7 @@ export class NewLineDirective implements OnChanges {
 
     constructor(private _el: ElementRef) { }
 
-    ngOnChanges() {
+    ngOnChanges(changes: SimpleChanges) {
         let val = (this.newLine || '').replace(/\n/g, '<br>');
         this._el.nativeElement.innerHTML = val;
     }
