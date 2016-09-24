@@ -157,6 +157,7 @@
     <Content Include="Content\font-awesome-4.6.3\HELP-US-OUT.txt" />
     <Content Include="favicon.ico" />
     <Content Include="index.html" />
+    <Content Include="rollup.js" />
     <Content Include="systemjs.config.js" />
     <Content Include="Web.config" />
     <Content Include="Content\font-awesome-4.6.3\fonts\fontawesome-webfont.eot" />

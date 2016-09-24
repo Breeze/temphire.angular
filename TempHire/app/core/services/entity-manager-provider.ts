@@ -1,7 +1,7 @@
 ﻿import { Injectable} from '@angular/core';
 import { 
-    EntityManager, NamingConvention, DataService, DataType, MetadataStore,
-    EntityType, NavigationProperty, DataProperty, EntityQuery 
+    config, EntityManager, NamingConvention, DataService, DataType, MetadataStore,
+    EntityType, NavigationProperty, DataProperty, EntityQuery, DataServiceOptions
 } from 'breeze-client';
 
 // Import breeze adapters
@@ -24,11 +24,13 @@ export class EntityManagerProvider {
 
     prepare(): Promise<any> {
         if (!EntityManagerProvider._preparePromise) {
+            config.initializeAdapterInstances({ dataService: 'webApi', uriBuilder: 'odata' });
             NamingConvention.camelCase.setAsDefault();
-            let dsconfig: any = {
+            let dsconfig: DataServiceOptions = {
                 serviceName: 'breeze'
             };
             if (location.port == '3000') {
+                config.initializeAdapterInstance('uriBuilder', 'json', false);
                 dsconfig.uriBuilderName = 'json'; // for breeze-sequelize server
             }
             let dataService = new DataService(dsconfig);

@@ -26,11 +26,12 @@ export default {
         ],
         namedExports: {
             'node_modules/breeze-client/breeze.base.debug.js': [
+                'core',
+                'config',
                 'NamingConvention',
                 'DataService',
                 'EntityManager',
                 'EntityQuery',
-                'core',
                 'FetchStrategy',
                 'SaveOptions'
             ]
