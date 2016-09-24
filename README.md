@@ -33,7 +33,7 @@ For more information on the node server, read the [Server Readme](./Express/READ
 
 Open the solution in Visual Studio, build and run. It should automatically restore all npm and NuGet packages. The database gets automatically created. 
 
-If there are issues with building the solution, then it's mostly likely because Visual Studio is using outdated versions of the web tools or is missing them. In this case install the latest Node 4.x from [https://nodejs.org](https://nodejs.org) and make sure you choose to add it to your path. We've made the best experience with npm v3 or higher. To update to npm v3 use the following utlity [https://www.npmjs.com/package/npm-windows-upgrade](https://www.npmjs.com/package/npm-windows-upgrade). 
+If there are issues with building the solution, then it's mostly likely because Visual Studio is using outdated versions of the web tools or is missing them. In this case install the latest Node 4.x from [https://nodejs.org](https://nodejs.org) and make sure you choose to add it to your path. We've made the best experience with npm v3 or higher. To update to npm v3 use the following utility [https://www.npmjs.com/package/npm-windows-upgrade](https://www.npmjs.com/package/npm-windows-upgrade). 
 
 You will also need to install Gulp globally, so that Visual Studio will find it in your path.
 
