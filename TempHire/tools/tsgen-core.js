@@ -1,6 +1,6 @@
 var fs = require('fs');
 var path = require('path');
-var breeze = require('breeze-client');
+var breeze = require('breeze-client/breeze.debug.js');
 var handlebars = require('handlebars');
 var _ = require('lodash');
 
