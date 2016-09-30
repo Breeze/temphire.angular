@@ -79,7 +79,6 @@ import * as import71 from '@angular/core/src/change_detection/differs/keyvalue_d
 import * as import72 from '@angular/core/src/linker/ng_module_factory_loader';
 import * as import73 from '@angular/router/src/router_config_loader';
 import * as import74 from '@angular/router/src/router_state';
-import * as import75 from '@angular/core/src/i18n/tokens';
 class AppModuleInjector extends import0.NgModuleInjector<import1.AppModule> {
   _HttpModule_0:import2.HttpModule;
   _BrowserXhr_1:import3.BrowserXhr;
@@ -144,7 +143,6 @@ class AppModuleInjector extends import0.NgModuleInjector<import1.AppModule> {
   __ResourceMgtUnitOfWork_60:import41.ResourceMgtUnitOfWork;
   __ActivatedRoute_61:any;
   __APP_BOOTSTRAP_LISTENER_62:any[];
-  __TRANSLATIONS_FORMAT_63:any;
   constructor(parent:import42.Injector) {
     super(parent,[
       import43.ResourceMgtComponentNgFactory,
@@ -157,7 +155,7 @@ class AppModuleInjector extends import0.NgModuleInjector<import1.AppModule> {
     ,[import47.AppComponentNgFactory]);
   }
   get _LOCALE_ID_19():any {
-    if ((this.__LOCALE_ID_19 == (null as any))) { (this.__LOCALE_ID_19 = (null as any)); }
+    if ((this.__LOCALE_ID_19 == (null as any))) { (this.__LOCALE_ID_19 = 'en-US'); }
     return this.__LOCALE_ID_19;
   }
   get _NgLocalization_20():import17.NgLocaleLocalization {
@@ -360,10 +358,6 @@ class AppModuleInjector extends import0.NgModuleInjector<import1.AppModule> {
     if ((this.__APP_BOOTSTRAP_LISTENER_62 == (null as any))) { (this.__APP_BOOTSTRAP_LISTENER_62 = [import13.initialRouterNavigation(this._Router_57,this._ROUTER_CONFIGURATION_52)]); }
     return this.__APP_BOOTSTRAP_LISTENER_62;
   }
-  get _TRANSLATIONS_FORMAT_63():any {
-    if ((this.__TRANSLATIONS_FORMAT_63 == (null as any))) { (this.__TRANSLATIONS_FORMAT_63 = (null as any)); }
-    return this.__TRANSLATIONS_FORMAT_63;
-  }
   createInternal():import1.AppModule {
     this._HttpModule_0 = new import2.HttpModule();
     this._BrowserXhr_1 = new import3.BrowserXhr();
@@ -456,7 +450,6 @@ class AppModuleInjector extends import0.NgModuleInjector<import1.AppModule> {
     if ((token === import41.ResourceMgtUnitOfWork)) { return this._ResourceMgtUnitOfWork_60; }
     if ((token === import74.ActivatedRoute)) { return this._ActivatedRoute_61; }
     if ((token === import48.APP_BOOTSTRAP_LISTENER)) { return this._APP_BOOTSTRAP_LISTENER_62; }
-    if ((token === import75.TRANSLATIONS_FORMAT)) { return this._TRANSLATIONS_FORMAT_63; }
     return notFoundResult;
   }
   destroyInternal():void {

@@ -18,11 +18,11 @@ import * as import10 from '../../../app/resourcemgt/resource-mgt-unit-of-work';
 import * as import11 from '@angular/core/src/di/injector';
 import * as import12 from './resource-mgt.component.ngfactory';
 import * as import13 from './resource-detail.component.ngfactory';
-import * as import14 from '../../../app/core/services/entity-manager-provider';
-import * as import15 from '../../../app/resourcemgt/resource-mgt.component';
-import * as import16 from '../../../app/core/services/guards';
-import * as import17 from '../../../app/resourcemgt/resource-detail.component';
-import * as import18 from '@angular/core/src/i18n/tokens';
+import * as import14 from '@angular/core/src/i18n/tokens';
+import * as import15 from '../../../app/core/services/entity-manager-provider';
+import * as import16 from '../../../app/resourcemgt/resource-mgt.component';
+import * as import17 from '../../../app/core/services/guards';
+import * as import18 from '../../../app/resourcemgt/resource-detail.component';
 import * as import19 from '@angular/router/src/router_config_loader';
 class ResourceMgtModuleInjector extends import0.NgModuleInjector<import1.ResourceMgtModule> {
   _CommonModule_0:import2.CommonModule;
@@ -31,13 +31,11 @@ class ResourceMgtModuleInjector extends import0.NgModuleInjector<import1.Resourc
   _FormsModule_3:import5.FormsModule;
   _RouterModule_4:import6.RouterModule;
   _ResourceMgtModule_5:import1.ResourceMgtModule;
-  __LOCALE_ID_6:any;
-  __NgLocalization_7:import7.NgLocaleLocalization;
-  __UnitOfWork_8:import8.UnitOfWork;
-  __RadioControlRegistry_9:import9.RadioControlRegistry;
-  __ROUTES_10:any[];
-  __ResourceMgtUnitOfWork_11:import10.ResourceMgtUnitOfWork;
-  __TRANSLATIONS_FORMAT_12:any;
+  __NgLocalization_6:import7.NgLocaleLocalization;
+  __UnitOfWork_7:import8.UnitOfWork;
+  __RadioControlRegistry_8:import9.RadioControlRegistry;
+  __ROUTES_9:any[];
+  __ResourceMgtUnitOfWork_10:import10.ResourceMgtUnitOfWork;
   constructor(parent:import11.Injector) {
     super(parent,[
       import12.ResourceMgtComponentNgFactory,
@@ -46,53 +44,45 @@ class ResourceMgtModuleInjector extends import0.NgModuleInjector<import1.Resourc
     ]
     ,[]);
   }
-  get _LOCALE_ID_6():any {
-    if ((this.__LOCALE_ID_6 == (null as any))) { (this.__LOCALE_ID_6 = (null as any)); }
-    return this.__LOCALE_ID_6;
+  get _NgLocalization_6():import7.NgLocaleLocalization {
+    if ((this.__NgLocalization_6 == (null as any))) { (this.__NgLocalization_6 = new import7.NgLocaleLocalization(this.parent.get(import14.LOCALE_ID))); }
+    return this.__NgLocalization_6;
   }
-  get _NgLocalization_7():import7.NgLocaleLocalization {
-    if ((this.__NgLocalization_7 == (null as any))) { (this.__NgLocalization_7 = new import7.NgLocaleLocalization(this._LOCALE_ID_6)); }
-    return this.__NgLocalization_7;
+  get _UnitOfWork_7():import8.UnitOfWork {
+    if ((this.__UnitOfWork_7 == (null as any))) { (this.__UnitOfWork_7 = new import8.UnitOfWork(this.parent.get(import15.EntityManagerProvider))); }
+    return this.__UnitOfWork_7;
   }
-  get _UnitOfWork_8():import8.UnitOfWork {
-    if ((this.__UnitOfWork_8 == (null as any))) { (this.__UnitOfWork_8 = new import8.UnitOfWork(this.parent.get(import14.EntityManagerProvider))); }
-    return this.__UnitOfWork_8;
+  get _RadioControlRegistry_8():import9.RadioControlRegistry {
+    if ((this.__RadioControlRegistry_8 == (null as any))) { (this.__RadioControlRegistry_8 = new import9.RadioControlRegistry()); }
+    return this.__RadioControlRegistry_8;
   }
-  get _RadioControlRegistry_9():import9.RadioControlRegistry {
-    if ((this.__RadioControlRegistry_9 == (null as any))) { (this.__RadioControlRegistry_9 = new import9.RadioControlRegistry()); }
-    return this.__RadioControlRegistry_9;
-  }
-  get _ROUTES_10():any[] {
-      if ((this.__ROUTES_10 == (null as any))) { (this.__ROUTES_10 = [[
+  get _ROUTES_9():any[] {
+      if ((this.__ROUTES_9 == (null as any))) { (this.__ROUTES_9 = [[
         {
           path: 'resourcemgt',
-          component: import15.ResourceMgtComponent,
-          canActivate: [import16.PrepareGuard]
+          component: import16.ResourceMgtComponent,
+          canActivate: [import17.PrepareGuard]
         }
         ,
         {
           path: 'resourcemgt',
-          component: import15.ResourceMgtComponent,
-          canActivate: [import16.PrepareGuard],
+          component: import16.ResourceMgtComponent,
+          canActivate: [import17.PrepareGuard],
             children: [{
               path: ':id',
-              component: import17.ResourceDetailComponent,
-              canDeactivate: [import16.CanDeactivateGuard]
+              component: import18.ResourceDetailComponent,
+              canDeactivate: [import17.CanDeactivateGuard]
             }
           ]
         }
 
       ]
     ]); }
-    return this.__ROUTES_10;
+    return this.__ROUTES_9;
   }
-  get _ResourceMgtUnitOfWork_11():import10.ResourceMgtUnitOfWork {
-    if ((this.__ResourceMgtUnitOfWork_11 == (null as any))) { (this.__ResourceMgtUnitOfWork_11 = new import10.ResourceMgtUnitOfWork(this.parent.get(import14.EntityManagerProvider))); }
-    return this.__ResourceMgtUnitOfWork_11;
-  }
-  get _TRANSLATIONS_FORMAT_12():any {
-    if ((this.__TRANSLATIONS_FORMAT_12 == (null as any))) { (this.__TRANSLATIONS_FORMAT_12 = (null as any)); }
-    return this.__TRANSLATIONS_FORMAT_12;
+  get _ResourceMgtUnitOfWork_10():import10.ResourceMgtUnitOfWork {
+    if ((this.__ResourceMgtUnitOfWork_10 == (null as any))) { (this.__ResourceMgtUnitOfWork_10 = new import10.ResourceMgtUnitOfWork(this.parent.get(import15.EntityManagerProvider))); }
+    return this.__ResourceMgtUnitOfWork_10;
   }
   createInternal():import1.ResourceMgtModule {
     this._CommonModule_0 = new import2.CommonModule();
@@ -110,13 +100,11 @@ class ResourceMgtModuleInjector extends import0.NgModuleInjector<import1.Resourc
     if ((token === import5.FormsModule)) { return this._FormsModule_3; }
     if ((token === import6.RouterModule)) { return this._RouterModule_4; }
     if ((token === import1.ResourceMgtModule)) { return this._ResourceMgtModule_5; }
-    if ((token === import18.LOCALE_ID)) { return this._LOCALE_ID_6; }
-    if ((token === import7.NgLocalization)) { return this._NgLocalization_7; }
-    if ((token === import8.UnitOfWork)) { return this._UnitOfWork_8; }
-    if ((token === import9.RadioControlRegistry)) { return this._RadioControlRegistry_9; }
-    if ((token === import19.ROUTES)) { return this._ROUTES_10; }
-    if ((token === import10.ResourceMgtUnitOfWork)) { return this._ResourceMgtUnitOfWork_11; }
-    if ((token === import18.TRANSLATIONS_FORMAT)) { return this._TRANSLATIONS_FORMAT_12; }
+    if ((token === import7.NgLocalization)) { return this._NgLocalization_6; }
+    if ((token === import8.UnitOfWork)) { return this._UnitOfWork_7; }
+    if ((token === import9.RadioControlRegistry)) { return this._RadioControlRegistry_8; }
+    if ((token === import19.ROUTES)) { return this._ROUTES_9; }
+    if ((token === import10.ResourceMgtUnitOfWork)) { return this._ResourceMgtUnitOfWork_10; }
     return notFoundResult;
   }
   destroyInternal():void {

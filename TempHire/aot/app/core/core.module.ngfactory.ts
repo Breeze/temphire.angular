@@ -17,77 +17,67 @@ import * as import9 from '../../../app/core/services/dialog.service';
 import * as import10 from '../../../app/core/services/error-handler';
 import * as import11 from '../../../app/core/services/busy.service';
 import * as import12 from '@angular/core/src/di/injector';
-import * as import13 from '@angular/http/src/http';
-import * as import14 from '@angular/router/src/router';
-import * as import15 from '../../../app/core/services/custom-exception-handler';
-import * as import16 from '@angular/core/src/i18n/tokens';
+import * as import13 from '@angular/core/src/i18n/tokens';
+import * as import14 from '@angular/http/src/http';
+import * as import15 from '@angular/router/src/router';
+import * as import16 from '../../../app/core/services/custom-exception-handler';
 import * as import17 from '@angular/core/src/error_handler';
 class CoreModuleInjector extends import0.NgModuleInjector<import1.CoreModule> {
   _CommonModule_0:import2.CommonModule;
   _SharedModule_1:import3.SharedModule;
   _CoreModule_2:import1.CoreModule;
-  __LOCALE_ID_3:any;
-  __NgLocalization_4:import4.NgLocaleLocalization;
-  __EntityManagerProvider_5:import5.EntityManagerProvider;
-  __UnitOfWork_6:import6.UnitOfWork;
-  __CanDeactivateGuard_7:import7.CanDeactivateGuard;
-  __AuthService_8:import8.AuthService;
-  __PrepareGuard_9:import7.PrepareGuard;
-  __DialogService_10:import9.DialogService;
-  __ErrorHandler_11:import10.ErrorHandler;
-  __ErrorHandler_12:any;
-  __BusyService_13:import11.BusyService;
-  __TRANSLATIONS_FORMAT_14:any;
+  __NgLocalization_3:import4.NgLocaleLocalization;
+  __EntityManagerProvider_4:import5.EntityManagerProvider;
+  __UnitOfWork_5:import6.UnitOfWork;
+  __CanDeactivateGuard_6:import7.CanDeactivateGuard;
+  __AuthService_7:import8.AuthService;
+  __PrepareGuard_8:import7.PrepareGuard;
+  __DialogService_9:import9.DialogService;
+  __ErrorHandler_10:import10.ErrorHandler;
+  __ErrorHandler_11:any;
+  __BusyService_12:import11.BusyService;
   constructor(parent:import12.Injector) {
     super(parent,[],[]);
   }
-  get _LOCALE_ID_3():any {
-    if ((this.__LOCALE_ID_3 == (null as any))) { (this.__LOCALE_ID_3 = (null as any)); }
-    return this.__LOCALE_ID_3;
+  get _NgLocalization_3():import4.NgLocaleLocalization {
+    if ((this.__NgLocalization_3 == (null as any))) { (this.__NgLocalization_3 = new import4.NgLocaleLocalization(this.parent.get(import13.LOCALE_ID))); }
+    return this.__NgLocalization_3;
   }
-  get _NgLocalization_4():import4.NgLocaleLocalization {
-    if ((this.__NgLocalization_4 == (null as any))) { (this.__NgLocalization_4 = new import4.NgLocaleLocalization(this._LOCALE_ID_3)); }
-    return this.__NgLocalization_4;
+  get _EntityManagerProvider_4():import5.EntityManagerProvider {
+    if ((this.__EntityManagerProvider_4 == (null as any))) { (this.__EntityManagerProvider_4 = new import5.EntityManagerProvider()); }
+    return this.__EntityManagerProvider_4;
   }
-  get _EntityManagerProvider_5():import5.EntityManagerProvider {
-    if ((this.__EntityManagerProvider_5 == (null as any))) { (this.__EntityManagerProvider_5 = new import5.EntityManagerProvider()); }
-    return this.__EntityManagerProvider_5;
+  get _UnitOfWork_5():import6.UnitOfWork {
+    if ((this.__UnitOfWork_5 == (null as any))) { (this.__UnitOfWork_5 = new import6.UnitOfWork(this._EntityManagerProvider_4)); }
+    return this.__UnitOfWork_5;
   }
-  get _UnitOfWork_6():import6.UnitOfWork {
-    if ((this.__UnitOfWork_6 == (null as any))) { (this.__UnitOfWork_6 = new import6.UnitOfWork(this._EntityManagerProvider_5)); }
-    return this.__UnitOfWork_6;
+  get _CanDeactivateGuard_6():import7.CanDeactivateGuard {
+    if ((this.__CanDeactivateGuard_6 == (null as any))) { (this.__CanDeactivateGuard_6 = new import7.CanDeactivateGuard()); }
+    return this.__CanDeactivateGuard_6;
   }
-  get _CanDeactivateGuard_7():import7.CanDeactivateGuard {
-    if ((this.__CanDeactivateGuard_7 == (null as any))) { (this.__CanDeactivateGuard_7 = new import7.CanDeactivateGuard()); }
-    return this.__CanDeactivateGuard_7;
+  get _AuthService_7():import8.AuthService {
+    if ((this.__AuthService_7 == (null as any))) { (this.__AuthService_7 = new import8.AuthService(this.parent.get(import14.Http))); }
+    return this.__AuthService_7;
   }
-  get _AuthService_8():import8.AuthService {
-    if ((this.__AuthService_8 == (null as any))) { (this.__AuthService_8 = new import8.AuthService(this.parent.get(import13.Http))); }
-    return this.__AuthService_8;
+  get _PrepareGuard_8():import7.PrepareGuard {
+    if ((this.__PrepareGuard_8 == (null as any))) { (this.__PrepareGuard_8 = new import7.PrepareGuard(this._EntityManagerProvider_4,this._AuthService_7,this.parent.get(import15.Router))); }
+    return this.__PrepareGuard_8;
   }
-  get _PrepareGuard_9():import7.PrepareGuard {
-    if ((this.__PrepareGuard_9 == (null as any))) { (this.__PrepareGuard_9 = new import7.PrepareGuard(this._EntityManagerProvider_5,this._AuthService_8,this.parent.get(import14.Router))); }
-    return this.__PrepareGuard_9;
+  get _DialogService_9():import9.DialogService {
+    if ((this.__DialogService_9 == (null as any))) { (this.__DialogService_9 = new import9.DialogService()); }
+    return this.__DialogService_9;
   }
-  get _DialogService_10():import9.DialogService {
-    if ((this.__DialogService_10 == (null as any))) { (this.__DialogService_10 = new import9.DialogService()); }
-    return this.__DialogService_10;
+  get _ErrorHandler_10():import10.ErrorHandler {
+    if ((this.__ErrorHandler_10 == (null as any))) { (this.__ErrorHandler_10 = new import10.ErrorHandler(this._DialogService_9)); }
+    return this.__ErrorHandler_10;
   }
-  get _ErrorHandler_11():import10.ErrorHandler {
-    if ((this.__ErrorHandler_11 == (null as any))) { (this.__ErrorHandler_11 = new import10.ErrorHandler(this._DialogService_10)); }
+  get _ErrorHandler_11():any {
+    if ((this.__ErrorHandler_11 == (null as any))) { (this.__ErrorHandler_11 = import16.CustomExceptionHandlerFactory(this._ErrorHandler_10)); }
     return this.__ErrorHandler_11;
   }
-  get _ErrorHandler_12():any {
-    if ((this.__ErrorHandler_12 == (null as any))) { (this.__ErrorHandler_12 = import15.CustomExceptionHandlerFactory(this._ErrorHandler_11)); }
-    return this.__ErrorHandler_12;
-  }
-  get _BusyService_13():import11.BusyService {
-    if ((this.__BusyService_13 == (null as any))) { (this.__BusyService_13 = new import11.BusyService()); }
-    return this.__BusyService_13;
-  }
-  get _TRANSLATIONS_FORMAT_14():any {
-    if ((this.__TRANSLATIONS_FORMAT_14 == (null as any))) { (this.__TRANSLATIONS_FORMAT_14 = (null as any)); }
-    return this.__TRANSLATIONS_FORMAT_14;
+  get _BusyService_12():import11.BusyService {
+    if ((this.__BusyService_12 == (null as any))) { (this.__BusyService_12 = new import11.BusyService()); }
+    return this.__BusyService_12;
   }
   createInternal():import1.CoreModule {
     this._CommonModule_0 = new import2.CommonModule();
@@ -99,18 +89,16 @@ class CoreModuleInjector extends import0.NgModuleInjector<import1.CoreModule> {
     if ((token === import2.CommonModule)) { return this._CommonModule_0; }
     if ((token === import3.SharedModule)) { return this._SharedModule_1; }
     if ((token === import1.CoreModule)) { return this._CoreModule_2; }
-    if ((token === import16.LOCALE_ID)) { return this._LOCALE_ID_3; }
-    if ((token === import4.NgLocalization)) { return this._NgLocalization_4; }
-    if ((token === import5.EntityManagerProvider)) { return this._EntityManagerProvider_5; }
-    if ((token === import6.UnitOfWork)) { return this._UnitOfWork_6; }
-    if ((token === import7.CanDeactivateGuard)) { return this._CanDeactivateGuard_7; }
-    if ((token === import8.AuthService)) { return this._AuthService_8; }
-    if ((token === import7.PrepareGuard)) { return this._PrepareGuard_9; }
-    if ((token === import9.DialogService)) { return this._DialogService_10; }
-    if ((token === import10.ErrorHandler)) { return this._ErrorHandler_11; }
-    if ((token === import17.ErrorHandler)) { return this._ErrorHandler_12; }
-    if ((token === import11.BusyService)) { return this._BusyService_13; }
-    if ((token === import16.TRANSLATIONS_FORMAT)) { return this._TRANSLATIONS_FORMAT_14; }
+    if ((token === import4.NgLocalization)) { return this._NgLocalization_3; }
+    if ((token === import5.EntityManagerProvider)) { return this._EntityManagerProvider_4; }
+    if ((token === import6.UnitOfWork)) { return this._UnitOfWork_5; }
+    if ((token === import7.CanDeactivateGuard)) { return this._CanDeactivateGuard_6; }
+    if ((token === import8.AuthService)) { return this._AuthService_7; }
+    if ((token === import7.PrepareGuard)) { return this._PrepareGuard_8; }
+    if ((token === import9.DialogService)) { return this._DialogService_9; }
+    if ((token === import10.ErrorHandler)) { return this._ErrorHandler_10; }
+    if ((token === import17.ErrorHandler)) { return this._ErrorHandler_11; }
+    if ((token === import11.BusyService)) { return this._BusyService_12; }
     return notFoundResult;
   }
   destroyInternal():void {

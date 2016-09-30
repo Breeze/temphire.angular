@@ -10,33 +10,23 @@ import * as import2 from '@angular/common/src/common_module';
 import * as import3 from '@angular/common/src/localization';
 import * as import4 from '../../../app/shared/services/unit-of-work';
 import * as import5 from '@angular/core/src/di/injector';
-import * as import6 from '../../../app/core/services/entity-manager-provider';
-import * as import7 from '@angular/core/src/i18n/tokens';
+import * as import6 from '@angular/core/src/i18n/tokens';
+import * as import7 from '../../../app/core/services/entity-manager-provider';
 class SharedModuleInjector extends import0.NgModuleInjector<import1.SharedModule> {
   _CommonModule_0:import2.CommonModule;
   _SharedModule_1:import1.SharedModule;
-  __LOCALE_ID_2:any;
-  __NgLocalization_3:import3.NgLocaleLocalization;
-  __UnitOfWork_4:import4.UnitOfWork;
-  __TRANSLATIONS_FORMAT_5:any;
+  __NgLocalization_2:import3.NgLocaleLocalization;
+  __UnitOfWork_3:import4.UnitOfWork;
   constructor(parent:import5.Injector) {
     super(parent,[],[]);
   }
-  get _LOCALE_ID_2():any {
-    if ((this.__LOCALE_ID_2 == (null as any))) { (this.__LOCALE_ID_2 = (null as any)); }
-    return this.__LOCALE_ID_2;
+  get _NgLocalization_2():import3.NgLocaleLocalization {
+    if ((this.__NgLocalization_2 == (null as any))) { (this.__NgLocalization_2 = new import3.NgLocaleLocalization(this.parent.get(import6.LOCALE_ID))); }
+    return this.__NgLocalization_2;
   }
-  get _NgLocalization_3():import3.NgLocaleLocalization {
-    if ((this.__NgLocalization_3 == (null as any))) { (this.__NgLocalization_3 = new import3.NgLocaleLocalization(this._LOCALE_ID_2)); }
-    return this.__NgLocalization_3;
-  }
-  get _UnitOfWork_4():import4.UnitOfWork {
-    if ((this.__UnitOfWork_4 == (null as any))) { (this.__UnitOfWork_4 = new import4.UnitOfWork(this.parent.get(import6.EntityManagerProvider))); }
-    return this.__UnitOfWork_4;
-  }
-  get _TRANSLATIONS_FORMAT_5():any {
-    if ((this.__TRANSLATIONS_FORMAT_5 == (null as any))) { (this.__TRANSLATIONS_FORMAT_5 = (null as any)); }
-    return this.__TRANSLATIONS_FORMAT_5;
+  get _UnitOfWork_3():import4.UnitOfWork {
+    if ((this.__UnitOfWork_3 == (null as any))) { (this.__UnitOfWork_3 = new import4.UnitOfWork(this.parent.get(import7.EntityManagerProvider))); }
+    return this.__UnitOfWork_3;
   }
   createInternal():import1.SharedModule {
     this._CommonModule_0 = new import2.CommonModule();
@@ -46,10 +36,8 @@ class SharedModuleInjector extends import0.NgModuleInjector<import1.SharedModule
   getInternal(token:any,notFoundResult:any):any {
     if ((token === import2.CommonModule)) { return this._CommonModule_0; }
     if ((token === import1.SharedModule)) { return this._SharedModule_1; }
-    if ((token === import7.LOCALE_ID)) { return this._LOCALE_ID_2; }
-    if ((token === import3.NgLocalization)) { return this._NgLocalization_3; }
-    if ((token === import4.UnitOfWork)) { return this._UnitOfWork_4; }
-    if ((token === import7.TRANSLATIONS_FORMAT)) { return this._TRANSLATIONS_FORMAT_5; }
+    if ((token === import3.NgLocalization)) { return this._NgLocalization_2; }
+    if ((token === import4.UnitOfWork)) { return this._UnitOfWork_3; }
     return notFoundResult;
   }
   destroyInternal():void {
