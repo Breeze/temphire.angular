@@ -4,7 +4,8 @@ import {
     EntityType, NavigationProperty, DataProperty, EntityQuery, DataServiceOptions
 } from 'breeze-client';
 
-// Import breeze adapters
+// Import required breeze adapters. Rollup.js requires the use of breeze.base.debug.js, which doesn't include
+// the breeze adapters. 
 import 'breeze-client/breeze.dataService.webApi';
 import 'breeze-client/breeze.modelLibrary.backingStore';
 import 'breeze-client/breeze.uriBuilder.json';
@@ -24,12 +25,14 @@ export class EntityManagerProvider {
 
     prepare(): Promise<any> {
         if (!EntityManagerProvider._preparePromise) {
+            // Configure breeze adapaters. See rollup.js comment above
             config.initializeAdapterInstances({ dataService: 'webApi', uriBuilder: 'odata' });
             NamingConvention.camelCase.setAsDefault();
             let dsconfig: DataServiceOptions = {
                 serviceName: 'breeze'
             };
             if (location.port == '3000') {
+                // Configure the json uriBuilder. See rollup.js comment above
                 config.initializeAdapterInstance('uriBuilder', 'json', false);
                 dsconfig.uriBuilderName = 'json'; // for breeze-sequelize server
             }
