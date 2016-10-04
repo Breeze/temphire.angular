@@ -1,16 +1,17 @@
 {
-    "name": "temphire-express-server",
-    "description": "Backend Express server for Temphire application",
-    "version": "0.0.1",
-    "private": true,
-    "dependencies": {
-        "breeze-client":  "*",
-        "breeze-sequelize": "^0.1.0",
-        "express": "^4.14",
-        "body-parser": "^1.15.2",
-        "express-session": "^1.14.1",
-        "passport": "^0.3.2",
-        "passport-local": "^1.0.0",
-        "sqlite3": "^3.1.4"
-    }
+  "name": "temphire-express-server",
+  "description": "Backend Express server for Temphire application",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "bluebird": "^3.4.6",
+    "body-parser": "^1.15.2",
+    "breeze-client": "*",
+    "breeze-sequelize": "^0.1.0",
+    "express": "^4.14",
+    "express-session": "^1.14.1",
+    "passport": "^0.3.2",
+    "passport-local": "^1.0.0",
+    "sqlite3": "^3.1.4"
+  }
 }
