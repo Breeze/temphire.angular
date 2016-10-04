@@ -12,12 +12,17 @@ TempHire is available with both a .NET server and a Node.js server. Pick the tec
 
 1. Node 4.5.0 or higher
 2. Npm 3.0 or higher
-3. Gulp
+3. Gulp `npm install gulp -g`
+4. Typings `npm install typings -g`
 
 #### .NET requirements ####
 
 1. Visual Studio 2015 Update 3
 2. [TypeScript 2](https://blogs.msdn.microsoft.com/typescript/2016/09/22/announcing-typescript-2-0/)
+1. Node 4.5.0 or higher
+2. Npm 3.0 or higher
+3. Gulp `npm install gulp -g`
+4. Typings `npm install typings -g`
 
 ### Build and run the application ###
 
