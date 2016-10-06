@@ -5,7 +5,7 @@
         <button class="btn btn-primary" style="margin-left: 15px" [disabled]="!canSave" (click)="cancel()"><i class="fa fa-undo" aria-hidden="true"></i>&nbsp;Cancel</button>
     </div>
 
-    <h2>{{ model.fullName }}&nbsp;<button class="btn btn-default bt-lg" style="margin-top: -5px" title="Edit..." (click)="editName()"><i class="fa fa-pencil" aria-hidden="true"></i></button></h2>
+    <h2>{{ model.fullName }}<a class="btn btn-icon bt-lg" style="margin-top: -5px" title="Edit..." (click)="editName()"><i class="fa fa-pencil" aria-hidden="true"></i></a></h2>
     <textarea class="form-control" rows="5" [(ngModel)]="model.summary"></textarea>
 
     <div class="panel">
@@ -15,13 +15,13 @@
                     <resource-contacts [model]="model"></resource-contacts>
                 </template>
                 <template tab-pane title="Rates">
-                    <span>Placeholder...</span>
+                    <span>Rates placeholder...</span>
                 </template>
                 <template tab-pane title="Work Experience">
-                    <span>Placeholder...</span>
+                    <span>Work Experience placeholder...</span>
                 </template>
                 <template tab-pane title="Skills">
-                    <span>Placeholder...</span>
+                    <span>Skills placeholder...</span>
                 </template>
             </tab-container>
         </div>

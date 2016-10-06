@@ -3,11 +3,11 @@
         <!--Addresses-->
         <div class="col-sm-6">
             <div class="row">
-                <div class="col-sm-1">
-                    <div class="btn-group" style="margin-top: 4px">
-                        <button type="button" class="btn btn-success dropdown-toggle btn-sm" data-toggle="dropdown" title="New...">
-                            <span class="caret"></span>
-                        </button>
+                <div class="col-sm-12" style="margin-top: 4px">
+                    <div class="dropdown pull-left" style="margin-top: 2px; margin-left: -12px">
+                        <a class="btn btn-icon dropdown-toggle" data-toggle="dropdown">
+                            <i class="fa fa-bars fa-lg" aria-hidden="true"></i>
+                        </a>
                         <ul class="dropdown-menu" role="menu">
                             <li class="selectable" *ngFor="let addressType of addressTypes">
                                 <a (click)="addAddress(addressType)">
@@ -19,12 +19,12 @@
                             </li>
                         </ul>
                     </div>
-                </div>
-                <div class="col-sm-11">
-                    <h4>Addresses</h4>
+                    <div class="pull-left">
+                        <h4>Addresses</h4>
+                    </div>
                 </div>
             </div>
-            <div class="row" *ngFor="let address of model.addresses" style="margin-top: 20px">
+            <div class="row" *ngFor="let address of model.addresses" style="margin-top: 10px">
                 <div class="col-sm-10 form-horizontal">
                     <h4>{{ address.addressType.displayName }}</h4>
                     <div class="form-group">
@@ -78,11 +78,11 @@
         <!--Phone Numbers-->
         <div class="col-sm-6">
             <div class="row">
-                <div class="col-sm-1">
-                    <div class="btn-group" style="margin-top: 4px">
-                        <button type="button" class="btn btn-success dropdown-toggle btn-sm" data-toggle="dropdown" title="New...">
-                            <span class="caret"></span>
-                        </button>
+                <div class="col-sm-12" style="margin-top: 4px">
+                    <div class="dropdown pull-left" style="margin-top: 2px">
+                        <a class="btn btn-icon dropdown-toggle" data-toggle="dropdown">
+                            <i class="fa fa-bars fa-lg" aria-hidden="true"></i>
+                        </a>
                         <ul class="dropdown-menu" role="menu">
                             <li class="selectable" *ngFor="let phoneNumberType of phoneNumberTypes">
                                 <a (click)="addPhoneNumber(phoneNumberType)">
@@ -94,12 +94,12 @@
                             </li>
                         </ul>
                     </div>
-                </div>
-                <div class="col-sm-11">
-                    <h4>Phone Numbers</h4>
+                    <div class="pull-left">
+                        <h4>Phone Numbers</h4>
+                    </div>
                 </div>
             </div>
-            <div class="row" *ngFor="let phoneNumber of model.phoneNumbers" style="margin-top: 20px">
+            <div class="row" *ngFor="let phoneNumber of model.phoneNumbers" style="margin-top: 10px">
                 <div class="col-sm-10 form-horizontal">
                     <div class="form-group">
                         <label class="col-sm-3 control-label">{{ phoneNumber.phoneNumberType.name }}</label>
