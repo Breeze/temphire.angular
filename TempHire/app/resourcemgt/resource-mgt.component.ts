@@ -25,8 +25,10 @@ export class ResourceMgtComponent implements OnInit, OnDestroy {
             });
         }
 
-        this.savedOrRejectedSub = ResourceMgtUnitOfWork.savedOrRejected.subscribe(() => {
-            this.loadList();
+        this.savedOrRejectedSub = ResourceMgtUnitOfWork.savedOrRejected.subscribe(args => {
+            if (!args.rejected) {
+                this.loadList();
+            }
         });
         this.loadList();
     }
