@@ -13,56 +13,46 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.Serialization;
 
 namespace DomainModel
 {
-    [DataContract(IsReference = true)]
     public class PhoneNumber : AuditEntityBase, IHasRoot
     {
-        internal PhoneNumber()
+        public PhoneNumber()
         {
         }
 
         /// <summary>Gets or sets the Id. </summary>
-        [DataMember]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         [Required]
-        public Guid Id { get; internal set; }
+        public Guid Id { get; set; }
 
         /// <summary>Gets or sets the AreaCode. </summary>
-        [DataMember]
         [Required]
         [StringLength(3, MinimumLength = 3)]
         public string AreaCode { get; set; }
 
         /// <summary>Gets or sets the Number. </summary>
-        [DataMember]
         [Required]
         [StringLength(8, MinimumLength = 7)]
         public string Number { get; set; }
 
         /// <summary>Gets or sets the PhoneNumberTypeId. </summary>
-        [DataMember]
         [Required]
         public Guid PhoneNumberTypeId { get; set; }
 
         /// <summary>Gets or sets the StaffingResourceId. </summary>
-        [DataMember]
         [Required]
         public Guid StaffingResourceId { get; set; }
 
         /// <summary>Gets or sets the Primary. </summary>
-        [DataMember]
         [Required]
         public bool Primary { get; set; }
 
         /// <summary>Gets or sets the StaffingResource. </summary>
-        [DataMember]
         public StaffingResource StaffingResource { get; set; }
 
         /// <summary>Gets or sets the PhoneNumberType. </summary>
-        [DataMember]
         public PhoneNumberType PhoneNumberType { get; set; }
 
         #region IHasRoot Members

@@ -13,60 +13,49 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.Serialization;
 
 namespace DomainModel
 {
-    [DataContract(IsReference = true)]
     public class WorkExperienceItem : AuditEntityBase, IHasRoot
     {
-        internal WorkExperienceItem()
+        public WorkExperienceItem()
         {
         }
 
         /// <summary>Gets or sets the Id. </summary>
-        [DataMember]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         [Required]
-        public Guid Id { get; internal set; }
+        public Guid Id { get; set; }
 
         /// <summary>Gets or sets the From. </summary>
-        [DataMember]
         [Required]
         public DateTime From { get; set; }
 
         /// <summary>Gets or sets the To. </summary>
-        [DataMember]
         [Required]
         public DateTime To { get; set; }
 
         /// <summary>Gets or sets the PositionTitle. </summary>
-        [DataMember]
         [Required]
         public string PositionTitle { get; set; }
 
         /// <summary>Gets or sets the Company. </summary>
-        [DataMember]
         [Required]
         public string Company { get; set; }
 
         /// <summary>Gets or sets the Location. </summary>
-        [DataMember]
         [Required]
         public string Location { get; set; }
 
         /// <summary>Gets or sets the Description. </summary>
-        [DataMember]
         [Required]
         public string Description { get; set; }
 
         /// <summary>Gets or sets the StaffingResourceId. </summary>
-        [DataMember]
         [Required]
         public Guid StaffingResourceId { get; set; }
 
         /// <summary>Gets or sets the StaffingResource. </summary>
-        [DataMember]
         public StaffingResource StaffingResource { get; set; }
 
         #region IHasRoot Members

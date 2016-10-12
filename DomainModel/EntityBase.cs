@@ -12,31 +12,23 @@
 
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.Runtime.Serialization;
 
 namespace DomainModel
 {
-    [DataContract(IsReference = true)]
     public abstract class EntityBase
     {
-        [DataMember]
         [ConcurrencyCheck]
-        public int RowVersion { get; internal set; }
+        public int RowVersion { get; set; }
     }
 
-    [DataContract(IsReference = true)]
     public abstract class AuditEntityBase : EntityBase
     {
-        [DataMember]
         public DateTime Created { get; set; }
 
-        [DataMember]
         public string CreatedUser { get; set; }
 
-        [DataMember]
         public DateTime Modified { get; set; }
 
-        [DataMember]
         public string ModifyUser { get; set; }
     }
 }

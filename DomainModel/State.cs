@@ -13,31 +13,26 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.Serialization;
 
 namespace DomainModel
 {
-    [DataContract(IsReference = true)]
     public class State : EntityBase
     {
-        internal State()
+        public State()
         {
         }
 
         /// <summary>Gets or sets the Id. </summary>
-        [DataMember]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         [Required]
-        public Guid Id { get; internal set; }
+        public Guid Id { get; set; }
 
         /// <summary>Gets or sets the ShortName. </summary>
-        [DataMember]
         [Required]
         [StringLength(2)]
         public string ShortName { get; set; }
 
         /// <summary>Gets or sets the Name. </summary>
-        [DataMember]
         [Required]
         public string Name { get; set; }
     }

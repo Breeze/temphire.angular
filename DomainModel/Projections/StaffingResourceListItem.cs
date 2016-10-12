@@ -11,44 +11,31 @@
 //====================================================================================================================
 
 using System;
-using System.Runtime.Serialization;
 
 namespace DomainModel.Projections
 {
-    [DataContract]
     public class StaffingResourceListItem
     {
-        [DataMember]
         public Guid Id { get; set; }
 
-        [DataMember]
         public string FirstName { get; set; }
 
-        [DataMember]
         public string MiddleName { get; set; }
 
-        [DataMember]
         public string LastName { get; set; }
 
-        [DataMember]
         public string Address1 { get; set; }
 
-        [DataMember]
         public string Address2 { get; set; }
 
-        [DataMember]
         public string City { get; set; }
 
-        [DataMember]
         public string State { get; set; }
 
-        [DataMember]
         public string Zipcode { get; set; }
 
-        [DataMember]
         public string AreaCode { get; set; }
 
-        [DataMember]
         public string Number { get; set; }
 
         public string FullName
