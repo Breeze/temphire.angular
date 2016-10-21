@@ -35,9 +35,9 @@
 
             // other libraries
             'rxjs': 'npm:rxjs',
-            'lodash': 'node_modules/lodash',
-            'breeze-client': 'node_modules/breeze-client',
-            'breeze-bridge-angular2': 'node_modules/breeze-bridge-angular2'
+            'lodash': 'npm:lodash',
+            'breeze-client': 'npm:breeze-client',
+            'breeze-bridge-angular2': 'npm:breeze-bridge-angular2'
         },
         // packages tells the System loader how to load when no filename and/or no extension
         packages: {

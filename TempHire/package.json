@@ -25,7 +25,7 @@
     "@angular/router": "~3.0.1",
     "@angular/upgrade": "~2.0.1",
     "bootstrap": "^3.3.7",
-    "breeze-bridge-angular2": "^0.3.2",
+    "breeze-bridge-angular2": "^0.3.4",
     "breeze-client": "~1.5.13",
     "core-js": "^2.4.1",
     "jquery": "^3.1.0",
