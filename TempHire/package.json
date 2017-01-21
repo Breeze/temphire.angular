@@ -62,7 +62,7 @@
     "rollup-plugin-strict-alias": "^1.0.0",
     "rollup-plugin-uglify": "^1.0.1",
     "tslint": "^3.7.4",
-    "typescript": "^2.0.3",
+    "typescript": "~2.0.3",
     "typings": "^1.0.4"
   },
   "repository": {}
