@@ -58,6 +58,7 @@ export class StaffingResource extends EntityBase {
     get fullName(): string {
         return ['firstName', 'middleName', 'lastName']
             .map(x => this[x])
+            .filter(x => !!x)
             .reduce((prev, cur) => prev ? `${prev} ${cur}` : cur, '');
     }
 

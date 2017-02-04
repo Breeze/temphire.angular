@@ -1,4 +1,8 @@
-﻿<div scrollToTop class="table-responsive" style="height: 220px; overflow: auto">
+﻿<div class="btn-group" style="margin-bottom: 15px">
+    <button class="btn btn-primary" (click)="beginNew()"><i class="fa fa-plus" aria-hidden="true"></i>&nbsp;Add</button>
+</div>
+
+<div scrollToTop class="table-responsive" style="height: 220px; overflow: auto">
     <table class="table table-striped table-hover table-bordered">
         <thead>
             <tr>
@@ -30,3 +34,4 @@
 </div>
 
 <router-outlet></router-outlet>
+<resource-name-editor></resource-name-editor>

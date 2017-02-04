@@ -38,7 +38,9 @@ export default {
                 'EntityManager',
                 'EntityQuery',
                 'FetchStrategy',
-                'SaveOptions'
+                'SaveOptions',
+                'Predicate', 
+                'FilterQueryOp'
             ]
         }
       }),

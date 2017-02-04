@@ -1,5 +1,5 @@
 ﻿import { Component, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs/Observable';
 
 import { BusyService, DialogService, CanComponentDeactivate } from '../core/services/common';
@@ -21,20 +21,34 @@ export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
 
     model: StaffingResource;
 
-    constructor(private unitOfWork: ResourceMgtUnitOfWork, private busyService: BusyService, private route: ActivatedRoute, private dialogService: DialogService) { }
+    constructor(private unitOfWork: ResourceMgtUnitOfWork, private busyService: BusyService, private route: ActivatedRoute, private dialogService: DialogService, private router: Router) { }
 
     ngOnInit() {
         this.route.params.forEach(params => {
-            let reportId = params['id'];
-
             this.unitOfWork.clear();
-            this.busyService.busy(this.unitOfWork.staffingResources.withId(reportId).then(data => {
-                if (data) {
-                    this.model = data;
-                } else {
-                    this.dialogService.messageBox('Not found!', 'The staffing resource with the given identifier wasn\'t found.', ['Ok']);
+
+            let reportId = params['id'];
+            if (reportId !== 'new') {
+                // Load existing StaffingResource
+                this.busyService.busy(this.unitOfWork.staffingResources.withId(reportId).then(data => {
+                    if (data) {
+                        this.model = data;
+                    } else {
+                        this.dialogService.messageBox('Not found!', 'The staffing resource with the given identifier wasn\'t found.', ['Ok']);
+                    }
+                }));
+            } else {
+                // Create new StaffingResource
+                let config = {
+                    firstName: params['firstName'],
+                    middleName: params['middleName'],
+                    lastName: params['lastName']
                 }
-            }));
+
+                this.busyService.busy(this.unitOfWork.staffingResourceFactory.create(config).then(data => {
+                    this.model = data;
+                }));
+            }
         });
     }
 
@@ -64,11 +78,19 @@ export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
             if (suppressConfirmation) return;
 
             return this.dialogService.messageBox('Success', 'Successfully saved data!', ['Ok']);
+        }).then(() => {
+            // Navigate to saved model
+            return this.router.navigate(['/resourcemgt', this.model.id]);
         });
     }
 
     cancel() {
         this.unitOfWork.rollback();
+
+        // If model is detached after rollback, navigate back to parent.
+        if (this.model.entityAspect.entityState.isDetached()) {
+            this.router.navigate(['/resourcemgt']);
+        }
     }
 
     editName() {

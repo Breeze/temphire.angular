@@ -120,7 +120,7 @@ namedQuery.staffingresourcelistitems = function(req, res, next) {
       var phon = getPrimary(staff.PhoneNumbers);
       var item = {
         Id: staff.Id,
-        FullName: staff.FirstName + ' ' + staff.MiddleName + ' ' + staff.LastName,
+        FullName: staff.MiddleName ? staff.FirstName + ' ' + staff.MiddleName + ' ' + staff.LastName : staff.FirstName + ' ' + staff.LastName,
         Address1: addr.Address1,
         Address2: addr.Address2,
         City: addr.City,

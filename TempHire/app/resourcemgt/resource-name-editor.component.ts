@@ -26,11 +26,14 @@ export class ResourceNameEditorComponent extends ModalDialog<Name> {
     }
 
     show(parent: any) {
-        this.name = {
-            firstName: this.model.firstName,
-            middleName: this.model.middleName,
-            lastName: this.model.lastName
-        };
+        this.name = {};
+        if (this.model) {
+            this.name = {
+                firstName: this.model.firstName,
+                middleName: this.model.middleName,
+                lastName: this.model.lastName
+            };
+        }
 
         return this.showModal(parent);
     }

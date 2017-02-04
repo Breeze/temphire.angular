@@ -1,15 +1,19 @@
-﻿import { Component, OnInit, OnDestroy } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs/Subscription';
 
 import { ResourceMgtUnitOfWork, StaffingResourceListItem } from './resource-mgt-unit-of-work';
 import { BusyService } from '../core/services/common';
 
+import { ResourceNameEditorComponent } from './resource-name-editor.component';
+
 @Component({
     moduleId: module.id,
     templateUrl: './resource-mgt.html'
 })
 export class ResourceMgtComponent implements OnInit, OnDestroy {
+
+    @ViewChild(ResourceNameEditorComponent) nameEditor: ResourceNameEditorComponent;
 
     staffingResources: StaffingResourceListItem[];
     staffingResourceId: string;
@@ -39,6 +43,14 @@ export class ResourceMgtComponent implements OnInit, OnDestroy {
 
     onSelect(staffingResource: StaffingResourceListItem) {
         this.router.navigate(['/resourcemgt', staffingResource.id]);
+    }
+
+    beginNew() {
+        this.nameEditor.show(this).then(name => {
+            if (name) {
+                this.router.navigate(['/resourcemgt/new', name]);
+            }
+        });
     }
 
     private loadList() {

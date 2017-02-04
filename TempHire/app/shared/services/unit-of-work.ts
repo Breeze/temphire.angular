@@ -6,22 +6,21 @@ import { EntityManagerProvider } from '../../core/services/common';
 import { IRepository, Repository} from './repository';
 
 export interface IEntityFactory<T extends Entity> {
-    create(...params: any[]): T;
+    create(...params: any[]): Promise<T>;
 }
 
 @Injectable()
 export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
 
-    constructor(private _type: { new (): T; }, private _manager: EntityManager) {
+    constructor(private entityTypeName: string, private manager: EntityManager) {
     }
 
-    create(config?: any): T {
-        let entityTypeName: string = (<any>this._type).name;
-        let inst = <T>this._manager.createEntity(entityTypeName, config);
+    create(config?: any): Promise<T> {
+        let inst = <T>this.manager.createEntity(this.entityTypeName, config);
         // OLD version - did not allow config.
         // let inst = new this.type();
         // this.entityManagerProvider.manager().addEntity(inst);
-        return inst;
+        return Promise.resolve(inst);
     }
 }
 
@@ -130,8 +129,8 @@ export class UnitOfWork {
         return new Repository<T>(this.manager, entityTypeName, resourceName, isCached);
     }
 
-    protected createFactory<T extends Entity>(type: { new (): T; }) {
-        return new EntityFactory<T>(type, this.manager);
+    protected createFactory<T extends Entity>(entityTypeName: string) {
+        return new EntityFactory<T>(entityTypeName, this.manager);
     }
 }
 
