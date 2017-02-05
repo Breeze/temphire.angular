@@ -59,9 +59,9 @@ export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
         let message = 'You have unsaved changes. Would you like to save?';
         let buttons = ['Yes', 'No', 'Cancel'];
         return this.dialogService.messageBox(title, message, buttons).then(result => {
-            if (result === 'Yes') return this.save(true).then(() => true);
+            if (result === 'Yes') return this.save(true, true).then(() => true);
             if (result === 'No') {
-                this.cancel();
+                this.cancel(true);
                 return true;
             }
 
@@ -73,22 +73,26 @@ export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
         return this.unitOfWork.hasChanges();
     }
 
-    save(suppressConfirmation: boolean) {
+    save(suppressConfirmation: boolean, deactivating: boolean = false) {
         return this.busyService.busy(this.unitOfWork.commit()).then(() => {
             if (suppressConfirmation) return;
 
             return this.dialogService.messageBox('Success', 'Successfully saved data!', ['Ok']);
         }).then(() => {
-            // Navigate to saved model
-            return this.router.navigate(['/resourcemgt', this.model.id]);
+            if (!deactivating) {
+                // Navigate to saved model
+                return this.router.navigate(['/resourcemgt', this.model.id]);
+            }
+
+            return true;
         });
     }
 
-    cancel() {
+    cancel(deactivating: boolean = false) {
         this.unitOfWork.rollback();
 
         // If model is detached after rollback, navigate back to parent.
-        if (this.model.entityAspect.entityState.isDetached()) {
+        if (this.model.entityAspect.entityState.isDetached() && !deactivating) {
             this.router.navigate(['/resourcemgt']);
         }
     }
