@@ -3,6 +3,8 @@ import {
     config, EntityManager, NamingConvention, DataService, DataType, MetadataStore,
     EntityType, NavigationProperty, DataProperty, EntityQuery, DataServiceOptions
 } from 'breeze-client';
+import remove from 'lodash-es/remove';
+import includes from 'lodash-es/includes';
 
 // Import required breeze adapters. Rollup.js requires the use of breeze.base.debug.js, which doesn't include
 // the breeze adapters. 
@@ -41,7 +43,7 @@ export class EntityManagerProvider {
             let masterManager = EntityManagerProvider._masterManager = new EntityManager({
                 dataService: dataService
             });
-            return EntityManagerProvider._preparePromise = masterManager.fetchMetadata().then(() => {
+            return EntityManagerProvider._preparePromise = <any>masterManager.fetchMetadata().then(() => {
                 RegistrationHelper.register(masterManager.metadataStore);
                 this.registerAnnotations(masterManager.metadataStore);
 
@@ -113,14 +115,14 @@ export class EntityManagerProvider {
             return dp;
         });
         // Get all the nulls out
-        _.remove(dps, dp => !dp);
+        remove(dps, dp => !dp);
 
         // Get existing ignored properties
         let ignoredProperties: DataProperty[] = (<any>entityType).$ignoredProperties;
 
         // Signals that we've already installed our custom serializerFn
         if (ignoredProperties) {
-            _.remove(dps, dp => _.includes(ignoredProperties, dp))
+            remove(dps, dp => includes(ignoredProperties, dp))
             ignoredProperties = ignoredProperties.concat(dps);
         } else {
             // First ignored properties for this entity type
@@ -128,7 +130,7 @@ export class EntityManagerProvider {
             let origSerializerFn: (dataProperty: DataProperty, value: any) => any = (<any>entityType).serializerFn;
             entityType.setProperties({
                 serializerFn: (dp, value) => {
-                    if (_.includes((<any>entityType).$ignoredProperties, dp)) {
+                    if (includes((<any>entityType).$ignoredProperties, dp)) {
                         // Return undefined if property is ignored for serialization
                         return undefined;
                     }

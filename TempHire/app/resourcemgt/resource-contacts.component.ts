@@ -1,4 +1,5 @@
 ﻿import { Component, Input, OnInit } from '@angular/core';
+import sortBy from 'lodash-es/sortBy';
 
 import { StaffingResource, State, PhoneNumber, Address, AddressType, PhoneNumberType } from '../core/entities/entity-model';
 import { ResourceMgtUnitOfWork } from './resource-mgt-unit-of-work';
@@ -20,15 +21,15 @@ export class ResourceContactsComponent implements OnInit {
 
     ngOnInit() {
         this.unitOfWork.states.all().then(data => {
-            this.states = _.sortBy(data, x => x.name);
+            this.states = sortBy(data, x => x.name);
         });
 
         this.unitOfWork.addressTypes.all().then(data => {
-            this.addressTypes = _.sortBy(data, x => x.displayName);
+            this.addressTypes = sortBy(data, x => x.displayName);
         });
 
         this.unitOfWork.phoneNumberTypes.all().then(data => {
-            this.phoneNumberTypes = _.sortBy(data, x => x.name);
+            this.phoneNumberTypes = sortBy(data, x => x.name);
         });
     }
 

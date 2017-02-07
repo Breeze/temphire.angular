@@ -11,7 +11,7 @@ export abstract class ModalDialog<T> {
 
     protected showModal(parent: any, validateFn?: (x: any) => string): Promise<T> {
         let ele = this.elementRef.nativeElement.firstElementChild;
-        let modalEle = jQuery(ele);
+        let modalEle: any = jQuery(ele);
         this.modalParent = parent;
         this.validationMessage = null;
         if (validateFn) {
@@ -36,7 +36,7 @@ export abstract class ModalDialog<T> {
 
     protected hideModal() {
         let ele = this.elementRef.nativeElement.firstElementChild;
-        let modalEle = jQuery(ele);
+        let modalEle: any = jQuery(ele);
         modalEle.modal("hide");
     }
 }

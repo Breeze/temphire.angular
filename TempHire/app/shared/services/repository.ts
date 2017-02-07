@@ -41,7 +41,7 @@ export class Repository<T> implements IRepository<T> {
         if (!this._entityTypeName)
             throw new Error("Repository must be created with an entity type specified");
 
-        return this.manager.fetchEntityByKey(this._entityTypeName, key, true)
+        return <any>this.manager.fetchEntityByKey(this._entityTypeName, key, true)
             .then(function (data) {
                 return <T><any>data.entity;
             }).catch(e => {
@@ -78,7 +78,7 @@ export class Repository<T> implements IRepository<T> {
 
     protected executeQuery(query: EntityQuery, fetchStrategy?: FetchStrategySymbol): Promise<T[]> {
         let q = query.using(fetchStrategy || this._defaultFetchStrategy);
-        return this.manager.executeQuery(q).then(data => {
+        return <any>this.manager.executeQuery(q).then(data => {
             return data.results;
         }).catch(e => {
             if (e.status == 404) {

@@ -13,7 +13,6 @@ TempHire is available with both a .NET server and a Node.js server. Pick the tec
 1. Node 4.5.0 or higher
 2. Npm 3.0 or higher
 3. Gulp `npm install gulp -g`
-4. Typings `npm install typings -g`
 
 #### .NET requirements ####
 
@@ -22,7 +21,6 @@ TempHire is available with both a .NET server and a Node.js server. Pick the tec
 1. Node 4.5.0 or higher
 2. Npm 3.0 or higher
 3. Gulp `npm install gulp -g`
-4. Typings `npm install typings -g`
 
 ### Build and run the application ###
 

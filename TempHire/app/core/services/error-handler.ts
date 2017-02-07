@@ -1,5 +1,6 @@
 import { Injectable} from '@angular/core';
 import { EntityError, core } from 'breeze-client';
+import get from 'lodash-es/get';
 
 import { DialogService } from './dialog.service';
 
@@ -89,7 +90,7 @@ export class ErrorHandler {
     }
 
     private isHttpStatus(e: any, status: number) {
-        return _.get(e, 'httpResponse.status', 200) == status;
+        return get(e, 'httpResponse.status', 200) == status;
     }
 
     private shouldLogError(e: any): boolean {

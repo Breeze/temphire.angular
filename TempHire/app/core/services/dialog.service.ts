@@ -32,7 +32,7 @@ export class DialogService {
         this.getModalElement().modal('hide');
     }
 
-    private getModalElement() {
+    private getModalElement(): any {
         return $('#message-box-modal');
     }
 }
