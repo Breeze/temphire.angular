@@ -7,6 +7,10 @@ import { WorkExperienceItem } from './work-experience-item';
 
 /// <code-import> Place custom imports between <code-import> tags
 import { core } from 'breeze-client';
+
+interface IChild {
+    staffingResourceId: string;
+}
 /// </code-import>
 
 export class StaffingResource extends EntityBase {
@@ -72,6 +76,16 @@ export class StaffingResource extends EntityBase {
         if (!obj.entityType || obj.entityType.shortName !== entityTypeName) {
             throw new Error('Object must be an entity of type ' + entityTypeName);
         }
+    }
+
+    delete() {
+        let children = this.entityAspect.entityManager.getEntities().filter(entity => {
+            let child = <IChild><any>entity;
+            return child.staffingResourceId && child.staffingResourceId === this.id;
+        });
+
+        children.forEach(entity => entity.entityAspect.setDeleted());
+        this.entityAspect.setDeleted();
     }
 
     /// [Initializer]

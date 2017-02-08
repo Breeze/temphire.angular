@@ -3,6 +3,7 @@
     <div class="btn-group">
         <button class="btn btn-primary" [disabled]="!canSave" (click)="save()"><i class="fa fa-floppy-o" aria-hidden="true"></i>&nbsp;Save</button>
         <button class="btn btn-primary" style="margin-left: 15px" [disabled]="!canSave" (click)="cancel()"><i class="fa fa-undo" aria-hidden="true"></i>&nbsp;Cancel</button>
+        <button class="btn btn-danger" style="margin-left: 15px" [disabled]="!canDelete" (click)="delete()"><i class="fa fa-trash-o" aria-hidden="true"></i>&nbsp;Delete</button>
     </div>
 
     <h2>{{ model.fullName }}<a class="btn btn-icon bt-lg" style="margin-top: -5px" title="Edit..." (click)="editName()"><i class="fa fa-pencil" aria-hidden="true"></i></a></h2>

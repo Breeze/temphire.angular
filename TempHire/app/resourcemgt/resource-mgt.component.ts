@@ -46,7 +46,7 @@ export class ResourceMgtComponent implements OnInit, OnDestroy {
     }
 
     beginNew() {
-        this.nameEditor.show(this).then(name => {
+        this.nameEditor.show(this, 'New resource name').then(name => {
             if (name) {
                 this.router.navigate(['/resourcemgt/new', name]);
             }

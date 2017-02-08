@@ -74,7 +74,12 @@ namespace DomainModel
         [NotMapped]
         public Address PrimaryAddress
         {
-            get { return Addresses.FirstOrDefault(a => a.Primary); }
+            get
+            {
+                if (Addresses == null) return null;
+
+                return Addresses.FirstOrDefault(a => a.Primary);
+            }
             set
             {
                 if (value.StaffingResource != this)
@@ -89,7 +94,12 @@ namespace DomainModel
         [NotMapped]
         public PhoneNumber PrimaryPhoneNumber
         {
-            get { return PhoneNumbers.FirstOrDefault(a => a.Primary); }
+            get
+            {
+                if (PhoneNumbers == null) return null;
+
+                return PhoneNumbers.FirstOrDefault(a => a.Primary);
+            }
             set
             {
                 if (value.StaffingResource != this)

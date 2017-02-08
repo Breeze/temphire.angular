@@ -97,8 +97,23 @@ export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
         }
     }
 
+    get canDelete(): boolean {
+        return !this.model.entityAspect.entityState.isAdded();
+    }
+
+    delete() {
+        this.model.delete();
+
+        return this.busyService.busy(this.unitOfWork.commit()).then(() => {
+            this.router.navigate(['/resourcemgt']);
+        }).catch(e => {
+            this.unitOfWork.rollback();
+            throw e;
+        });
+    }
+
     editName() {
-        this.nameEditor.show(this).then(name => {
+        this.nameEditor.show(this, 'Edit resource name').then(name => {
             if (name) {
                 this.model.firstName = name.firstName;
                 this.model.middleName = name.middleName;

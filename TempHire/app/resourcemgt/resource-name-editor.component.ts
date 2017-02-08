@@ -19,13 +19,15 @@ export class ResourceNameEditorComponent extends ModalDialog<Name> {
 
     @Input() model: StaffingResource;
 
+    title: string;
     name: Name = {};
 
     constructor(elementRef: ElementRef) {
         super(elementRef);
     }
 
-    show(parent: any) {
+    show(parent: any, title: string) {
+        this.title = title;
         this.name = {};
         if (this.model) {
             this.name = {
