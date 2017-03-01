@@ -23,7 +23,7 @@ export default {
         include: [
             'node_modules/rxjs/**', 
             'node_modules/breeze-client/**', 
-            'node_modules/breeze-bridge-angular2/**', 
+            'node_modules/breeze-bridge-angular/**', 
             'node_modules/lodash/**'
         ],
         exclude: [

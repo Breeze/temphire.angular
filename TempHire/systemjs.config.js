@@ -1,5 +1,5 @@
 /**
- * System configuration for Angular 2 samples
+ * System configuration for Angular samples
  * Adjust as necessary for your application needs.
  */
 (function (global) {
@@ -37,7 +37,7 @@
             'rxjs': 'npm:rxjs',
             'lodash': 'npm:lodash',
             'breeze-client': 'npm:breeze-client',
-            'breeze-bridge-angular2': 'npm:breeze-bridge-angular2'
+            'breeze-bridge-angular': 'npm:breeze-bridge-angular'
         },
         // packages tells the System loader how to load when no filename and/or no extension
         packages: {
@@ -56,7 +56,7 @@
                 main: 'breeze.base.debug.js',
                 defaultExtension: 'js'
             },
-            'breeze-bridge-angular2': {
+            'breeze-bridge-angular': {
                 main: 'index.js',
                 defaultExtension: 'js'
             }

@@ -1,6 +1,6 @@
-#Welcome to TempHire Angular 2#
+#Welcome to TempHire Angular#
 
-This example demonstrates a reference architecture for data driven business applications. It uses Angular 2 as the overall application framework and Breeze for the distributed client data management.
+This example demonstrates a reference architecture for data driven business applications. It uses Angular as the overall application framework and Breeze for the distributed client data management.
 
 The application demonstrates common scenarios found in these types of applications such as multi-screen routing, master-detail views, editing, saving etc.
 

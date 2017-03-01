@@ -1,7 +1,7 @@
 {
-  "name": "temphire-angular-2",
+  "name": "temphire-angular",
   "version": "1.0.0",
-  "description": "A reference architecture for data driven business apps using Angular 2 and BreezeJs",
+  "description": "A reference architecture for data driven business apps using Angular and BreezeJs",
   "scripts": {
     "tsc": "tsc",
     "tsc:w": "tsc -w",
@@ -22,7 +22,7 @@
     "@angular/platform-browser-dynamic": "~2.4.0",
     "@angular/router": "~3.4.0",
     "bootstrap": "^3.3.7",
-    "breeze-bridge-angular2": "^0.3.6",
+    "breeze-bridge-angular": "^2.4.1",
     "breeze-client": "~1.6.2",
     "core-js": "^2.4.1",
     "jquery": "^3.1.0",

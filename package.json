@@ -1,7 +1,7 @@
 {
-  "name": "temphire.angular2",
+  "name": "temphire.angular",
   "version": "1.0.0",
-  "description": "A reference architecture for data driven business apps using Angular 2 and BreezeJs",
+  "description": "A reference architecture for data driven business apps using Angular and BreezeJs",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,7 +11,7 @@
     "url": "git+https://github.com/Breeze/temphire.angular2.git"
   },
   "keywords": [
-    "Angular2",
+    "Angular",
     "Breeze",
     "TypeScript",
     "CRUD"
@@ -27,5 +27,6 @@
     "gulp-install": "^0.6.0",
     "gulp-shell": "^0.5.2",
     "typescript": "~2.0.10"
-  }
+  },
+  "dependencies": {}
 }
