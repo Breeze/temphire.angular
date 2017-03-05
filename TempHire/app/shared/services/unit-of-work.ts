@@ -69,10 +69,10 @@ export class UnitOfWork {
         return this.manager.getChanges();
     }
 
-    commit(): Promise<any> {
+    commit(): Promise<Entity[]> {
         let saveOptions = new SaveOptions({ resourceName: 'savechanges' });
 
-        return <any>this.manager.saveChanges(null, saveOptions)
+        return this.manager.saveChanges(null, saveOptions)
             .then((saveResult) => {
                 UnitOfWork.savedOrRejectedSubject.next({
                     entities: saveResult.entities,

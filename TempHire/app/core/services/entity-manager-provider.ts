@@ -43,7 +43,7 @@ export class EntityManagerProvider {
             let masterManager = EntityManagerProvider._masterManager = new EntityManager({
                 dataService: dataService
             });
-            return EntityManagerProvider._preparePromise = <any>masterManager.fetchMetadata().then(() => {
+            return EntityManagerProvider._preparePromise = masterManager.fetchMetadata().then(() => {
                 RegistrationHelper.register(masterManager.metadataStore);
                 this.registerAnnotations(masterManager.metadataStore);
 

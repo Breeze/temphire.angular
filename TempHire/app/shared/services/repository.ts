@@ -41,9 +41,9 @@ export class Repository<T> implements IRepository<T> {
         if (!this._entityTypeName)
             throw new Error("Repository must be created with an entity type specified");
 
-        return <any>this.manager.fetchEntityByKey(this._entityTypeName, key, true)
+        return this.manager.fetchEntityByKey(this._entityTypeName, key, true)
             .then(function (data) {
-                return <T><any>data.entity;
+                return data.entity;
             }).catch(e => {
                 if (e.status == 404) {
                     return null;
@@ -63,7 +63,7 @@ export class Repository<T> implements IRepository<T> {
     whereInCache(predicate: Predicate): T[] {
         let query = this.baseQuery().where(predicate);
 
-        return <any[]>this.executeCacheQuery(query);
+        return this.executeCacheQuery(query);
     };
 
     all(): Promise<T[]> {
@@ -78,7 +78,7 @@ export class Repository<T> implements IRepository<T> {
 
     protected executeQuery(query: EntityQuery, fetchStrategy?: FetchStrategySymbol): Promise<T[]> {
         let q = query.using(fetchStrategy || this._defaultFetchStrategy);
-        return <any>this.manager.executeQuery(q).then(data => {
+        return this.manager.executeQuery(q).then(data => {
             return data.results;
         }).catch(e => {
             if (e.status == 404) {
@@ -90,7 +90,7 @@ export class Repository<T> implements IRepository<T> {
         });
     }
 
-    protected executeCacheQuery(query: EntityQuery): Entity[] {
-        return this.manager.executeQueryLocally(query);
+    protected executeCacheQuery(query: EntityQuery): T[] {
+        return <T[]><any>this.manager.executeQueryLocally(query);
     }
 }
