@@ -36,7 +36,8 @@ export class UnitOfWork {
     private static shelveSets = {};
 
     private entityChangedSubject: Subject<EntityChangedEventArgs>;
-    private static savedOrRejectedSubject = new Subject<SavedOrRejectedArgs>();
+    private static committedSubject = new Subject<Entity[]>();
+    private static rejectedSubject = new Subject<Entity[]>();
 
     protected get manager(): EntityManager {
         if (!this._manager) {
@@ -53,8 +54,12 @@ export class UnitOfWork {
         return this.entityChangedSubject.asObservable();
     }
 
-    static get savedOrRejected() {
-        return UnitOfWork.savedOrRejectedSubject.asObservable();
+    static get committed() {
+        return UnitOfWork.committedSubject.asObservable();
+    }
+
+    static get rejected() {
+        return UnitOfWork.rejectedSubject.asObservable();
     }
 
     constructor(private _emProvider: EntityManagerProvider) {
@@ -74,10 +79,7 @@ export class UnitOfWork {
 
         return this.manager.saveChanges(null, saveOptions)
             .then((saveResult) => {
-                UnitOfWork.savedOrRejectedSubject.next({
-                    entities: saveResult.entities,
-                    rejected: false
-                });
+                UnitOfWork.committedSubject.next(saveResult.entities);
 
                 return saveResult.entities;
             });
@@ -86,10 +88,7 @@ export class UnitOfWork {
     rollback(): void {
         let pendingChanges = this.manager.getChanges();
         this.manager.rejectChanges();
-        UnitOfWork.savedOrRejectedSubject.next({
-            entities: pendingChanges,
-            rejected: true
-        });
+        UnitOfWork.rejectedSubject.next(pendingChanges);
     }
 
     clear(): void {

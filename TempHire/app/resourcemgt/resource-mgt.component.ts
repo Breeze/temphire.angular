@@ -18,7 +18,7 @@ export class ResourceMgtComponent implements OnInit, OnDestroy {
     staffingResources: StaffingResourceListItem[];
     staffingResourceId: string;
 
-    private savedOrRejectedSub: Subscription;
+    private committedSub: Subscription;
 
     constructor(private unitOfWork: ResourceMgtUnitOfWork, private busyService: BusyService, private router: Router, private route: ActivatedRoute) { }
 
@@ -26,19 +26,18 @@ export class ResourceMgtComponent implements OnInit, OnDestroy {
         if (this.route.firstChild) {
             this.route.firstChild.params.forEach(params => {
                 this.staffingResourceId = params['id'];
+                this.scrollIntoView();
             });
         }
 
-        this.savedOrRejectedSub = ResourceMgtUnitOfWork.savedOrRejected.subscribe(args => {
-            if (!args.rejected) {
-                this.loadList();
-            }
+        this.committedSub = ResourceMgtUnitOfWork.committed.subscribe(() => {
+            this.loadList();
         });
         this.loadList();
     }
 
     ngOnDestroy() {
-        this.savedOrRejectedSub.unsubscribe();
+        this.committedSub.unsubscribe();
     }
 
     onSelect(staffingResource: StaffingResourceListItem) {
@@ -62,5 +61,21 @@ export class ResourceMgtComponent implements OnInit, OnDestroy {
                 }
                 return data;
             }));
+    }
+
+    private scrollIntoView() {
+        // Scroll selected item into view
+        setTimeout(() => {
+            let container = $('#search-result');
+            let scrollTo = $('#search-result .info');
+            if (scrollTo.length) {
+                let scrollTop = scrollTo.offset().top - container.offset().top + container.scrollTop();
+                if (scrollTop > container.scrollTop() + container.height()) {
+                    container.animate({
+                        scrollTop: scrollTop
+                    });
+                }
+            }
+        });
     }
 }
