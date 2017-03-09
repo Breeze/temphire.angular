@@ -16,8 +16,9 @@ export class BusyService {
                 this._busyCounter--;
             }).catch((reason: any) => {
                 this._busyCounter--;
+                throw reason;    // Rethrow error
             });
-        }, 300);
+        });
 
         return op;
     }
