@@ -6,7 +6,7 @@ import { SharedModule } from '../shared/shared.module';
 import {
     MessageBoxComponent, CanDeactivateGuard, PrepareGuard,
     ErrorHandler, EntityManagerProvider, DialogService, customExceptionHandlerProvider,
-    BusyService, AuthService
+    BusyService, AuthService, UnitOfWork
 } from './services/common';
 
 // ATTENTION: Never import this module into a lazy loaded module. Only import into app module.
@@ -22,7 +22,8 @@ import {
         DialogService,
         customExceptionHandlerProvider,
         BusyService,
-        AuthService
+        AuthService,
+        UnitOfWork
     ]
 })
 export class CoreModule { }

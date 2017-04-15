@@ -2,7 +2,7 @@
 import { EntityManager, Entity, EntityQuery, FetchStrategy, SaveOptions, EntityChangedEventArgs } from 'breeze-client';
 import { Subject } from 'rxjs/Subject';
 
-import { EntityManagerProvider } from '../../core/services/common';
+import { EntityManagerProvider } from './entity-manager-provider';
 import { IRepository, Repository} from './repository';
 
 export interface IEntityFactory<T extends Entity> {

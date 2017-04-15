@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { NewLineDirective, ScrollToTopDirective } from './directives/common';
 import { TabContainer } from './controls/tab-container.component';
 import { TabPane } from './controls/tab-pane.directive';
-import { UnitOfWork } from './services/common';
 
 @NgModule({
     imports: [CommonModule],
@@ -19,7 +18,6 @@ import { UnitOfWork } from './services/common';
         TabContainer,
         TabPane,
         ScrollToTopDirective
-    ],
-    providers: [UnitOfWork]
+    ]
 })
 export class SharedModule { }

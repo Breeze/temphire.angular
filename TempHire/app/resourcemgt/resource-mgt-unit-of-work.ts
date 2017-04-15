@@ -1,8 +1,7 @@
 ﻿import { Injectable } from '@angular/core';
 import { Entity, EntityManager, Predicate, FilterQueryOp } from 'breeze-client';
 
-import { EntityManagerProvider } from '../core/services/entity-manager-provider';
-import { UnitOfWork, IRepository, EntityFactory, IEntityFactory } from '../shared/services/common';
+import { EntityManagerProvider, UnitOfWork, IRepository, EntityFactory, IEntityFactory } from '../core/services/common';
 
 import { StaffingResource, State, AddressType, PhoneNumberType } from '../core/entities/entity-model';
 
