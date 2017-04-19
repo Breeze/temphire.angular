@@ -9,7 +9,6 @@ export interface IEntityFactory<T extends Entity> {
     create(...params: any[]): Promise<T>;
 }
 
-@Injectable()
 export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
 
     constructor(private entityTypeName: string, private manager: EntityManager) {

@@ -267,6 +267,9 @@
     <TypeScriptCompile Include="app\core\services\entity-manager-provider.ts" />
     <TypeScriptCompile Include="app\core\services\error-handler.ts" />
     <TypeScriptCompile Include="app\core\services\guards.ts" />
+    <TypeScriptCompile Include="app\core\services\provide-parent.ts" />
+    <TypeScriptCompile Include="app\core\services\repository.ts" />
+    <TypeScriptCompile Include="app\core\services\unit-of-work.ts" />
     <TypeScriptCompile Include="app\home.component.ts" />
     <TypeScriptCompile Include="app\login.component.ts" />
     <TypeScriptCompile Include="app\main.ts" />
@@ -284,10 +287,6 @@
     <TypeScriptCompile Include="app\shared\directives\common.ts" />
     <TypeScriptCompile Include="app\shared\directives\new-line.directive.ts" />
     <TypeScriptCompile Include="app\shared\directives\scroll-to-top.directive.ts" />
-    <TypeScriptCompile Include="app\shared\services\common.ts" />
-    <TypeScriptCompile Include="app\shared\services\provide-parent.ts" />
-    <TypeScriptCompile Include="app\shared\services\repository.ts" />
-    <TypeScriptCompile Include="app\shared\services\unit-of-work.ts" />
     <TypeScriptCompile Include="app\shared\shared.module.ts" />
   </ItemGroup>
   <ItemGroup>
