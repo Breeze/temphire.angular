@@ -24,9 +24,9 @@
   "homepage": "https://github.com/Breeze/temphire.angular2#readme",
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-install": "^0.6.0",
-    "gulp-shell": "^0.5.2",
-    "typescript": "^2.2.1"
+    "gulp-install": "^1.1.0",
+    "gulp-shell": "^0.6.3",
+    "typescript": "^2.2.2"
   },
   "dependencies": {}
 }
