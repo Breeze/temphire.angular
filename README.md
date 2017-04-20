@@ -1,4 +1,4 @@
-#Welcome to TempHire Angular#
+# Welcome to TempHire Angular #
 
 This example demonstrates a reference architecture for data driven business applications. It uses Angular as the overall application framework and Breeze for the distributed client data management.
 
@@ -10,15 +10,15 @@ TempHire is available with both a .NET server and a Node.js server. Pick the tec
 
 #### Node requirements ####
 
-1. Node 4.5.0 or higher
+1. Node 6.10.2 or higher
 2. Npm 3.0 or higher
 3. Gulp `npm install gulp -g`
 
 #### .NET requirements ####
 
-1. Visual Studio 2015 Update 3
-2. [TypeScript 2](https://blogs.msdn.microsoft.com/typescript/2016/09/22/announcing-typescript-2-0/)
-1. Node 4.5.0 or higher
+1. Visual Studio 2015 Update 3 or higher
+2. [TypeScript 2.2](https://blogs.msdn.microsoft.com/typescript/2017/02/22/announcing-typescript-2-2/)
+1. Node 6.10.2 or higher
 2. Npm 3.0 or higher
 3. Gulp `npm install gulp -g`
 
