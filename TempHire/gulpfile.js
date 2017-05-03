@@ -19,7 +19,7 @@ gulp.task('rollup', ['build'],
 )
 
 // watch and build
-gulp.task('watch', function() {
+gulp.task('watch', ['rollup'], function() {
   var basePath = path.join(clientDir, 'app', '**');
   var tsglob = path.join(basePath, '*.ts');
   var htmlglob = path.join(basePath, '*.html');
