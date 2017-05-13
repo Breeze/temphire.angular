@@ -9,17 +9,13 @@ export class BusyService {
         return this._busyCounter > 0;
     }
 
-    busy<T>(op: Promise<T>): Promise<T> {
-        setTimeout(() => {
-            this._busyCounter++;
-            op.then(result => {
-                this._busyCounter--;
-            }).catch((reason: any) => {
-                this._busyCounter--;
-                throw reason;    // Rethrow error
-            });
-        });
+    async busy<T>(op: Promise<T>): Promise<T> {
+        this._busyCounter++;
 
-        return op;
+        try {
+            return await op;
+        } finally {
+            this._busyCounter--;
+        }
     }
 }
