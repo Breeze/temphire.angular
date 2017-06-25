@@ -1,21 +1,37 @@
 {
-  "compileOnSave": true,
-  "compilerOptions": {
-    "target": "es5",
-    "module": "es2015",
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "lib": [ "es2015", "dom" ],
-    "removeComments": false,
-    "noImplicitAny": true,
-    "suppressImplicitAnyIndexErrors": true,
-    "importHelpers": true
-  },
-
-  "angularCompilerOptions": {
-   "genDir": "aot",
-   "skipMetadataEmit" : true
- }
+    "compileOnSave": false,
+    "compilerOptions": {
+        "target": "es5",
+        "module": "es2015",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "lib": [
+            "es2015",
+            "dom"
+        ],
+        "noImplicitAny": true,
+        "suppressImplicitAnyIndexErrors": true,
+        "importHelpers": true,
+        "typeRoots": [
+            "node_modules/@types"
+        ]
+    },    
+    "include": [
+        "app/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "app/main.ts"
+    ],
+    "files": [
+        "app/app.module.ts",
+        "app/main-aot.ts"
+    ],
+    "angularCompilerOptions": {
+        "genDir": "aot",
+        "entryModule": "./app/app.module#AppModule",
+        "skipMetadataEmit": true
+    }
 }

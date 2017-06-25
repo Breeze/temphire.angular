@@ -157,9 +157,6 @@
     <Content Include="Content\font-awesome-4.6.3\fonts\fontawesome-webfont.svg" />
     <Content Include="Content\font-awesome-4.6.3\HELP-US-OUT.txt" />
     <Content Include="favicon.ico" />
-    <Content Include="index.html" />
-    <Content Include="rollup.js" />
-    <Content Include="systemjs.config.js" />
     <Content Include="Web.config" />
     <Content Include="Content\font-awesome-4.6.3\fonts\fontawesome-webfont.eot" />
     <Content Include="Content\font-awesome-4.6.3\fonts\fontawesome-webfont.ttf" />
@@ -194,6 +191,10 @@
     <Content Include="Content\font-awesome-4.6.3\scss\_screen-reader.scss" />
     <Content Include="Content\font-awesome-4.6.3\scss\_stacked.scss" />
     <Content Include="Content\font-awesome-4.6.3\scss\_variables.scss" />
+    <Content Include="webpack.common.js" />
+    <Content Include="webpack.dev.js" />
+    <Content Include="webpack.prod.js" />
+    <Content Include="index.ejs" />
     <None Include="_bin_deployableAssemblies\x86\sqlcese40.dll" />
     <None Include="_bin_deployableAssemblies\x86\sqlceqp40.dll" />
     <None Include="_bin_deployableAssemblies\x86\sqlceme40.dll" />

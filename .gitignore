@@ -11,6 +11,7 @@
 *.zip
 *.map
 */app/**/*.js
+TempHire/index.html
 
 [Tt]humbs.db
 

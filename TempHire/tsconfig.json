@@ -1,16 +1,32 @@
 {
-  "compileOnSave": true,
-  "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "lib": [ "es2015", "dom" ],
-    "removeComments": false,
-    "noImplicitAny": true,
-    "suppressImplicitAnyIndexErrors": true,
-    "importHelpers": true
-  }
+    "compileOnSave": false,
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "lib": [
+            "es2015",
+            "dom"
+        ],
+        "noImplicitAny": true,
+        "suppressImplicitAnyIndexErrors": true,
+        "importHelpers": true,
+        "typeRoots": [
+            "node_modules/@types"
+        ]
+    },    
+    "include": [
+        "app/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "app/main-aot.ts"
+    ],
+    "files": [
+        "app/app.module.ts",
+        "app/main.ts"
+    ]
 }
