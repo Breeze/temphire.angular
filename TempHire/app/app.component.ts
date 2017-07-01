@@ -2,7 +2,6 @@ import { Component, AfterViewInit } from '@angular/core';
 
 @Component({
     selector: 'my-app',
-    moduleId: module.id,
     templateUrl: './app.html'
 })
 export class AppComponent implements AfterViewInit {

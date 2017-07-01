@@ -12,7 +12,6 @@ export interface Name {
 
 @Component({
     selector: 'resource-name-editor',
-    moduleId: module.id,
     templateUrl: './resource-name-editor.html'
 })
 export class ResourceNameEditorComponent extends ModalDialog<Name> {

@@ -2,7 +2,6 @@ import {Component, ContentChildren, QueryList, EventEmitter, Input, Output} from
 import {TabPane} from './tab-pane.directive';
 
 @Component({
-    moduleId: module.id,
     selector: 'tab-container',
     template: `
     <ul class="nav nav-tabs">

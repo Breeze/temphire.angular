@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { AuthService, DialogService } from './core/services/common';
 
 @Component({
-    moduleId: module.id,
     templateUrl: './login.html'
 })
 export class LoginComponent {

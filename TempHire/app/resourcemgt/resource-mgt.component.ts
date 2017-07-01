@@ -8,7 +8,6 @@ import { BusyService } from '../core/services/common';
 import { ResourceNameEditorComponent } from './resource-name-editor.component';
 
 @Component({
-    moduleId: module.id,
     templateUrl: './resource-mgt.html'
 })
 export class ResourceMgtComponent implements OnInit, OnDestroy {

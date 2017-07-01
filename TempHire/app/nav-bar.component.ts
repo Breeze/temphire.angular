@@ -4,7 +4,6 @@ import { BusyService, AuthService } from './core/services/common';
 
 @Component({
     selector: 'nav-bar',
-    moduleId: module.id,
     templateUrl: './nav-bar.html'
 })
 export class NavBarComponent {

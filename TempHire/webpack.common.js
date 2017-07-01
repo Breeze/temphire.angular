@@ -1,18 +1,12 @@
 const path = require('path');
 const webpack = require('webpack');
-const CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
-const ngtools = require('@ngtools/webpack');
 
 const entryPoints = ['manifest', 'vendor', 'app'];
 
 module.exports = {
     devtool: 'source-map',
-
-    entry: {
-        'app': './app/main-aot.ts'
-    },
 
     output: {
         path: __dirname + '/dist/',
@@ -36,34 +30,8 @@ module.exports = {
         }
     },
 
-    module: {
-        loaders: [
-            {
-                test: /\.ts$/,
-                loader: '@ngtools/webpack'
-            },
-            {
-                test: /\.html$/,
-                loader: 'raw-loader'
-            }
-        ]
-    },
-
     plugins: [
         new CleanWebpackPlugin(['dist/*.*']),
-
-        new ngtools.AotPlugin({
-            tsConfigPath: './tsconfig-aot.json'
-        }),
-
-        new webpack.optimize.CommonsChunkPlugin({
-            name: 'vendor',
-            minChunks: (m) => /node_modules/.test(m.context)
-        }),
-        new webpack.optimize.CommonsChunkPlugin({
-            name: 'manifest',
-            minChunks: Infinity
-        }),
 
         new HtmlWebpackPlugin({
             filename: '../index.html',
