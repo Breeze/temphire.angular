@@ -17,7 +17,7 @@ export abstract class ModalDialog<T> {
         if (validateFn) {
             this.validationFn = validateFn.bind(parent);
         }
-        let p = new Promise((resolve, reject) => {
+        let p = new Promise<T>((resolve, reject) => {
             modalEle.modal({ backdrop: 'static', keyboard: false }).on('hidden.bs.modal', () => {
                 resolve(this.modalResult);
             });

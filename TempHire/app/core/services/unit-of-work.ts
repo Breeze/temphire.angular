@@ -16,9 +16,6 @@ export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
 
     create(config?: any): Promise<T> {
         let inst = <T>this.manager.createEntity(this.entityTypeName, config);
-        // OLD version - did not allow config.
-        // let inst = new this.type();
-        // this.entityManagerProvider.manager().addEntity(inst);
         return Promise.resolve(inst);
     }
 }

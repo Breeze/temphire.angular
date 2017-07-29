@@ -51,9 +51,7 @@ module.exports = function (env) {
             }),
 
             new webpack.optimize.UglifyJsPlugin({ // https://github.com/angular/angular/issues/10618
-                sourceMap: true,
-                compress: { warnings: false },
-                mangle: { keep_fnames: true }
+                sourceMap: true
             })
         ]
     })

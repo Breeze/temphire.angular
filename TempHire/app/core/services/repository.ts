@@ -79,10 +79,10 @@ export class Repository<T> implements IRepository<T> {
     protected executeQuery(query: EntityQuery, fetchStrategy?: FetchStrategySymbol): Promise<T[]> {
         let q = query.using(fetchStrategy || this._defaultFetchStrategy);
         return this.manager.executeQuery(q).then(data => {
-            return data.results;
+            return <T[]><any>data.results;
         }).catch(e => {
             if (e.status == 404) {
-                return [];
+                return <T[]>[];
             }
 
             // Something else happend, rethrow the exception
