@@ -4,6 +4,7 @@ using Breeze.WebApi2;
 
 using DomainModel;
 using Newtonsoft.Json.Linq;
+using System;
 
 namespace TempHire.Services
 {
@@ -14,6 +15,7 @@ namespace TempHire.Services
         public UnitOfWork()
         {
             _contextProvider = new EFContextProvider<TempHireDbContext>();
+            _contextProvider.BeforeSaveEntityDelegate = this.BeforeSaveEntity;
 
             StaffingResources = new Repository<StaffingResource>(_contextProvider.Context);
             Addresses = new Repository<Address>(_contextProvider.Context);
@@ -45,6 +47,26 @@ namespace TempHire.Services
         public SaveResult Commit(JObject changeSet)
         {
             return _contextProvider.SaveChanges(changeSet);
+        }
+
+        private bool BeforeSaveEntity(EntityInfo entityInfo)
+        {
+            var auditEntity = entityInfo.Entity as AuditEntityBase;
+            if (auditEntity == null) return true;
+
+            if (entityInfo.EntityState == EntityState.Modified)
+            {
+                auditEntity.Modified = DateTime.Now;
+                entityInfo.OriginalValuesMap["Modified"] = null;
+            }
+
+            if (entityInfo.EntityState == EntityState.Added)
+            {
+                auditEntity.Created = DateTime.Now;
+                entityInfo.OriginalValuesMap["Created"] = null;
+            }
+
+            return true;
         }
     }
 }
