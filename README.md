@@ -17,7 +17,7 @@ TempHire is available with both a .NET server and a Node.js server. Pick the tec
 #### .NET requirements ####
 
 1. Visual Studio 2015 Update 3 or higher
-2. [TypeScript 2.2](https://blogs.msdn.microsoft.com/typescript/2017/02/22/announcing-typescript-2-2/)
+2. [TypeScript 2.2](https://blogs.msdn.microsoft.com/typescript/2017/02/22/announcing-typescript-2-2/) or higher
 1. Node 6.10.2 or higher
 2. Npm 3.0 or higher
 3. Gulp `npm install gulp -g`
