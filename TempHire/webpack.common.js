@@ -33,6 +33,8 @@ module.exports = {
     plugins: [
         new CleanWebpackPlugin(['dist/*.*']),
 
+        new webpack.optimize.ModuleConcatenationPlugin(),
+
         new HtmlWebpackPlugin({
             filename: '../index.html',
             template: 'index.ejs',
