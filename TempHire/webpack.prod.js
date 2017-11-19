@@ -8,13 +8,13 @@ const CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
 module.exports = function (env) {
     return Merge(CommonConfig, {
         entry: {
-            'app': './app/main-aot.ts'
+            'app': './app/main.ts'
         },
 
         module: {
             loaders: [
                 {
-                    test: /\.ts$/,
+                    test: /(?:\.ngfactory\.js|\.ngstyle\.js|\.ts)$/,
                     loader: '@ngtools/webpack'
                 },
                 {
@@ -26,7 +26,7 @@ module.exports = function (env) {
 
         plugins: [
 
-            new ngtools.AotPlugin({
+            new ngtools.AngularCompilerPlugin({
                 tsConfigPath: './tsconfig-aot.json'
             }),
 

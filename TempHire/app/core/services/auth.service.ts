@@ -1,12 +1,12 @@
 ﻿import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
+import { HttpClient } from '@angular/common/http';
 import 'rxjs/add/operator/toPromise';
 
 @Injectable()
 export class AuthService {
     redirectUrl: string;
 
-    constructor(private http: Http) { }
+    constructor(private http: HttpClient) { }
 
     loginUser(username: string, password: string): Promise<any> {
         let data = {
@@ -14,10 +14,10 @@ export class AuthService {
             password: password
         };
 
-        return this.http.post('/breeze/account/login', data).toPromise();
+        return this.http.post('/breeze/account/login', data, { responseType: 'text' }).toPromise();
     }
 
     logout(): Promise<any> {
-        return this.http.post('/breeze/account/logout', {}).toPromise();
+        return this.http.post('/breeze/account/logout', {}, { responseType: 'text' }).toPromise();
     }
 }

@@ -23,11 +23,11 @@
     ],
     "exclude": [
         "node_modules",
-        "app/main.ts"
+        "app/main-aot.ts"
     ],
     "files": [
         "app/app.module.ts",
-        "app/main-aot.ts"
+        "app/main.ts"
     ],
     "angularCompilerOptions": {
         "genDir": "aot",

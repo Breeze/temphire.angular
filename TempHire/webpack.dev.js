@@ -17,12 +17,11 @@ module.exports = function (env) {
                 'breeze-client/breeze.modelLibrary.backingStore',
                 'breeze-client/breeze.uriBuilder.json',
                 'breeze-client/breeze.uriBuilder.odata',
-                'breeze-bridge-angular',
+                'breeze-bridge2-angular',
                 '@angular/common',
                 '@angular/compiler',
                 '@angular/core',
                 '@angular/forms',
-                '@angular/http',
                 '@angular/platform-browser-dynamic',
                 '@angular/router'
             ],
