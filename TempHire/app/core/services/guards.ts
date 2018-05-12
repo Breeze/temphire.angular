@@ -1,6 +1,6 @@
-﻿import { Injectable }    from '@angular/core';
+import { Injectable }    from '@angular/core';
 import { CanActivate, CanDeactivate, ActivatedRouteSnapshot, RouterStateSnapshot, Routes, Resolve, Router } from '@angular/router';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 
 import { EntityManagerProvider } from './entity-manager-provider';
 import { BusyService } from './busy.service';

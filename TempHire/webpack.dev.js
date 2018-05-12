@@ -1,7 +1,6 @@
 const webpack = require('webpack');
 const Merge = require('webpack-merge');
 const CommonConfig = require('./webpack.common.js');
-const CommonsChunkPlugin = webpack.optimize.CommonsChunkPlugin;
 
 module.exports = function (env) {
     return Merge(CommonConfig, {
@@ -28,28 +27,34 @@ module.exports = function (env) {
         },
 
         module: {
-            loaders: [
+            rules: [
                 {
                     test: /\.ts$/,
-                    loaders: ['ts-loader', 'angular2-template-loader'],
+                    use: [{
+                        loader: 'ts-loader'
+                    }, {
+                        loader: 'angular2-template-loader'
+                    }],
                     exclude: [/node_modules/]
                 },
                 {
                     test: /\.html$/,
-                    loader: 'html-loader?attrs=false&-removeAttributeQuotes&caseSensitive'
+                    use: [{
+                        loader: 'html-loader',
+
+                        options: {
+                            attrs: false,
+                            removeAttributeQuotes: true,
+                            caseSensitive: true
+                        }
+                    }]
                 }
             ]
         },
 
-        plugins: [
+        optimization: {
+            minimize: false
+        }
 
-            new CommonsChunkPlugin({
-                name: ['app', 'vendor']
-            }),
-            new CommonsChunkPlugin({
-                name: 'manifest',
-                minChunks: Infinity
-            })
-        ]
     });
 }
