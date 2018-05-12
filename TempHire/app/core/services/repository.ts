@@ -1,4 +1,4 @@
-﻿import { Entity, FetchStrategySymbol, EntityManager, FetchStrategy, EntityType, EntityQuery, Predicate } from 'breeze-client';
+import { Entity, EntityManager, EntityQuery, EntityType, FetchStrategy, FetchStrategySymbol, Predicate } from 'breeze-client';
 
 export interface IRepository<T> {
     withId(key: any): Promise<T>;
@@ -13,18 +13,18 @@ export class Repository<T> implements IRepository<T> {
     protected _defaultFetchStrategy: FetchStrategySymbol;
 
     constructor(private _manager: EntityManager,
-        protected _entityTypeName: string,
-        protected _resourceName: string,
-        protected _isCachedBundle: boolean = false) {
+                protected _entityTypeName: string,
+                protected _resourceName: string,
+                protected _isCachedBundle: boolean = false) {
 
         this._defaultFetchStrategy = _isCachedBundle ? FetchStrategy.FromLocalCache : FetchStrategy.FromServer;
     }
 
     protected get manager(): EntityManager {
-        if (this._resourceNameSet) return this._manager;
-        let metadataStore = this._manager.metadataStore;
-        
-        let entityType = <EntityType>metadataStore.getEntityType(this._entityTypeName || '', true);
+        if (this._resourceNameSet) { return this._manager; }
+        const metadataStore = this._manager.metadataStore;
+
+        const entityType = metadataStore.getEntityType(this._entityTypeName || '', true) as EntityType;
         if (entityType) {
             entityType.setProperties({ defaultResourceName: this.localResourceName });
             metadataStore.setEntityTypeForResourceName(this.localResourceName, entityType);
@@ -32,17 +32,18 @@ export class Repository<T> implements IRepository<T> {
 
         return this._manager;
     }
-    
+
     protected get localResourceName() {
         return this._isCachedBundle ? this._entityTypeName : this._resourceName;
     }
 
     withId(key: any): Promise<T> {
-        if (!this._entityTypeName)
-            throw new Error("Repository must be created with an entity type specified");
+        if (!this._entityTypeName) {
+            throw new Error('Repository must be created with an entity type specified');
+        }
 
         return this.manager.fetchEntityByKey(this._entityTypeName, key, true)
-            .then(function (data) {
+            .then(function(data) {
                 return data.entity;
             }).catch(e => {
                 if (e.status == 404) {
@@ -52,37 +53,37 @@ export class Repository<T> implements IRepository<T> {
                 // Something else happened
                 throw e;
             });
-    };
+    }
 
     where(predicate: Predicate): Promise<T[]> {
-        let query = this.baseQuery().where(predicate);
+        const query = this.baseQuery().where(predicate);
 
         return this.executeQuery(query);
-    };
+    }
 
     whereInCache(predicate: Predicate): T[] {
-        let query = this.baseQuery().where(predicate);
+        const query = this.baseQuery().where(predicate);
 
         return this.executeCacheQuery(query);
-    };
+    }
 
     all(): Promise<T[]> {
-        let query = this.baseQuery();
+        const query = this.baseQuery();
 
         return this.executeQuery(query);
-    };
+    }
 
-    protected baseQuery() : EntityQuery {
+    protected baseQuery(): EntityQuery {
         return EntityQuery.from(this.localResourceName);
     }
 
     protected executeQuery(query: EntityQuery, fetchStrategy?: FetchStrategySymbol): Promise<T[]> {
-        let q = query.using(fetchStrategy || this._defaultFetchStrategy);
+        const q = query.using(fetchStrategy || this._defaultFetchStrategy);
         return this.manager.executeQuery(q).then(data => {
-            return <T[]><any>data.results;
+            return data.results as any as T[];
         }).catch(e => {
             if (e.status == 404) {
-                return <T[]>[];
+                return [] as T[];
             }
 
             // Something else happend, rethrow the exception
@@ -91,6 +92,6 @@ export class Repository<T> implements IRepository<T> {
     }
 
     protected executeCacheQuery(query: EntityQuery): T[] {
-        return <T[]><any>this.manager.executeQueryLocally(query);
+        return this.manager.executeQueryLocally(query) as any as T[];
     }
 }

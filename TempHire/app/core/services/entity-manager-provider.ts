@@ -1,13 +1,13 @@
-﻿import { Injectable} from '@angular/core';
-import { 
-    config, EntityManager, NamingConvention, DataService, DataType, MetadataStore,
-    EntityType, NavigationProperty, DataProperty, EntityQuery, DataServiceOptions
+import { Injectable } from '@angular/core';
+import {
+    config, DataProperty, DataService, DataServiceOptions, DataType, EntityManager,
+    EntityQuery, EntityType, MetadataStore, NamingConvention, NavigationProperty
 } from 'breeze-client';
-import remove from 'lodash-es/remove';
 import includes from 'lodash-es/includes';
+import remove from 'lodash-es/remove';
 
 // Import required breeze adapters. Rollup.js requires the use of breeze.base.debug.js, which doesn't include
-// the breeze adapters. 
+// the breeze adapters.
 import 'breeze-client/breeze.dataService.webApi';
 import 'breeze-client/breeze.modelLibrary.backingStore';
 import 'breeze-client/breeze.uriBuilder.json';
@@ -30,7 +30,7 @@ export class EntityManagerProvider {
             // Configure breeze adapaters. See rollup.js comment above
             config.initializeAdapterInstances({ dataService: 'webApi', uriBuilder: 'odata' });
             NamingConvention.camelCase.setAsDefault();
-            let dsconfig: DataServiceOptions = {
+            const dsconfig: DataServiceOptions = {
                 serviceName: 'breeze'
             };
             if (location.port == '3000') {
@@ -38,17 +38,17 @@ export class EntityManagerProvider {
                 config.initializeAdapterInstance('uriBuilder', 'json', false);
                 dsconfig.uriBuilderName = 'json'; // for breeze-sequelize server
             }
-            let dataService = new DataService(dsconfig);
+            const dataService = new DataService(dsconfig);
 
-            let masterManager = EntityManagerProvider._masterManager = new EntityManager({
-                dataService: dataService
+            const masterManager = EntityManagerProvider._masterManager = new EntityManager({
+                dataService
             });
             return EntityManagerProvider._preparePromise = masterManager.fetchMetadata().then(() => {
                 RegistrationHelper.register(masterManager.metadataStore);
                 this.registerAnnotations(masterManager.metadataStore);
 
                 // Load lockups
-                var query = EntityQuery.from('lookups');
+                const query = EntityQuery.from('lookups');
                 return masterManager.executeQuery(query);
             }).catch(e => {
                 // If there's an error, we need to ensure prepare can be called fresh
@@ -68,7 +68,7 @@ export class EntityManagerProvider {
     }
 
     newManager(): EntityManager {
-        let manager = EntityManagerProvider._masterManager.createEmptyCopy();
+        const manager = EntityManagerProvider._masterManager.createEmptyCopy();
         this.seedManager(manager);
         return manager;
     }
@@ -79,13 +79,13 @@ export class EntityManagerProvider {
 
     private registerAnnotations(metadataStore: MetadataStore) {
         metadataStore.getEntityTypes().forEach((t: EntityType) => {
-            let et = <EntityType>t;
-            let ctor = <any>et.getCtor();
+            const et = t as EntityType;
+            const ctor = et.getCtor() as any;
             if (ctor && ctor.getEntityTypeAnnotation) {
-                let etAnnotation = <EntityTypeAnnotation>ctor.getEntityTypeAnnotation();
+                const etAnnotation = ctor.getEntityTypeAnnotation() as EntityTypeAnnotation;
                 et.validators.push(...etAnnotation.validators);
-                etAnnotation.propertyAnnotations.forEach((pa) => {
-                    let prop = et.getProperty(pa.propertyName);
+                etAnnotation.propertyAnnotations.forEach(pa => {
+                    const prop = et.getProperty(pa.propertyName);
                     prop.validators.push(...pa.validators);
                     prop.displayName = pa.displayName;
                 });
@@ -95,20 +95,20 @@ export class EntityManagerProvider {
     }
 
     private ignoreForSerialization(metadataStore: MetadataStore, typeInfo: string | EntityType, ...propertyNames: string[]) {
-        if (!propertyNames || propertyNames.length == 0) return;
+        if (!propertyNames || propertyNames.length == 0) { return; }
 
-        let entityType = typeof (typeInfo) === 'string' ? <EntityType>metadataStore.getEntityType(<string>typeInfo) : <EntityType>typeInfo;
+        const entityType = typeof (typeInfo) === 'string' ? metadataStore.getEntityType(typeInfo as string) as EntityType : typeInfo as EntityType;
 
         // Recursivley walk the inheritance tree and ignore the same properties for all parent types
-        let parentTypes = metadataStore.getEntityTypes().filter(type => {
-            let parentType = <EntityType>type;
+        const parentTypes = metadataStore.getEntityTypes().filter(type => {
+            const parentType = type as EntityType;
             return parentType.baseEntityType && parentType.baseEntityType === entityType;
         });
         parentTypes.forEach((parentType: EntityType) => this.ignoreForSerialization(metadataStore, parentType, ...propertyNames));
 
         // Now ignore for current type
-        let dps = propertyNames.map(propertyName => {
-            let dp = entityType.getDataProperty(propertyName);
+        const dps = propertyNames.map(propertyName => {
+            const dp = entityType.getDataProperty(propertyName);
             if (!dp) {
                 console.warn(`No data property with name ${propertyName} found in entity type ${entityType.shortName}`);
             }
@@ -118,19 +118,19 @@ export class EntityManagerProvider {
         remove(dps, dp => !dp);
 
         // Get existing ignored properties
-        let ignoredProperties: DataProperty[] = (<any>entityType).$ignoredProperties;
+        let ignoredProperties: DataProperty[] = (entityType as any).$ignoredProperties;
 
         // Signals that we've already installed our custom serializerFn
         if (ignoredProperties) {
-            remove(dps, dp => includes(ignoredProperties, dp))
+            remove(dps, dp => includes(ignoredProperties, dp));
             ignoredProperties = ignoredProperties.concat(dps);
         } else {
             // First ignored properties for this entity type
             ignoredProperties = dps;
-            let origSerializerFn: (dataProperty: DataProperty, value: any) => any = (<any>entityType).serializerFn;
+            const origSerializerFn: (dataProperty: DataProperty, value: any) => any = (entityType as any).serializerFn;
             entityType.setProperties({
                 serializerFn: (dp, value) => {
-                    if (includes((<any>entityType).$ignoredProperties, dp)) {
+                    if (includes((entityType as any).$ignoredProperties, dp)) {
                         // Return undefined if property is ignored for serialization
                         return undefined;
                     }
@@ -139,7 +139,6 @@ export class EntityManagerProvider {
                 }
             });
         }
-        (<any>entityType).$ignoredProperties = ignoredProperties;
+        (entityType as any).$ignoredProperties = ignoredProperties;
     }
 }
-

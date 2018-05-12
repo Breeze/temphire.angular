@@ -1,6 +1,6 @@
 import { EntityBase } from './entity-base';
-import { StaffingResource } from './staffing-resource';
 import { RateType } from './rate-type';
+import { StaffingResource } from './staffing-resource';
 
 /// <code-import> Place custom imports between <code-import> tags
 
@@ -26,4 +26,3 @@ export class Rate extends EntityBase {
     rateType: RateType;
     staffingResource: StaffingResource;
 }
-

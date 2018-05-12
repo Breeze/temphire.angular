@@ -1,6 +1,5 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-
+import { Injectable } from '@angular/core';
 
 @Injectable()
 export class AuthService {
@@ -9,9 +8,9 @@ export class AuthService {
     constructor(private http: HttpClient) { }
 
     loginUser(username: string, password: string): Promise<any> {
-        let data = {
-            username: username,
-            password: password
+        const data = {
+            username,
+            password
         };
 
         return this.http.post('/breeze/account/login', data, { responseType: 'text' }).toPromise();

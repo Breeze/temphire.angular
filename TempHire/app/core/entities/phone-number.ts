@@ -1,9 +1,8 @@
-import { EntityBase } from './entity-base';
-import { StaffingResource } from './staffing-resource';
-import { PhoneNumberType } from './phone-number-type';
-
-/// <code-import> Place custom imports between <code-import> tags
 import { core } from 'breeze-client';
+
+import { EntityBase } from './entity-base';
+import { PhoneNumberType } from './phone-number-type';
+import { StaffingResource } from './staffing-resource';
 /// </code-import>
 
 export class PhoneNumber extends EntityBase {
@@ -33,4 +32,3 @@ export class PhoneNumber extends EntityBase {
     phoneNumberType: PhoneNumberType;
     staffingResource: StaffingResource;
 }
-

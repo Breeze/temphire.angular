@@ -8,4 +8,3 @@ export { RateType } from './rate-type';
 export { Skill } from './skill';
 export { WorkExperienceItem } from './work-experience-item';
 export { State } from './state';
-

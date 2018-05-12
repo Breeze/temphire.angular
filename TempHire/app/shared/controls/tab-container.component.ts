@@ -1,12 +1,13 @@
-import {Component, ContentChildren, QueryList, EventEmitter, Input, Output} from '@angular/core';
-import {TabPane} from './tab-pane.directive';
+import { Component, ContentChildren, EventEmitter, Input, Output, QueryList } from '@angular/core';
+
+import { TabPane } from './tab-pane.directive';
 
 @Component({
     selector: 'tab-container',
     template: `
     <ul class="nav nav-tabs">
         <li *ngIf="title"><h3 style="margin-top: 10px; margin-right: 50px; margin-bottom:5px;">{{title}}</h3></li>
-        <li *ngFor="let pane of panes; let i = index" 
+        <li *ngFor="let pane of panes; let i = index"
             (click)="selectTab(i)"
             role="presentation" [class.active]="pane.active" [class.has-no-data]="pane.hasData == false" >
         <a href="javascript:void(0)"><span>{{pane.title}}</span></a>
@@ -29,10 +30,10 @@ export class TabContainer {
 
     selectTab(pane: number) {
 
-        let currentPane = this.getCurrentPane();
+        const currentPane = this.getCurrentPane();
 
         if (currentPane) {
-            let comp = currentPane.component;
+            const comp = currentPane.component;
             if (currentPane.canDeactivate === false) {
                 return;
             }
@@ -64,8 +65,7 @@ export class TabContainer {
     }
 
     getCurrentComponent<T>(): T {
-        let pane = this.getCurrentPane();
-        return <T>(pane && pane.component);
+        const pane = this.getCurrentPane();
+        return (pane && pane.component) as T;
     }
 }
-

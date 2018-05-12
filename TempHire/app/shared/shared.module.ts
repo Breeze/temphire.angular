@@ -1,9 +1,9 @@
-﻿import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 
-import { NewLineDirective, ScrollToTopDirective } from './directives/common';
 import { TabContainer } from './controls/tab-container.component';
 import { TabPane } from './controls/tab-pane.directive';
+import { NewLineDirective, ScrollToTopDirective } from './directives/common';
 
 @NgModule({
     imports: [CommonModule],

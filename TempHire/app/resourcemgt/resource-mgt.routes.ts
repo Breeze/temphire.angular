@@ -1,9 +1,10 @@
-﻿import { Injectable } from '@angular/core'
-import { Routes, RouterModule, Resolve, ActivatedRouteSnapshot } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { ActivatedRouteSnapshot, Resolve, RouterModule, Routes } from '@angular/router';
 
-import { ResourceMgtComponent } from './resource-mgt.component';
+import { CanDeactivateGuard, PrepareGuard } from '../core/services/common';
+
 import { ResourceDetailComponent } from './resource-detail.component';
-import { PrepareGuard, CanDeactivateGuard } from '../core/services/common';
+import { ResourceMgtComponent } from './resource-mgt.component';
 
 export const resourceMgtRoutes: Routes = [
     {

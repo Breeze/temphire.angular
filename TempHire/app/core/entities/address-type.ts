@@ -18,4 +18,3 @@ export class AddressType extends EntityBase {
     default: boolean;
     rowVersion: number;
 }
-

@@ -18,4 +18,3 @@ export class RateType extends EntityBase {
     sequence: number;
     rowVersion: number;
 }
-

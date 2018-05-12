@@ -1,12 +1,11 @@
-import { EntityBase } from './entity-base';
+import { core } from 'breeze-client';
+
 import { Address } from './address';
+import { EntityBase } from './entity-base';
 import { PhoneNumber } from './phone-number';
 import { Rate } from './rate';
 import { Skill } from './skill';
 import { WorkExperienceItem } from './work-experience-item';
-
-/// <code-import> Place custom imports between <code-import> tags
-import { core } from 'breeze-client';
 
 interface IChild {
     staffingResourceId: string;
@@ -22,11 +21,11 @@ export class StaffingResource extends EntityBase {
     }
 
     addAddress(typeId: string): Address {
-        return <Address>this.entityAspect.entityManager.createEntity('Address', { addressTypeId: typeId, staffingResourceId: this.id });
+        return this.entityAspect.entityManager.createEntity('Address', { addressTypeId: typeId, staffingResourceId: this.id }) as Address;
     }
 
     addPhoneNumber(typeId: string): PhoneNumber {
-        return <PhoneNumber>this.entityAspect.entityManager.createEntity('PhoneNumber', { phoneNumberTypeId: typeId, staffingResourceId: this.id });
+        return this.entityAspect.entityManager.createEntity('PhoneNumber', { phoneNumberTypeId: typeId, staffingResourceId: this.id }) as PhoneNumber;
     }
 
     deletePhoneNumber(phoneNumber: PhoneNumber) {
@@ -79,8 +78,8 @@ export class StaffingResource extends EntityBase {
     }
 
     delete() {
-        let children = this.entityAspect.entityManager.getEntities().filter(entity => {
-            let child = <IChild><any>entity;
+        const children = this.entityAspect.entityManager.getEntities().filter(entity => {
+            const child = entity as any as IChild;
             return child.staffingResourceId && child.staffingResourceId === this.id;
         });
 
@@ -109,4 +108,3 @@ export class StaffingResource extends EntityBase {
     skills: Skill[];
     workExperience: WorkExperienceItem[];
 }
-

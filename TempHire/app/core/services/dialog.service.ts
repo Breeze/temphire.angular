@@ -1,4 +1,4 @@
-﻿import { Component, Injectable } from '@angular/core';
+import { Component, Injectable } from '@angular/core';
 import { core } from 'breeze-client';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class DialogService {
         this.message = message;
         this.buttonNames = buttonNames || ['Ok', 'Cancel'];
 
-        let el = this.getModalElement();
+        const el = this.getModalElement();
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 el.modal({ backdrop: 'static', keyboard: false }).on('hidden.bs.modal', () => {

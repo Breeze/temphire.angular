@@ -17,4 +17,3 @@ export class PhoneNumberType extends EntityBase {
     default: boolean;
     rowVersion: number;
 }
-

@@ -10,7 +10,8 @@
     "metadata-entities": "npm run metadata && npm run entities",
     "build:dev": "webpack --config webpack.dev.js --progress --profile --colors --display-error-details --display-cached",
     "build:prod": "webpack --config webpack.prod.js --progress --profile --colors --display-error-details --display-cached",
-    "watch": "webpack --config webpack.dev.js --watch --progress --profile --colors --display-error-details --display-cached"
+    "watch": "webpack --config webpack.dev.js --watch --progress --profile --colors --display-error-details --display-cached",
+    "tslint": ".\\node_modules\\.bin\\tslint --fix --format verbose --force .\\app\\**\\*.ts"
   },
   "keywords": [],
   "author": "",
@@ -55,6 +56,7 @@
     "html-webpack-plugin": "^3.2.0",
     "raw-loader": "^0.5.1",
     "ts-loader": "^4.3.0",
+    "tslint": "^5.10.0",
     "typescript": "^2.7.2",
     "webpack": "^4.8.2",
     "webpack-cli": "^2.1.3",

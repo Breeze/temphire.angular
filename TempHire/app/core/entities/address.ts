@@ -1,10 +1,9 @@
-import { EntityBase } from './entity-base';
+import { core } from 'breeze-client';
+
 import { AddressType } from './address-type';
+import { EntityBase } from './entity-base';
 import { StaffingResource } from './staffing-resource';
 import { State } from './state';
-
-/// <code-import> Place custom imports between <code-import> tags
-import { core } from 'breeze-client';
 /// </code-import>
 
 export class Address extends EntityBase {
@@ -38,4 +37,3 @@ export class Address extends EntityBase {
     staffingResource: StaffingResource;
     state: State;
 }
-

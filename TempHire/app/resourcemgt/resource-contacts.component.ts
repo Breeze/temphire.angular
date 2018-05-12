@@ -1,7 +1,8 @@
-﻿import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import sortBy from 'lodash-es/sortBy';
 
-import { StaffingResource, State, PhoneNumber, Address, AddressType, PhoneNumberType } from '../core/entities/entity-model';
+import { Address, AddressType, PhoneNumber, PhoneNumberType, StaffingResource, State } from '../core/entities/entity-model';
+
 import { ResourceMgtUnitOfWork } from './resource-mgt-unit-of-work';
 
 @Component({
@@ -37,13 +38,13 @@ export class ResourceContactsComponent implements OnInit {
     }
 
     deletePhoneNumber(phoneNumber: PhoneNumber) {
-        if (phoneNumber.primary || this.model.phoneNumbers.length === 1) return;
+        if (phoneNumber.primary || this.model.phoneNumbers.length === 1) { return; }
 
         this.model.deletePhoneNumber(phoneNumber);
     }
 
     setPrimaryPhoneNumber(phoneNumber: PhoneNumber) {
-        if (phoneNumber.primary) return;
+        if (phoneNumber.primary) { return; }
 
         this.model.setPrimaryPhoneNumber(phoneNumber);
     }
@@ -53,13 +54,13 @@ export class ResourceContactsComponent implements OnInit {
     }
 
     deleteAddress(address: Address) {
-        if (address.primary || this.model.addresses.length === 1) return;
+        if (address.primary || this.model.addresses.length === 1) { return; }
 
         this.model.deleteAddress(address);
     }
 
     setPrimaryAddress(address: Address) {
-        if (address.primary) return;
+        if (address.primary) { return; }
 
         this.model.setPrimaryAddress(address);
     }

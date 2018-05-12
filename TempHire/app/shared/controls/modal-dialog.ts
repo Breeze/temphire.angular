@@ -1,4 +1,4 @@
-﻿import { ElementRef } from '@angular/core';
+import { ElementRef } from '@angular/core';
 
 export abstract class ModalDialog<T> {
 
@@ -10,14 +10,14 @@ export abstract class ModalDialog<T> {
     constructor(public elementRef: ElementRef) { }
 
     protected showModal(parent: any, validateFn?: (x: any) => string): Promise<T> {
-        let ele = this.elementRef.nativeElement.firstElementChild;
-        let modalEle: any = jQuery(ele);
+        const ele = this.elementRef.nativeElement.firstElementChild;
+        const modalEle: any = jQuery(ele);
         this.modalParent = parent;
         this.validationMessage = null;
         if (validateFn) {
             this.validationFn = validateFn.bind(parent);
         }
-        let p = new Promise<T>((resolve, reject) => {
+        const p = new Promise<T>((resolve, reject) => {
             modalEle.modal({ backdrop: 'static', keyboard: false }).on('hidden.bs.modal', () => {
                 resolve(this.modalResult);
             });
@@ -28,16 +28,15 @@ export abstract class ModalDialog<T> {
     protected returnModal(result: T) {
         if (result != null && this.validationFn) {
             this.validationMessage = this.validationFn(result);
-            if (this.validationMessage != null) return;
+            if (this.validationMessage != null) { return; }
         }
         this.modalResult = result;
         this.hideModal();
     }
 
     protected hideModal() {
-        let ele = this.elementRef.nativeElement.firstElementChild;
-        let modalEle: any = jQuery(ele);
-        modalEle.modal("hide");
+        const ele = this.elementRef.nativeElement.firstElementChild;
+        const modalEle: any = jQuery(ele);
+        modalEle.modal('hide');
     }
 }
-

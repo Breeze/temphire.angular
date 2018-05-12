@@ -23,4 +23,3 @@ export class Skill extends EntityBase {
     rowVersion: number;
     staffingResource: StaffingResource;
 }
-

@@ -1,12 +1,12 @@
-import { Injectable} from '@angular/core';
-import { EntityError, core } from 'breeze-client';
+import { Injectable } from '@angular/core';
+import { core, EntityError } from 'breeze-client';
 import get from 'lodash-es/get';
 
 import { DialogService } from './dialog.service';
 
 export enum ErrorLevel {
     Exception, Info, Warning
-};
+}
 
 @Injectable()
 export class ErrorHandler {
@@ -26,22 +26,22 @@ export class ErrorHandler {
     }
 
     private handle(e: string | any, errorLevel?: ErrorLevel) {
-        // Ignore error if it was already handled once. 
-        if (e.errorWasHandled) return;
+        // Ignore error if it was already handled once.
+        if (e.errorWasHandled) { return; }
 
         errorLevel = errorLevel || ErrorLevel.Exception;
         let message = typeof e === 'string' ? e : this.userFriendlyErrorMessage(e);
-        let entityErrors = this.formatEntityErrors(e.entityErrors);
+        const entityErrors = this.formatEntityErrors(e.entityErrors);
         if (entityErrors && entityErrors !== '') {
             message = `${message}\n\n${entityErrors}`;
         }
-        let logId = core.getUuid();
+        const logId = core.getUuid();
         if (this.shouldLogError(e)) {
             message = `${message}\n\nError ID: ${logId}`;
         }
 
-        let title = this.errorTitle(e, errorLevel);
-        let buttonsNames = this.getApplicableButtonNamesByError(e);
+        const title = this.errorTitle(e, errorLevel);
+        const buttonsNames = this.getApplicableButtonNamesByError(e);
         this.dialogService.messageBox(title, message, buttonsNames).then(result => {
             if (result == 'Login') {
                 document.location.reload();
@@ -49,7 +49,7 @@ export class ErrorHandler {
         });
 
         if (this.shouldLogError(e)) {
-            let consoleMessage = `${title.toUpperCase()}: ${message}`;
+            const consoleMessage = `${title.toUpperCase()}: ${message}`;
             if (errorLevel === ErrorLevel.Exception) {
                 console.error(consoleMessage);
             } else if (errorLevel === ErrorLevel.Warning) {
@@ -94,16 +94,16 @@ export class ErrorHandler {
     }
 
     private shouldLogError(e: any): boolean {
-        if (this.isHttpStatus(e, 401)) return false;
+        if (this.isHttpStatus(e, 401)) { return false; }
 
-        if (e.entityErrors) return false;
+        if (e.entityErrors) { return false; }
 
         return true;
-    } 
+    }
 
     private formatEntityErrors(entityErrors: EntityError[]) {
         let s = '';
-        if (!entityErrors || !entityErrors.length) return s;
+        if (!entityErrors || !entityErrors.length) { return s; }
         entityErrors.forEach(ee => {
             s += `- ${ee.errorMessage}\n`;
         });
@@ -126,4 +126,4 @@ export class ErrorHandler {
 
         return 'Message';
     }
-} 
+}

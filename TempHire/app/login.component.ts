@@ -1,4 +1,4 @@
-﻿import { Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { AuthService, DialogService } from './core/services/common';
@@ -14,7 +14,7 @@ export class LoginComponent {
     constructor(private authService: AuthService, private router: Router, private dialogService: DialogService) { }
 
     loginUser() {
-        if (!this.isValid) return;
+        if (!this.isValid) { return; }
 
         this.authService.loginUser(this.username, this.password)
             .then(() => {

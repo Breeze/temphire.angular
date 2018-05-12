@@ -1,9 +1,9 @@
-﻿import { RouterModule, Routes } from '@angular/router';
+import { RouterModule, Routes } from '@angular/router';
 
-import { PrepareGuard, CanDeactivateGuard } from './core/services/common';
+import { CanDeactivateGuard, PrepareGuard } from './core/services/common';
 
-import { LoginComponent } from './login.component';
 import { HomeComponent } from './home.component';
+import { LoginComponent } from './login.component';
 
 export const routes: Routes = [
     {

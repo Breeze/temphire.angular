@@ -28,4 +28,3 @@ export class WorkExperienceItem extends EntityBase {
     rowVersion: number;
     staffingResource: StaffingResource;
 }
-

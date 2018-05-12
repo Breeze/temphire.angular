@@ -1,10 +1,10 @@
 import { Injectable }    from '@angular/core';
-import { CanActivate, CanDeactivate, ActivatedRouteSnapshot, RouterStateSnapshot, Routes, Resolve, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivate, CanDeactivate, Resolve, Router, RouterStateSnapshot, Routes } from '@angular/router';
 import { Observable } from 'rxjs';
 
-import { EntityManagerProvider } from './entity-manager-provider';
-import { BusyService } from './busy.service';
 import { AuthService } from './auth.service';
+import { BusyService } from './busy.service';
+import { EntityManagerProvider } from './entity-manager-provider';
 
 export interface CanComponentDeactivate {
     canDeactivate: () => boolean | Observable<boolean> | Promise<boolean>;
@@ -36,4 +36,3 @@ export class PrepareGuard implements CanActivate {
             });
     }
 }
-

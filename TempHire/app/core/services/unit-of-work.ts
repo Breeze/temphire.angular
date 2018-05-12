@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { EntityManager, Entity, EntityQuery, FetchStrategy, SaveOptions, EntityChangedEventArgs } from 'breeze-client';
+import { Entity, EntityChangedEventArgs, EntityManager, EntityQuery, FetchStrategy, SaveOptions } from 'breeze-client';
 import { Subject } from 'rxjs';
 
 import { EntityManagerProvider } from './entity-manager-provider';
-import { IRepository, Repository} from './repository';
+import { IRepository, Repository } from './repository';
 
 export interface IEntityFactory<T extends Entity> {
     create(...params: any[]): Promise<T>;
@@ -15,7 +15,7 @@ export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
     }
 
     create(config?: any): Promise<T> {
-        let inst = <T>this.manager.createEntity(this.entityTypeName, config);
+        const inst = this.manager.createEntity(this.entityTypeName, config) as T;
         return Promise.resolve(inst);
     }
 }
@@ -71,10 +71,10 @@ export class UnitOfWork {
     }
 
     commit(): Promise<Entity[]> {
-        let saveOptions = new SaveOptions({ resourceName: 'savechanges' });
+        const saveOptions = new SaveOptions({ resourceName: 'savechanges' });
 
         return this.manager.saveChanges(null, saveOptions)
-            .then((saveResult) => {
+            .then(saveResult => {
                 UnitOfWork.committedSubject.next(saveResult.entities);
 
                 return saveResult.entities;
@@ -82,7 +82,7 @@ export class UnitOfWork {
     }
 
     rollback(): void {
-        let pendingChanges = this.manager.getChanges();
+        const pendingChanges = this.manager.getChanges();
         this.manager.rejectChanges();
         UnitOfWork.rejectedSubject.next(pendingChanges);
     }
@@ -92,7 +92,7 @@ export class UnitOfWork {
     }
 
     shelve(key: string, clear: boolean = false): void {
-        let data = this.manager.exportEntities(null, { asString: false, includeMetadata: false });
+        const data = this.manager.exportEntities(null, { asString: false, includeMetadata: false });
         UnitOfWork.shelveSets[key] = data;
         if (clear) {
             this._emProvider.reset(this.manager);
@@ -100,7 +100,7 @@ export class UnitOfWork {
     }
 
     unshelve(key: string, clear: boolean = true): boolean {
-        let data = UnitOfWork.shelveSets[key];
+        const data = UnitOfWork.shelveSets[key];
         if (!data) {
             return false;
         }
@@ -128,4 +128,3 @@ export class UnitOfWork {
         return new EntityFactory<T>(entityTypeName, this.manager);
     }
 }
-

@@ -1,9 +1,9 @@
-﻿import { Injectable } from '@angular/core';
-import { Entity, EntityManager, Predicate, FilterQueryOp } from 'breeze-client';
+import { Injectable } from '@angular/core';
+import { Entity, EntityManager, FilterQueryOp, Predicate } from 'breeze-client';
 
-import { EntityManagerProvider, UnitOfWork, IRepository, EntityFactory, IEntityFactory } from '../core/services/common';
+import { EntityFactory, EntityManagerProvider, IEntityFactory, IRepository, UnitOfWork } from '../core/services/common';
 
-import { StaffingResource, State, AddressType, PhoneNumberType } from '../core/entities/entity-model';
+import { AddressType, PhoneNumberType, StaffingResource, State } from '../core/entities/entity-model';
 
 export interface StaffingResourceListItem {
     id: string;
@@ -24,24 +24,24 @@ export interface StaffingResourceListItem {
 export class StaffingResourceFactory extends EntityFactory<StaffingResource> {
 
     constructor(manager: EntityManager, private addressTypes: IRepository<AddressType>, private phoneNumberTypes: IRepository<PhoneNumberType>) {
-        super('StaffingResource', manager)
+        super('StaffingResource', manager);
     }
 
-    create(config: { firstName: string, middleName:  string, lastName: string }): Promise<StaffingResource> {
+    create(config: { firstName: string, middleName: string, lastName: string }): Promise<StaffingResource> {
         return super.create(config).then(staffingResource => {
-            let predicate = new Predicate('default', FilterQueryOp.Equals, true);
+            const predicate = new Predicate('default', FilterQueryOp.Equals, true);
             return Promise.all([
                 this.addressTypes.where(predicate),
                 this.phoneNumberTypes.where(predicate)
             ]).then(result => {
-                let addressTypeId = result[0][0].id;
-                let phoneNumberTypeId = result[1][0].id;
+                const addressTypeId = result[0][0].id;
+                const phoneNumberTypeId = result[1][0].id;
 
                 staffingResource.addAddress(addressTypeId).primary = true;
                 staffingResource.addPhoneNumber(phoneNumberTypeId).primary = true;
 
                 return staffingResource;
-            })
+            });
         });
     }
 }

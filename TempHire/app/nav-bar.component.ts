@@ -1,6 +1,6 @@
-﻿import { Component } from '@angular/core';
+import { Component } from '@angular/core';
 
-import { BusyService, AuthService } from './core/services/common';
+import { AuthService, BusyService } from './core/services/common';
 
 @Component({
     selector: 'nav-bar',

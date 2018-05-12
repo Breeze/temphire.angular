@@ -2,14 +2,14 @@ import { MetadataStore } from 'breeze-client';
 
 import { Address } from './address';
 import { AddressType } from './address-type';
-import { StaffingResource } from './staffing-resource';
 import { PhoneNumber } from './phone-number';
 import { PhoneNumberType } from './phone-number-type';
 import { Rate } from './rate';
 import { RateType } from './rate-type';
 import { Skill } from './skill';
-import { WorkExperienceItem } from './work-experience-item';
+import { StaffingResource } from './staffing-resource';
 import { State } from './state';
+import { WorkExperienceItem } from './work-experience-item';
 
 export class RegistrationHelper {
 

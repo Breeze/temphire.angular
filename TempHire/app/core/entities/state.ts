@@ -17,4 +17,3 @@ export class State extends EntityBase {
     name: string;
     rowVersion: number;
 }
-

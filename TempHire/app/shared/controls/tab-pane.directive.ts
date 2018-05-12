@@ -1,4 +1,4 @@
-import {Directive, Input, ViewContainerRef, TemplateRef, ContentChild} from '@angular/core';
+import { ContentChild, Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
 
 @Directive({
     selector: '[tab-pane]'
@@ -13,11 +13,10 @@ export class TabPane {
     @ContentChild('self') component: any;
 
     constructor(public viewContainer: ViewContainerRef,
-        public templateRef: TemplateRef<any>) { }
-
+                public templateRef: TemplateRef<any>) { }
 
     @Input() set active(active: boolean) {
-        if (active == this._active) return;
+        if (active == this._active) { return; }
         this._active = active;
         if (active) {
             this.viewContainer.createEmbeddedView(this.templateRef);

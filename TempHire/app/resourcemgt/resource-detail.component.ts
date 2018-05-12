@@ -2,9 +2,9 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 
-import { BusyService, DialogService, CanComponentDeactivate } from '../core/services/common';
-
 import { StaffingResource } from '../core/entities/entity-model';
+import { BusyService, CanComponentDeactivate, DialogService } from '../core/services/common';
+
 import { ResourceMgtUnitOfWork } from './resource-mgt-unit-of-work';
 import { ResourceNameEditorComponent } from './resource-name-editor.component';
 
@@ -26,7 +26,7 @@ export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
         this.route.params.forEach(params => {
             this.unitOfWork.clear();
 
-            let reportId = params['id'];
+            const reportId = params.id;
             if (reportId !== 'new') {
                 // Load existing StaffingResource
                 this.busyService.busy(this.unitOfWork.staffingResources.withId(reportId).then(data => {
@@ -38,11 +38,11 @@ export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
                 }));
             } else {
                 // Create new StaffingResource
-                let config = {
-                    firstName: params['firstName'],
-                    middleName: params['middleName'],
-                    lastName: params['lastName']
-                }
+                const config = {
+                    firstName: params.firstName,
+                    middleName: params.middleName,
+                    lastName: params.lastName
+                };
 
                 this.busyService.busy(this.unitOfWork.staffingResourceFactory.create(config).then(data => {
                     this.model = data;
@@ -52,13 +52,13 @@ export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
     }
 
     canDeactivate(): boolean | Observable<boolean> | Promise<boolean> {
-        if (!this.unitOfWork.hasChanges()) return true;
+        if (!this.unitOfWork.hasChanges()) { return true; }
 
-        let title = 'Confirm';
-        let message = 'You have unsaved changes. Would you like to save?';
-        let buttons = ['Yes', 'No', 'Cancel'];
+        const title = 'Confirm';
+        const message = 'You have unsaved changes. Would you like to save?';
+        const buttons = ['Yes', 'No', 'Cancel'];
         return this.dialogService.messageBox(title, message, buttons).then(result => {
-            if (result === 'Yes') return this.save(true, true).then(() => true);
+            if (result === 'Yes') { return this.save(true, true).then(() => true); }
             if (result === 'No') {
                 this.cancel(true);
                 return true;
@@ -74,7 +74,7 @@ export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
 
     save(suppressConfirmation: boolean, deactivating: boolean = false) {
         return this.busyService.busy(this.unitOfWork.commit()).then(() => {
-            if (suppressConfirmation) return;
+            if (suppressConfirmation) { return; }
 
             return this.dialogService.messageBox('Success', 'Successfully saved data!', ['Ok']);
         }).then(() => {
