@@ -8,6 +8,10 @@ const entryPoints = ['manifest', 'vendor', 'app'];
 module.exports = {
     devtool: 'source-map',
 
+    entry: {
+        'app': './app/main.ts'
+    },
+
     output: {
         path: __dirname + '/dist/',
         publicPath: 'dist/',

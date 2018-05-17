@@ -7,9 +7,8 @@ const ngtools = require('@ngtools/webpack');
 
 module.exports = function (env) {
     return Merge(CommonConfig, {
-        entry: {
-            'app': './app/main.ts'
-        },
+
+        mode: 'production',
 
         module: {
             rules: [
@@ -29,15 +28,6 @@ module.exports = function (env) {
         plugins: [
             new ngtools.AngularCompilerPlugin({
                 tsConfigPath: './tsconfig-aot.json'
-            }),
-            new webpack.LoaderOptionsPlugin({
-                minimize: true,
-                debug: true
-            }),
-            new webpack.DefinePlugin({
-                'process.env': {
-                    'NODE_ENV': JSON.stringify('production')
-                }
             })
         ],
 

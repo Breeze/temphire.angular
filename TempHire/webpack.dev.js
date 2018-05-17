@@ -5,26 +5,7 @@ const CommonConfig = require('./webpack.common.js');
 module.exports = function (env) {
     return Merge(CommonConfig, {
 
-        entry: {
-            'app': './app/main.ts',
-            'vendor': [
-                'tslib',
-                'lodash-es',
-                'rxjs',
-                'breeze-client',
-                'breeze-client/breeze.dataService.webApi',
-                'breeze-client/breeze.modelLibrary.backingStore',
-                'breeze-client/breeze.uriBuilder.json',
-                'breeze-client/breeze.uriBuilder.odata',
-                'breeze-bridge2-angular',
-                '@angular/common',
-                '@angular/compiler',
-                '@angular/core',
-                '@angular/forms',
-                '@angular/platform-browser-dynamic',
-                '@angular/router'
-            ],
-        },
+        mode: 'development',
 
         module: {
             rules: [
