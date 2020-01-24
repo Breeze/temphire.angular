@@ -25,7 +25,7 @@
     "@angular/platform-browser": "^8.2.14",
     "@angular/platform-browser-dynamic": "^8.2.14",
     "@angular/router": "^8.2.14",
-    "bootstrap": "^3.3.7",
+    "bootstrap": "^3.4.1",
     "breeze-client": "^2.0.3",
     "core-js": "^3.6.4",
     "jquery": "^3.4.1",
