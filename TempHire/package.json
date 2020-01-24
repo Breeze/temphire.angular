@@ -26,15 +26,14 @@
     "@angular/platform-browser-dynamic": "^6.0.3",
     "@angular/router": "^6.0.3",
     "bootstrap": "^3.3.7",
-    "breeze-bridge2-angular": "^1.1.0",
-    "breeze-client": "^1.7.1",
+    "breeze-client": "^2.0.3",
     "core-js": "^2.5.7",
     "jquery": "^3.3.1",
     "lodash": "^4.17.10",
     "lodash-es": "^4.17.10",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^6.2.0",
-    "tslib": "^1.9.2",
+    "tslib": "^1.10.0",
     "zone.js": "^0.8.26"
   },
   "devDependencies": {

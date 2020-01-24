@@ -2,7 +2,6 @@ import { HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
-import { BreezeBridgeHttpClientModule } from 'breeze-bridge2-angular';
 
 import { routing } from './app.routes';
 
@@ -17,7 +16,6 @@ import { NavBarComponent } from './nav-bar.component';
 
 @NgModule({
     imports: [
-        BreezeBridgeHttpClientModule,
         BrowserModule,
         HttpClientModule,
         FormsModule,

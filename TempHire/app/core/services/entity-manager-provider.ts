@@ -1,20 +1,21 @@
 import { Injectable } from '@angular/core';
 import {
-    config, DataProperty, DataService, DataServiceOptions, DataType, EntityManager,
+    DataProperty, DataService, DataServiceConfig, EntityManager,
     EntityQuery, EntityType, MetadataStore, NamingConvention, NavigationProperty
 } from 'breeze-client';
 import includes from 'lodash-es/includes';
 import remove from 'lodash-es/remove';
 
-// Import required breeze adapters. Rollup.js requires the use of breeze.base.debug.js, which doesn't include
-// the breeze adapters.
-import 'breeze-client/breeze.dataService.webApi';
-import 'breeze-client/breeze.modelLibrary.backingStore';
-import 'breeze-client/breeze.uriBuilder.json';
-import 'breeze-client/breeze.uriBuilder.odata';
+// Import required breeze adapters.
+import { DataServiceWebApiAdapter } from 'breeze-client/adapter-data-service-webapi';
+import { ModelLibraryBackingStoreAdapter } from 'breeze-client/adapter-model-library-backing-store';
+import { UriBuilderODataAdapter } from 'breeze-client/adapter-uri-builder-odata';
+import { UriBuilderJsonAdapter } from 'breeze-client/adapter-uri-builder-json';
+import { AjaxHttpClientAdapter } from 'breeze-client/adapter-ajax-httpclient';
 
 import { EntityTypeAnnotation } from '../entities/entity-type-annotation';
 import { RegistrationHelper } from '../entities/registration-helper';
+import { HttpClient } from '@angular/common/http';
 
 // The EntityManagerProvider manages a static master manager and a per instance sandbox manager.
 @Injectable()
@@ -23,19 +24,24 @@ export class EntityManagerProvider {
     private static _preparePromise: Promise<any>;
     private static _masterManager: EntityManager;
 
-    constructor() { }
+    constructor(http: HttpClient) {
+       // the order is important
+       ModelLibraryBackingStoreAdapter.register();
+       UriBuilderJsonAdapter.register();
+       UriBuilderODataAdapter.register();
+       AjaxHttpClientAdapter.register(http);
+       DataServiceWebApiAdapter.register();
+    }
 
     prepare(): Promise<any> {
         if (!EntityManagerProvider._preparePromise) {
             // Configure breeze adapaters. See rollup.js comment above
-            config.initializeAdapterInstances({ dataService: 'webApi', uriBuilder: 'odata' });
             NamingConvention.camelCase.setAsDefault();
-            const dsconfig: DataServiceOptions = {
+            const dsconfig: DataServiceConfig = {
                 serviceName: 'breeze'
             };
             if (location.port == '3000') {
                 // Configure the json uriBuilder. See rollup.js comment above
-                config.initializeAdapterInstance('uriBuilder', 'json', false);
                 dsconfig.uriBuilderName = 'json'; // for breeze-sequelize server
             }
             const dataService = new DataService(dsconfig);
@@ -127,7 +133,7 @@ export class EntityManagerProvider {
         } else {
             // First ignored properties for this entity type
             ignoredProperties = dps;
-            const origSerializerFn: (dataProperty: DataProperty, value: any) => any = (entityType as any).serializerFn;
+            const origSerializerFn: (dataProperty: DataProperty | NavigationProperty, value: any) => any = (entityType as any).serializerFn;
             entityType.setProperties({
                 serializerFn: (dp, value) => {
                     if (includes((entityType as any).$ignoredProperties, dp)) {
