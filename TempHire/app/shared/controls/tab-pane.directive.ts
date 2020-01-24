@@ -10,7 +10,7 @@ export class TabPane {
     _active: boolean = false;
 
     // add a '#self' attribute to any TabPane to make it available here or within the TabContainer.
-    @ContentChild('self') component: any;
+    @ContentChild('self', { static: false }) component: any;
 
     constructor(public viewContainer: ViewContainerRef,
                 public templateRef: TemplateRef<any>) { }

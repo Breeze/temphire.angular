@@ -16,11 +16,12 @@ import { ResourceNameEditorComponent } from './resource-name-editor.component';
 })
 export class ResourceDetailComponent implements OnInit, CanComponentDeactivate {
 
-    @ViewChild(ResourceNameEditorComponent) nameEditor: ResourceNameEditorComponent;
+    @ViewChild(ResourceNameEditorComponent, { static: false }) nameEditor: ResourceNameEditorComponent;
 
     model: StaffingResource;
 
-    constructor(private unitOfWork: ResourceMgtUnitOfWork, private busyService: BusyService, private route: ActivatedRoute, private dialogService: DialogService, private router: Router) { }
+    constructor(private unitOfWork: ResourceMgtUnitOfWork, private busyService: BusyService,
+                private route: ActivatedRoute, private dialogService: DialogService, private router: Router) { }
 
     ngOnInit() {
         this.route.params.forEach(params => {

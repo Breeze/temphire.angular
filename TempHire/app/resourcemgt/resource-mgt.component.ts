@@ -12,7 +12,7 @@ import { ResourceNameEditorComponent } from './resource-name-editor.component';
 })
 export class ResourceMgtComponent implements OnInit, OnDestroy {
 
-    @ViewChild(ResourceNameEditorComponent) nameEditor: ResourceNameEditorComponent;
+    @ViewChild(ResourceNameEditorComponent, { static: false }) nameEditor: ResourceNameEditorComponent;
 
     staffingResources: StaffingResourceListItem[];
     staffingResourceId: string;

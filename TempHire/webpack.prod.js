@@ -1,11 +1,8 @@
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
-const path = require('path');
-const webpack = require('webpack');
 const Merge = require('webpack-merge');
 const CommonConfig = require('./webpack.common.js');
 const ngtools = require('@ngtools/webpack');
 
-module.exports = function (env) {
+module.exports = function () {
     return Merge(CommonConfig, {
 
         mode: 'production',
@@ -33,10 +30,6 @@ module.exports = function (env) {
 
         optimization: {
             minimize: true,
-
-            minimizer: [new UglifyJsPlugin({ // https://github.com/angular/angular/issues/10618
-                sourceMap: true
-            })],
 
             splitChunks: {
                 cacheGroups: {
