@@ -29,7 +29,7 @@
     "breeze-client": "^2.0.3",
     "core-js": "^3.6.4",
     "jquery": "^3.4.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "lodash-es": "^4.17.15",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.5.4",
