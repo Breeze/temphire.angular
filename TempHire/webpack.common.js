@@ -1,7 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 const entryPoints = ['manifest', 'vendor', 'app'];
 
@@ -15,7 +15,7 @@ module.exports = {
     output: {
         path: __dirname + '/dist/',
         publicPath: 'dist/',
-        filename: '[name].[hash].js',
+        filename: '[name].[contenthash].js',
         sourceMapFilename: '[file].map',
     },
 
@@ -31,10 +31,12 @@ module.exports = {
         extensions: ['.ts', '.js', '.html']
     },
 
-    plugins: [
-        new CleanWebpackPlugin(['dist/*.*']),
+    optimization: {
+        concatenateModules: true
+    },
 
-        new webpack.optimize.ModuleConcatenationPlugin(),
+    plugins: [
+        new CleanWebpackPlugin(),
 
         new HtmlWebpackPlugin({
             filename: '../index.html',

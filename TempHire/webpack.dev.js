@@ -1,8 +1,8 @@
-const Merge = require('webpack-merge');
+const { merge } = require('webpack-merge');
 const CommonConfig = require('./webpack.common.js');
 
 module.exports = function () {
-    return Merge(CommonConfig, {
+    return merge(CommonConfig, {
 
         mode: 'development',
 
@@ -23,9 +23,7 @@ module.exports = function () {
                         loader: 'html-loader',
 
                         options: {
-                            attrs: false,
-                            removeAttributeQuotes: true,
-                            caseSensitive: true
+                            attributes: false
                         }
                     }]
                 }

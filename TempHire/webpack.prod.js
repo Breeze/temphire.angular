@@ -1,9 +1,9 @@
-const Merge = require('webpack-merge');
+const { merge } = require('webpack-merge');
 const CommonConfig = require('./webpack.common.js');
 const ngtools = require('@ngtools/webpack');
 
 module.exports = function () {
-    return Merge(CommonConfig, {
+    return merge(CommonConfig, {
 
         mode: 'production',
 

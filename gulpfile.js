@@ -1,36 +1,43 @@
-var gulp    = require('gulp');
-var shell = require('gulp-shell');
-var install = require('gulp-install');
-var path = require('path');
+const { series, parallel, src } = require('gulp');
+const { task } = require('gulp-shell');
+const install = require('gulp-install');
+const path = require('path');
 
-var clientDir = path.join('.', 'TempHire');
-var serverDir = path.join('.', 'Express');
+const clientDir = path.join('.', 'TempHire');
+const serverDir = path.join('.', 'Express');
 
 // client npm install
-gulp.task('client-install', function() {
-  return gulp.src(mapPath(clientDir, ['package.json']))
+function clientInstall() {
+  return src(mapPath(clientDir, ['package.json']))
       .pipe(install());
-});
+}
 
 // server npm install
-gulp.task('server-install', function() {
-  return gulp.src(mapPath(serverDir, ['package.json']))
+function serverInstall() {
+  return src(mapPath(serverDir, ['package.json']))
       .pipe(install());
-});
+}
 
 // build client code
-gulp.task('client-build', ['client-install'],
-  shell.task(['gulp'], { cwd: clientDir })
-);
+function clientBuild() {
+  return task(['gulp'], { cwd: clientDir })();
+}
 
 // run server
-gulp.task('run', ['server-install', 'client-build'],
-  shell.task('node server', { cwd: serverDir })
+function run() {
+  return task('node server', { cwd: serverDir })();
+}
+
+exports.default = series(
+  parallel(
+    serverInstall,
+    series(
+      clientInstall,
+      clientBuild
+    )
+  ),
+  run
 );
-
-gulp.task('default', ['run'], function() {
-
-});
 
 function mapPath(dir, filenames) {
   return filenames.map(function(filename) {
