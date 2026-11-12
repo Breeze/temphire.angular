@@ -206,8 +206,20 @@ dotnet ef database update
 
 ## Known gaps
 
-- **No automated tests beyond a shell smoke test.** The original had none either. `ng test` runs
-  Vitest; the server has no test project.
+- **A temporary workaround for a breeze-client 3.0.0 bug.** Breeze 3.0.0 fails any request whose
+  successful response has an empty body: a **204 No Content**, which ASP.NET Core sends whenever a
+  controller action returns `null`, or a 200 with no body. The query rejects with
+  `SyntaxError: Unexpected end of JSON input` instead of resolving with no results. None of
+  TempHire's current endpoints send such a response, but a new action that can return `null`
+  would. `app.config.ts` therefore wraps Breeze's fetch function in `emptyBodyAsNull`
+  (`client/src/app/core/services/breeze-fetch.ts`), the workaround from the
+  [breeze-client release notes](https://github.com/Breeze/breeze-client-v3/blob/fix/empty-response-body/RELEASE-NOTES.md).
+  The fix is on the `fix/empty-response-body` branch of breeze-client-v3 and not yet released.
+  **When you upgrade to a release with the fix**, `breeze-fetch.spec.ts` fails its "without the
+  workaround" test; that is the signal to delete `breeze-fetch.ts` and its spec, and to pass
+  `httpClientFetch(inject(HttpClient))` to `configureBreeze` directly.
+- **No automated tests beyond a shell smoke test and the workaround above.** The original had none
+  either. `ng test` runs Vitest; the server has no test project.
 - **`Database.EnsureCreated()` instead of migrations**, as described above.
 - **Logout does not revoke the token.** A JWT is valid until it expires; `AccountController.Logout`
   is the hook where a revocation list would go.
