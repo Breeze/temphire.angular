@@ -1,0 +1,185 @@
+import { Component, inject, input } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { RadioButtonModule } from 'primeng/radiobutton';
+
+import { PhoneNumberType } from '../../core/entities/lookups';
+import { PhoneNumber } from '../../core/entities/phone-number';
+import { StaffingResource } from '../../core/entities/staffing-resource';
+import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
+import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
+import { ItemSelectorComponent } from '../item-selector.component';
+
+/**
+ * Port of `ViewModels/StaffingResource/StaffingResourcePhoneListViewModel.cs` +
+ * `StaffingResourcePhoneItemViewModel.cs` + `Views/StaffingResource/StaffingResourcePhoneListView.xaml`.
+ *
+ * The same shape as the address list, one row per phone number: type, area code, number, and the
+ * primary / delete actions.  As with the addresses, the per-row
+ * `StaffingResourcePhoneItemViewModel` has no counterpart here - it only carried `EditMode` next to
+ * the entity and re-raised `CanDelete` / `CanSetPrimary` when `Primary` changed, both of which fall
+ * out of binding the entity directly - and the original's "Set Primary" button per row is a radio
+ * group, which is what the mutually exclusive flag really is.
+ */
+@Component({
+  selector: 'app-resource-phone-list',
+  imports: [FormsModule, ButtonModule, InputTextModule, RadioButtonModule],
+  template: `
+    <div class="phones">
+      <p-button
+        label="Add"
+        icon="pi pi-plus"
+        size="small"
+        [outlined]="true"
+        [disabled]="readOnly()"
+        (onClick)="add()"
+      />
+
+      @for (phoneNumber of staffingResource().phoneNumbers; track phoneNumber.id) {
+        <div class="phone temphire-elevated">
+          <span class="phone__type">{{ phoneNumber.phoneNumberType?.name }}</span>
+
+          <input
+            pInputText
+            class="phone__area-code"
+            aria-label="Area code"
+            [readOnly]="readOnly()"
+            [(ngModel)]="phoneNumber.areaCode"
+          />
+
+          <input
+            pInputText
+            class="phone__number"
+            aria-label="Number"
+            [readOnly]="readOnly()"
+            [(ngModel)]="phoneNumber.number"
+          />
+
+          <div class="phone__primary">
+            <p-radiobutton
+              name="primary-phone-number"
+              [inputId]="'primary-phone-' + phoneNumber.id"
+              [value]="phoneNumber.id"
+              [ngModel]="staffingResource().primaryPhoneNumber?.id"
+              [disabled]="!canSetPrimary(phoneNumber)"
+              (ngModelChange)="setPrimary(phoneNumber)"
+            />
+            <label [for]="'primary-phone-' + phoneNumber.id">Primary</label>
+          </div>
+
+          <p-button
+            label="Delete"
+            severity="danger"
+            size="small"
+            [outlined]="true"
+            [disabled]="!canDelete(phoneNumber)"
+            (onClick)="delete(phoneNumber)"
+          />
+        </div>
+      }
+    </div>
+  `,
+  styles: [
+    `
+      .phones {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .phone {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--p-content-border-color, #e5e7eb);
+        border-radius: 4px;
+      }
+
+      .phone__type {
+        min-width: 4rem;
+        font-weight: 700;
+      }
+
+      .phone__area-code {
+        width: 4rem;
+      }
+
+      .phone__number {
+        width: 7rem;
+      }
+
+      .phone__primary {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+    `,
+  ],
+})
+export class ResourcePhoneListComponent {
+  private readonly dialogs = inject(AppDialogService);
+
+  readonly staffingResource = input.required<StaffingResource>();
+  readonly readOnly = input.required<boolean>();
+  readonly unitOfWork = input.required<ResourceMgtUnitOfWork>();
+
+  /** Port of `StaffingResourcePhoneItemViewModel.CanDelete`. */
+  canDelete(phoneNumber: PhoneNumber): boolean {
+    return (
+      !this.readOnly() && !phoneNumber.primary && this.staffingResource().phoneNumbers.length > 1
+    );
+  }
+
+  /** Port of `StaffingResourcePhoneItemViewModel.CanSetPrimary`. */
+  canSetPrimary(phoneNumber: PhoneNumber): boolean {
+    return !this.readOnly() && !phoneNumber.primary;
+  }
+
+  /** Port of `StaffingResourcePhoneListViewModel.SetPrimary`. */
+  setPrimary(phoneNumber: PhoneNumber): void {
+    this.staffingResource().setPrimaryPhoneNumber(phoneNumber);
+  }
+
+  /** Port of `StaffingResourcePhoneListViewModel.Delete`. */
+  delete(phoneNumber: PhoneNumber): void {
+    this.staffingResource().deletePhoneNumber(phoneNumber);
+  }
+
+  /**
+   * Port of `StaffingResourcePhoneListViewModel.Add`.
+   *
+   * Note the display property: phone number types have no `DisplayName`, so the original selected on
+   * `"Name"` here where the address list used `"DisplayName"`.  Breeze's camelCase naming convention
+   * turns that into `name` on the client.
+   */
+  async add(): Promise<void> {
+    if (this.readOnly()) {
+      return;
+    }
+
+    let phoneNumberType: PhoneNumberType;
+
+    try {
+      phoneNumberType = await this.dialogs.open<PhoneNumberType>(ItemSelectorComponent, {
+        header: 'Add a phone number',
+        width: '24rem',
+        data: {
+          prompt: 'Select type:',
+          displayProperty: 'name',
+          items: this.unitOfWork().phoneNumberTypes.allInCache('name'),
+        },
+      });
+    } catch (error) {
+      if (error instanceof DialogCancelledError) {
+        return;
+      }
+      throw error;
+    }
+
+    this.staffingResource().addPhoneNumber(phoneNumberType);
+  }
+}

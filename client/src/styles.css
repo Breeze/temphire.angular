@@ -1,0 +1,45 @@
+/*
+ * Global styles.  Replaces `TempHire/Styles/Styles.xaml`, the WPF ResourceDictionary that held the
+ * app's brush palette and control templates.  PrimeNG's Aura preset (configured in `app.config.ts`)
+ * supplies the control styling, so only the app-level chrome lives here.
+ */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  color: #333333;
+  background: #ffffff;
+}
+
+/* The blue the original used for headings and the tab border. */
+:root {
+  --temphire-accent: #1d5380;
+  --temphire-accent-light: #73a9d8;
+  --temphire-toolbar: #c6dbf1;
+}
+
+.temphire-section-heading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--temphire-accent);
+  margin: 0 0 0.5rem;
+}
+
+/* Matches the DropShadowEffect the WPF views applied to grids, tabs and text boxes. */
+.temphire-elevated {
+  box-shadow: 0 1px 3px rgba(51, 51, 51, 0.2);
+}
+
+.temphire-field-error {
+  color: var(--p-red-500, #e24c4c);
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+  display: block;
+}

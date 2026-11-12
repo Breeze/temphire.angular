@@ -1,0 +1,25 @@
+@if (isLoggedIn()) {
+  <header class="app-toolbar">
+    <span class="app-toolbar__brand">TempHire</span>
+
+    @for (action of actions(); track action.label) {
+      <p-button
+        [label]="action.label"
+        [icon]="action.icon ?? ''"
+        [disabled]="action.canExecute ? !action.canExecute() : false"
+        [text]="true"
+        severity="contrast"
+        (onClick)="action.execute()"
+      />
+    }
+
+    <span class="app-toolbar__spacer"></span>
+    <span class="app-toolbar__user">{{ username() }}</span>
+  </header>
+}
+
+<main class="app-content">
+  <router-outlet />
+</main>
+
+<p-toast position="top-right" />

@@ -1,33 +1,16 @@
-*.svn
-*.idea
+# .NET
+bin/
+obj/
 *.user
-*.docx
-*.vs
-*.vsmdi
-*.cmd
-*.testsettings
-*.old
 *.suo
-*.zip
-*.map
-*/app/**/*.js
-TempHire/index.html
+.vs/
 
-[Tt]humbs.db
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
 
-typings
-node_modules
-aot
-dist
-bin
-obj
-packages
-Unused
-TestResults
-_temp
-_ReSharper*
-
-#Don't commit databases (except manually in some cases)
-*.mdf
-*.ldf
-*.sdf
+# Local config
+appsettings.Local.json
+*.local.json

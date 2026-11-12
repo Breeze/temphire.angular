@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Nullable reference types are disabled deliberately.  The entities are ported
+         one-for-one from the DevForce model, where "required" is expressed with
+         [Required] data annotations (which Breeze surfaces to the client as
+         validators) rather than with nullable annotations. -->
+    <Nullable>disable</Nullable>
+    <RootNamespace>TempHire.Model</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.19" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.19" />
+  </ItemGroup>
+
+</Project>
