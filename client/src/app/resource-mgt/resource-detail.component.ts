@@ -54,23 +54,36 @@ import { ResourceSummaryComponent } from './resource-summary.component';
             />
           </p-tabpanel>
 
+          <!--
+            The other three tabs are deferred: each is loaded, as its own chunk, the first time its
+            tab is selected, and stays loaded after that.
+          -->
           <p-tabpanel value="rates">
-            <app-resource-rates
-              [staffingResource]="staffingResource()"
-              [readOnly]="readOnly()"
-              [unitOfWork]="unitOfWork()"
-            />
+            @defer (when activeTab() === 'rates') {
+              <app-resource-rates
+                [staffingResource]="staffingResource()"
+                [readOnly]="readOnly()"
+                [unitOfWork]="unitOfWork()"
+              />
+            }
           </p-tabpanel>
 
           <p-tabpanel value="work">
-            <app-resource-work-experience
-              [staffingResource]="staffingResource()"
-              [readOnly]="readOnly()"
-            />
+            @defer (when activeTab() === 'work') {
+              <app-resource-work-experience
+                [staffingResource]="staffingResource()"
+                [readOnly]="readOnly()"
+              />
+            }
           </p-tabpanel>
 
           <p-tabpanel value="skills">
-            <app-resource-skills [staffingResource]="staffingResource()" [readOnly]="readOnly()" />
+            @defer (when activeTab() === 'skills') {
+              <app-resource-skills
+                [staffingResource]="staffingResource()"
+                [readOnly]="readOnly()"
+              />
+            }
           </p-tabpanel>
         </p-tabpanels>
       </p-tabs>

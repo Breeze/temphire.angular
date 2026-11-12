@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Signal, inject, signal } from '@angular/core';
 
 import { EntityManagerProvider } from './entity-manager-provider';
 import { ResourceMgtUnitOfWork } from './resource-mgt-unit-of-work';
@@ -25,6 +25,15 @@ export const SHARED_UNIT_OF_WORK_KEY = '00000000-0000-0000-0000-000000000000';
 export class UnitOfWorkManager {
   private readonly emProvider = inject(EntityManagerProvider);
   private readonly cache = new Map<string, ResourceMgtUnitOfWork>();
+  private readonly saveCount = signal(0);
+
+  /**
+   * Bumped after every successful save in any unit of work - port of Cocktail's `SavedMessage`,
+   * which the search list handled (`IHandle<SavedMessage>`) to re-run its query.  As a signal it
+   * needs no subscription: `ResourceSearchComponent` reads it in its `resource()` params, so a save
+   * anywhere reloads the list.
+   */
+  readonly saves: Signal<number> = this.saveCount.asReadonly();
 
   /** Returns the cached unit of work for `key`, creating it on first use. */
   get(key: string): ResourceMgtUnitOfWork {
@@ -40,7 +49,9 @@ export class UnitOfWorkManager {
 
   /** Creates an unregistered unit of work - port of `IUnitOfWorkManager.Create`. */
   create(): ResourceMgtUnitOfWork {
-    return new ResourceMgtUnitOfWork(this.emProvider);
+    return new ResourceMgtUnitOfWork(this.emProvider, () =>
+      this.saveCount.update((count) => count + 1),
+    );
   }
 
   /**

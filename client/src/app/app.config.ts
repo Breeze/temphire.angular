@@ -6,6 +6,7 @@ import {
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
+import { provideSignalFormsConfig } from '@angular/forms/signals';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import Aura from '@primeuix/themes/aura';
@@ -32,6 +33,12 @@ export const appConfig: ApplicationConfig = {
     MessageService,
     ConfirmationService,
     DialogService,
+
+    // Signal Forms add no CSS classes by default.  `ng-touched` lets `styles.css` hold back
+    // PrimeNG's invalid styling until the user has left the field.
+    provideSignalFormsConfig({
+      classes: { 'ng-touched': (field) => field.state().touched() },
+    }),
 
     // Port of `Common/Errors/ErrorHandler.cs`, which Cocktail installed as the global handler.
     { provide: ErrorHandler, useClass: AppErrorHandler },

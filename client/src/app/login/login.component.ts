@@ -1,5 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+  FieldTree,
+  FormField,
+  FormRoot,
+  ValidationError,
+  form,
+  required,
+} from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -15,7 +22,8 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
  *
  * The WPF version was a modal dialog that the shell popped on load and again after logout, with a
  * `FailureMessage` shown inline and the OK button disabled until both fields had content.  All of
- * that is preserved; only the presentation changed from a Cocktail dialog to a route.
+ * that is preserved; the presentation changed from a Cocktail dialog to a route, and the form is a
+ * Signal Form.
  *
  * The original pre-filled Admin/password under `#if DEBUG`, and the credentials are unchanged in the
  * seeded database, so they are shown as a hint rather than typed in for you.
@@ -23,7 +31,8 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
 @Component({
   selector: 'app-login',
   imports: [
-    FormsModule,
+    FormField,
+    FormRoot,
     ButtonModule,
     CardModule,
     InputTextModule,
@@ -33,42 +42,40 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
   template: `
     <div class="login">
       <p-card header="Sign in to TempHire" styleClass="login__card">
-        <form class="login__form" (ngSubmit)="submit()">
-          <div class="login__field">
-            <label for="login-username">Username</label>
-            <input
-              pInputText
-              id="login-username"
-              name="username"
-              autocomplete="username"
-              [(ngModel)]="username"
-              [disabled]="busy()"
-            />
-          </div>
+        <form class="login__form" [formRoot]="loginForm">
+          <fieldset class="login__fields" [disabled]="loginForm().submitting()">
+            <div class="login__field">
+              <label for="login-username">Username</label>
+              <input
+                pInputText
+                id="login-username"
+                autocomplete="username"
+                [formField]="loginForm.username"
+              />
+            </div>
 
-          <div class="login__field">
-            <label for="login-password">Password</label>
-            <input
-              pInputText
-              type="password"
-              id="login-password"
-              name="password"
-              autocomplete="current-password"
-              [(ngModel)]="password"
-              [disabled]="busy()"
-            />
-          </div>
+            <div class="login__field">
+              <label for="login-password">Password</label>
+              <input
+                pInputText
+                type="password"
+                id="login-password"
+                autocomplete="current-password"
+                [formField]="loginForm.password"
+              />
+            </div>
+          </fieldset>
 
-          @if (failureMessage()) {
-            <p-message severity="error">{{ failureMessage() }}</p-message>
+          @for (error of loginForm().errors(); track error.kind) {
+            <p-message severity="error">{{ error.message }}</p-message>
           }
 
           <div class="login__actions">
             <p-button
               type="submit"
               label="Login"
-              [disabled]="!canLogin() || busy()"
-              [loading]="busy()"
+              [disabled]="loginForm().invalid() || loginForm().submitting()"
+              [loading]="loginForm().submitting()"
             />
           </div>
 
@@ -94,6 +101,16 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
         display: flex;
         flex-direction: column;
         gap: 1rem;
+      }
+
+      .login__fields {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        min-width: 0;
       }
 
       .login__field {
@@ -123,37 +140,40 @@ export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
-  username = '';
-  password = '';
+  /**
+   * The login form, a Signal Form over a plain credentials signal.
+   *
+   *  - `required` on both fields is the port of `LoginViewModel.CanLogin`: the form is invalid, and
+   *    Login disabled, until both have content.
+   *  - Submitting runs `login` through the form's `submission` action, so `submitting()` replaces
+   *    the old `busy` flag, and a failed login comes back as a form-level error rather than a
+   *    separate `failureMessage` signal.
+   */
+  readonly loginForm = form(
+    signal({ username: '', password: '' }),
+    (credentials) => {
+      required(credentials.username);
+      required(credentials.password);
+    },
+    { submission: { action: (field) => this.login(field) } },
+  );
 
-  readonly busy = signal(false);
-  readonly failureMessage = signal<string | null>(null);
-
-  /** Port of `LoginViewModel.CanLogin`. */
-  canLogin(): boolean {
-    return !!this.username.trim() && !!this.password.trim();
-  }
-
-  async submit(): Promise<void> {
-    if (!this.canLogin() || this.busy()) {
-      return;
-    }
-
-    this.busy.set(true);
-    this.failureMessage.set(null);
+  private async login(
+    field: FieldTree<{ username: string; password: string }>,
+  ): Promise<ValidationError | undefined> {
+    const { username, password } = field().value();
 
     try {
-      await this.auth.login(this.username.trim(), this.password);
+      await this.auth.login(username.trim(), password);
 
       const target = this.auth.redirectUrl ?? '/home';
       this.auth.redirectUrl = null;
       await this.router.navigateByUrl(target);
+      return undefined;
     } catch (error) {
       // Same as the original: clear the password, keep the user on the form, show why it failed.
-      this.password = '';
-      this.failureMessage.set(AppErrorHandler.describe(error).detail);
-    } finally {
-      this.busy.set(false);
+      field.password().value.set('');
+      return { kind: 'loginFailed', message: AppErrorHandler.describe(error).detail };
     }
   }
 }

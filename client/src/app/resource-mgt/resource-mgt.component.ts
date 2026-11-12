@@ -1,5 +1,4 @@
-import { Component, OnDestroy, computed, inject, signal, viewChild } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 
 import { CanComponentDeactivate } from '../app.routes';
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
@@ -8,7 +7,7 @@ import { BusyService } from '../core/services/busy.service';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
-import { ToolbarGroup, ToolbarService } from '../core/services/toolbar.service';
+import { ToolbarGroup, registerToolbarGroup } from '../core/services/toolbar.service';
 import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/unit-of-work-manager';
 import { ResourceDetailComponent } from './resource-detail.component';
 import { ResourceNameEditorComponent, ResourceName } from './resource-name-editor.component';
@@ -42,20 +41,12 @@ type EditMode = 'view' | 'edit';
   templateUrl: './resource-mgt.component.html',
   styleUrl: './resource-mgt.component.css',
 })
-export class ResourceMgtComponent implements OnDestroy, CanComponentDeactivate {
+export class ResourceMgtComponent implements CanComponentDeactivate {
   private readonly unitOfWorkManager = inject(UnitOfWorkManager);
   private readonly dialogs = inject(AppDialogService);
-  private readonly toolbar = inject(ToolbarService);
   private readonly errorHandler = inject(AppErrorHandler);
 
   protected readonly busy = inject(BusyService);
-
-  private readonly searchPane = viewChild.required(ResourceSearchComponent);
-
-  private entityChangedSubscription?: Subscription;
-
-  /** Bumped whenever an entity in the active unit of work changes, so the toolbar re-evaluates. */
-  private readonly changeTick = signal(0);
 
   readonly staffingResource = signal<StaffingResource | null>(null);
   readonly staffingResourceId = signal<string | null>(null);
@@ -75,22 +66,24 @@ export class ResourceMgtComponent implements OnDestroy, CanComponentDeactivate {
   readonly canEdit = computed(() => this.hasResource() && this.isReadOnly());
   readonly canCancel = computed(() => this.hasResource() && !this.isReadOnly());
 
+  // `hasChanges` and `changes` are signals on the unit of work (see `UnitOfWork`), so these
+  // re-evaluate whenever an entity in the active unit of work changes - an edit, a save, a delete.
   readonly canSave = computed(() => {
-    this.changeTick();
     const resource = this.staffingResource();
     const unitOfWork = this.unitOfWork();
+    if (!resource || !unitOfWork) {
+      return false;
+    }
 
-    return (
-      !!resource &&
-      !!unitOfWork &&
-      unitOfWork.hasChanges() &&
-      !resource.entityAspect.entityState.isDeleted()
-    );
+    unitOfWork.changes();
+    return unitOfWork.hasChanges() && !resource.entityAspect.entityState.isDeleted();
   });
 
-  readonly canRefresh = computed(
-    () => this.hasResource() && !this.staffingResource()!.entityAspect.entityState.isAdded(),
-  );
+  readonly canRefresh = computed(() => {
+    const resource = this.staffingResource();
+    this.unitOfWork()?.changes();
+    return !!resource && !resource.entityAspect.entityState.isAdded();
+  });
 
   /** Port of the `ToolbarGroup(10)` built in `ResourceMgtViewModel.OnActivate`. */
   private readonly toolbarGroup: ToolbarGroup = {
@@ -136,19 +129,17 @@ export class ResourceMgtComponent implements OnDestroy, CanComponentDeactivate {
   };
 
   constructor() {
-    this.toolbar.addGroup(this.toolbarGroup);
-  }
-
-  ngOnDestroy(): void {
-    // `ResourceMgtViewModel.OnDeactivate` removed its toolbar group and closed the active detail.
-    this.toolbar.removeGroup(this.toolbarGroup);
-    this.entityChangedSubscription?.unsubscribe();
+    // `ResourceMgtViewModel.OnActivate` added its toolbar group and `OnDeactivate` removed it;
+    // `registerToolbarGroup` does both, tying the group to this component's lifetime.
+    registerToolbarGroup(this.toolbarGroup);
 
     // Don't leave an empty sandbox behind in the root-scoped manager.
-    const id = this.staffingResourceId();
-    if (id) {
-      this.unitOfWorkManager.releaseIfClean(id);
-    }
+    inject(DestroyRef).onDestroy(() => {
+      const id = this.staffingResourceId();
+      if (id) {
+        this.unitOfWorkManager.releaseIfClean(id);
+      }
+    });
   }
 
   /**
@@ -262,6 +253,11 @@ export class ResourceMgtComponent implements OnDestroy, CanComponentDeactivate {
     }
 
     await this.run(async () => {
+      // Select the row before saving.  The save reloads the search list (it watches
+      // `UnitOfWorkManager.saves`), and the list keeps the selected row selected if it is there -
+      // which, for a newly added resource, it only is from this save on.
+      this.selectedId.set(id);
+
       await unitOfWork.commit();
       this.unitOfWorkManager.releaseIfClean(id);
 
@@ -273,8 +269,6 @@ export class ResourceMgtComponent implements OnDestroy, CanComponentDeactivate {
       this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
 
       await this.loadDetail(id, 'view');
-      this.selectedId.set(id);
-      await this.searchPane().refresh(id);
     });
   }
 
@@ -337,8 +331,8 @@ export class ResourceMgtComponent implements OnDestroy, CanComponentDeactivate {
       this.unitOfWorkManager.remove(id);
       // Same reasoning as in `save()`: drop the shared cache so the deleted graph goes with it.
       this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
+      // The save reloads the search list; with nothing selected, it selects the first row.
       this.clearDetail();
-      await this.searchPane().refresh();
     });
   }
 
@@ -399,22 +393,13 @@ export class ResourceMgtComponent implements OnDestroy, CanComponentDeactivate {
     resource: StaffingResource,
     editMode: EditMode,
   ): void {
-    this.entityChangedSubscription?.unsubscribe();
-    this.entityChangedSubscription = unitOfWork.entityChanged.subscribe(() =>
-      this.changeTick.update((tick) => tick + 1),
-    );
-
     this.unitOfWork.set(unitOfWork);
     this.staffingResource.set(resource);
     this.staffingResourceId.set(resource.id);
     this.editMode.set(editMode);
-    this.changeTick.update((tick) => tick + 1);
   }
 
   private clearDetail(): void {
-    this.entityChangedSubscription?.unsubscribe();
-    this.entityChangedSubscription = undefined;
-
     this.staffingResource.set(null);
     this.staffingResourceId.set(null);
     this.unitOfWork.set(null);
@@ -441,7 +426,7 @@ export class ResourceMgtComponent implements OnDestroy, CanComponentDeactivate {
     if (answer === 'yes') {
       try {
         await this.busy.run(unitOfWork.commit());
-        // The search list refreshes itself off `UnitOfWork.committed`; only the shared cache needs
+        // The search list reloads itself off `UnitOfWorkManager.saves`; only the shared cache needs
         // dropping so the next view-mode load re-reads the saved graph.
         this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
       } catch (error) {
@@ -465,8 +450,6 @@ export class ResourceMgtComponent implements OnDestroy, CanComponentDeactivate {
       if (!(error instanceof DialogCancelledError)) {
         this.errorHandler.show(error);
       }
-    } finally {
-      this.changeTick.update((tick) => tick + 1);
     }
   }
 }

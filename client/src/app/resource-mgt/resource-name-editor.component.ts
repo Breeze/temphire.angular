@@ -1,5 +1,5 @@
-import { Component, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, inject, signal } from '@angular/core';
+import { FormField, FormRoot, form, required } from '@angular/forms/signals';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -19,35 +19,29 @@ export interface ResourceName {
  */
 @Component({
   selector: 'app-resource-name-editor',
-  imports: [FormsModule, ButtonModule, InputTextModule],
+  imports: [FormField, FormRoot, ButtonModule, InputTextModule],
   template: `
-    <div class="name-editor">
+    <form class="name-editor" [formRoot]="nameForm">
       <div class="name-editor__field">
         <label for="name-editor-first">First name</label>
-        <input
-          pInputText
-          id="name-editor-first"
-          name="firstName"
-          [(ngModel)]="name.firstName"
-          autofocus
-        />
+        <input pInputText id="name-editor-first" [formField]="nameForm.firstName" autofocus />
       </div>
 
       <div class="name-editor__field">
         <label for="name-editor-middle">Middle name</label>
-        <input pInputText id="name-editor-middle" name="middleName" [(ngModel)]="name.middleName" />
+        <input pInputText id="name-editor-middle" [formField]="nameForm.middleName" />
       </div>
 
       <div class="name-editor__field">
         <label for="name-editor-last">Last name</label>
-        <input pInputText id="name-editor-last" name="lastName" [(ngModel)]="name.lastName" />
+        <input pInputText id="name-editor-last" [formField]="nameForm.lastName" />
       </div>
 
       <div class="name-editor__buttons">
-        <p-button label="OK" [disabled]="!canAccept" (onClick)="accept()" />
+        <p-button type="submit" label="OK" [disabled]="nameForm().invalid()" />
         <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancel()" />
       </div>
-    </div>
+    </form>
   `,
   styles: [
     `
@@ -79,27 +73,29 @@ export interface ResourceName {
 export class ResourceNameEditorComponent {
   private readonly ref = inject(DynamicDialogRef);
 
-  readonly name: ResourceName = {
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    ...(inject(DynamicDialogConfig).data as Partial<ResourceName> | undefined),
-  };
+  /**
+   * A Signal Form over the name being edited, seeded from the dialog's data when renaming.
+   * `required` on first and last name is the original's `CanOk` rule; OK (or Enter) submits.
+   */
+  readonly nameForm = form(
+    signal<ResourceName>({
+      firstName: '',
+      middleName: '',
+      lastName: '',
+      ...(inject(DynamicDialogConfig).data as Partial<ResourceName> | undefined),
+    }),
+    (name) => {
+      required(name.firstName);
+      required(name.lastName);
+    },
+    { submission: { action: async (field) => this.accept(field().value()) } },
+  );
 
-  /** Same rule as the original's `CanOk`: first and last name are mandatory. */
-  get canAccept(): boolean {
-    return !!this.name.firstName?.trim() && !!this.name.lastName?.trim();
-  }
-
-  accept(): void {
-    if (!this.canAccept) {
-      return;
-    }
-
+  private accept(name: ResourceName): void {
     this.ref.close({
-      firstName: this.name.firstName.trim(),
-      middleName: this.name.middleName?.trim() ?? '',
-      lastName: this.name.lastName.trim(),
+      firstName: name.firstName.trim(),
+      middleName: name.middleName?.trim() ?? '',
+      lastName: name.lastName.trim(),
     } satisfies ResourceName);
   }
 

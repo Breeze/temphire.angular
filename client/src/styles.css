@@ -37,6 +37,20 @@ body {
   box-shadow: 0 1px 3px rgba(51, 51, 51, 0.2);
 }
 
+/*
+ * Signal Forms pass a field's `invalid` state straight to PrimeNG's `pInputText`, which then shows
+ * its red border as soon as a required field is empty - before the user has typed anything.  Keep
+ * the normal border until the field has been touched.  `ng-touched` is added by the
+ * `provideSignalFormsConfig` call in `app.config.ts`.
+ */
+.p-inputtext.p-invalid:not(.ng-touched) {
+  border-color: var(--p-inputtext-border-color);
+}
+
+.p-inputtext.p-invalid:not(.ng-touched)::placeholder {
+  color: var(--p-inputtext-placeholder-color);
+}
+
 .temphire-field-error {
   color: var(--p-red-500, #e24c4c);
   font-size: 0.8rem;

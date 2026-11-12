@@ -157,7 +157,7 @@ The rest of the WPF-era dependencies did not need replacing so much as *deleting
 
 | Original | Replacement | Why |
 |---|---|---|
-| Caliburn.Micro (MVVM, conventions, `IEventAggregator`) | Angular components, signals, RxJS `Subject` | Angular already is an MVVM framework; the event aggregator becomes two `Subject`s on `UnitOfWork` |
+| Caliburn.Micro (MVVM, conventions, `IEventAggregator`) | Angular components and signals | Angular already is an MVVM framework; the event aggregator's messages become signals (`UnitOfWork.changes`, `UnitOfWorkManager.saves`) |
 | Cocktail (`IUnitOfWorkManager`, `IRepository`, `IFactory`, `IDialogManager`, `IBusyWatcher`, `INavigator`) | Hand-ported into `core/services` | These are ~250 lines of pattern, and porting them keeps the app's architecture recognisable. Navigation becomes the Angular router |
 | MEF (`[Export]`, `[ImportMany]`) | Angular DI + explicit lists | Angular DI covers the singleton/scoped cases; the two places MEF was used for *discovery* (workspaces, detail sections) are now explicit lists, called out in the code |
 | Xceed WPF Toolkit `BusyIndicator` | `BusyService` + `p-progressSpinner` | |
@@ -166,6 +166,33 @@ The rest of the WPF-era dependencies did not need replacing so much as *deleting
 
 No date, HTTP or utility library was added: Angular's `HttpClient` and the platform's `Intl` cover
 what jQuery/lodash/moment would once have been used for.
+
+### Angular as of version 22
+
+The client is meant to show current Angular, not just to run on it:
+
+- **Standalone components, no NgModules**, lazy-loaded routes, functional guards and interceptors.
+- **Zoneless and OnPush.** There is no zone.js, and Angular 22 makes OnPush the default change
+  detection for every component.  Views update from signals, so state lives in signals.
+- **Signals throughout.** `input()` / `output()` instead of decorators, `computed` for derived
+  state, `linkedSignal` where a value must survive a reload (the search grid keeps its rows while
+  new ones load), and `effect` only for genuine side effects.
+- **Breeze entities and signals.** Entities are plain mutable objects, so a unit of work turns its
+  `EntityManager`'s change events into a counter signal, `UnitOfWork.changes`, plus a `hasChanges`
+  signal.  The toolbar's Save and Cancel derive from those, so an edit anywhere in a sandbox
+  enables Save without any subscription.
+- **`resource()`** loads the search results; its params are the search text and the save counter,
+  so a save anywhere reloads the list.
+- **Signal Forms** (`@angular/forms/signals`) for the forms over plain data: login, the search box
+  and the name editor.  The entity editors keep `[(ngModel)]` bound straight to the Breeze
+  entities, as Breeze recommends: a Signal Form would hold a second copy of every value, kept in
+  step with the entity by hand.
+- **`@defer`** for the Rates, Work Experience and Skills tabs, each loaded as its own chunk when its
+  tab is first opened.
+- **Injection functions** such as `registerToolbarGroup`, which adds a toolbar group and removes
+  it through `DestroyRef`, in place of lifecycle hooks.
+- **The `@angular/build` builder** (esbuild, a Vite dev server, Vitest for `ng test`); there is no
+  Webpack.
 
 ---
 

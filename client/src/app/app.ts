@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogModule } from 'primeng/dynamicdialog';
@@ -6,7 +6,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { WORKSPACES } from './app.routes';
 import { AuthService } from './core/services/auth.service';
-import { ToolbarGroup, ToolbarService } from './core/services/toolbar.service';
+import { ToolbarGroup, ToolbarService, toolbarActions } from './core/services/toolbar.service';
 
 /**
  * Port of `TempHire/Views/ShellView.Wpf.xaml` + `ViewModels/ShellViewModel.cs`.
@@ -33,7 +33,6 @@ export class App {
 
   readonly isLoggedIn = this.auth.isLoggedIn;
   readonly username = this.auth.username;
-  readonly actions = this.toolbar.actions;
 
   /** Port of `ShellViewModel.StartAsync`: one toolbar group for the workspaces, one for Logout. */
   private readonly workspaceGroup: ToolbarGroup = {
@@ -51,24 +50,21 @@ export class App {
     actions: [{ label: 'Logout', icon: 'pi pi-sign-out', execute: () => void this.logout() }],
   };
 
-  constructor() {
-    // Register and unregister the shell's own toolbar groups as the session comes and goes, the
-    // way `ShellViewModel` handled `LoggedInMessage` / `LoggedOutMessage`.
-    effect(() => {
-      if (this.isLoggedIn()) {
-        this.toolbar.addGroup(this.workspaceGroup);
-        this.toolbar.addGroup(this.logoutGroup);
-      } else {
-        this.toolbar.clear();
-      }
-    });
-  }
+  /**
+   * The toolbar: the shell's own groups plus whatever the active screen contributed, and nothing
+   * while logged out.  `ShellViewModel` added and removed its groups in response to
+   * `LoggedInMessage` / `LoggedOutMessage`; here the toolbar is simply *derived* from the session,
+   * so there is nothing to keep in step.
+   */
+  readonly actions = computed(() =>
+    this.isLoggedIn()
+      ? toolbarActions([this.workspaceGroup, this.logoutGroup, ...this.toolbar.groups()])
+      : [],
+  );
 
   /** Port of `ShellViewModel.Logout`, which returned to the default workspace before logging out. */
   async logout(): Promise<void> {
     await this.auth.logout();
     await this.router.navigate(['/login']);
   }
-
-  readonly isEnabled = computed(() => this.isLoggedIn());
 }

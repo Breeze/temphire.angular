@@ -38,7 +38,7 @@ export interface ItemSelectorData<T = Record<string, unknown>> {
       />
 
       <div class="item-selector__buttons">
-        <p-button label="OK" [disabled]="!selectedItem" (onClick)="accept()" />
+        <p-button label="OK" [disabled]="!selectedItem()" (onClick)="accept()" />
         <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancel()" />
       </div>
     </div>
@@ -71,10 +71,11 @@ export class ItemSelectorComponent {
   private readonly ref = inject(DynamicDialogRef);
   readonly data: ItemSelectorData = inject(DynamicDialogConfig).data;
 
-  selectedItem: unknown = null;
+  /** A signal, which `[(ngModel)]` reads and writes directly. */
+  readonly selectedItem = signal<unknown>(null);
 
   accept(): void {
-    this.ref.close(this.selectedItem);
+    this.ref.close(this.selectedItem());
   }
 
   cancel(): void {

@@ -90,7 +90,7 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 | `INavigator` | Angular router (`app.routes.ts`) | |
 | `IErrorHandler`, `ValidationErrorHandler` | `error-handler.service.ts` | |
 | `IWorkspace` (`[ImportMany]` via MEF) | `WORKSPACES` array in `app.routes.ts` | Angular has no ambient discovery; the list is explicit |
-| `IMessageProcessor`, `EntityChangedMessage`, `SavedMessage` | `UnitOfWork.entityChanged` / `UnitOfWork.committed` / `UnitOfWork.rejected` observables | |
+| `IMessageProcessor`, `EntityChangedMessage`, `SavedMessage` | `UnitOfWork.changes` / `UnitOfWork.hasChanges` and `UnitOfWorkManager.saves` signals | `EntityChangedMessage` becomes a counter signal bumped from the manager's `entityChanged` event; `SavedMessage` a save counter that the search list's `resource()` reads, so it reloads after any save |
 
 ### Screens
 
@@ -207,10 +207,21 @@ Everything below is a conscious departure from the original.
 
 ## 5. Things to be aware of when extending it
 
-- **Zoneless change detection.** There is no zone.js. State that changes outside a template event
-  handler — inside a promise callback or an RxJS subscription — must live in a `signal` or the view
-  will not repaint. Breeze entity *properties* are safe to bind directly with `[(ngModel)]` because
-  every mutation happens in an event handler; query *results* are held in signals.
+- **Zoneless, OnPush change detection.** There is no zone.js, and Angular 22 makes OnPush the
+  default, so a component re-renders only for an event in its own template or a signal it reads.
+  State that changes anywhere else - in a promise callback, or in another component - must live in
+  a `signal` or the view will not repaint.  Breeze entity *properties* are safe to bind directly
+  with `[(ngModel)]` in the component that edits them, because that edit is an event in that
+  component.  Anything that has to react to an entity change *elsewhere*, as the toolbar's Save
+  button does, reads `UnitOfWork.changes` (or `hasChanges`) inside a `computed`.
+- **Signal Forms and PrimeNG.** `[formField]` passes the field's `invalid` state to PrimeNG's
+  `pInputText`, which shows its red border at once, and binding `[invalid]` yourself next to
+  `[formField]` is a compile error (NG8022).  `app.config.ts` therefore adds an `ng-touched` class
+  through `provideSignalFormsConfig`, and `styles.css` holds back the invalid border until a field
+  has been touched.
+- **One `MetadataStore` for the page.** Breeze binds each registered entity class to a single
+  store, so `EntityManagerProvider` keeps one store across logout and login and registers the
+  classes once.  Creating a new store per login made the second login in a page fail.
 - **Adding a detail tab** means editing `resource-detail.component.ts`. The original got this for
   free from MEF's `[ImportMany] IEnumerable<IStaffingResourceDetailSection>` ordered by `Index`.
 - **Adding a workspace** means adding a route in `app.routes.ts` and an entry in `WORKSPACES`.

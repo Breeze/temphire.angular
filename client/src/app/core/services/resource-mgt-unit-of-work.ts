@@ -75,8 +75,8 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
 
   readonly staffingResourceFactory: StaffingResourceFactory;
 
-  constructor(emProvider: EntityManagerProvider) {
-    super(emProvider);
+  constructor(emProvider: EntityManagerProvider, onCommitted?: () => void) {
+    super(emProvider, onCommitted);
 
     this.staffingResources = this.createRepository(StaffingResource);
     this.addresses = this.createRepository(Address);
