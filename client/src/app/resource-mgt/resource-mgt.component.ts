@@ -66,8 +66,9 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   readonly canEdit = computed(() => this.hasResource() && this.isReadOnly());
   readonly canCancel = computed(() => this.hasResource() && !this.isReadOnly());
 
-  // `hasChanges` and `changes` are signals on the unit of work (see `UnitOfWork`), so these
-  // re-evaluate whenever an entity in the active unit of work changes - an edit, a save, a delete.
+  // `hasChanges`, `hasValidationErrors` and `changes` are signals on the unit of work (see
+  // `UnitOfWork`), so these re-evaluate whenever an entity in the active unit of work changes - an
+  // edit, a save, a delete, a new validation error.
   readonly canSave = computed(() => {
     const resource = this.staffingResource();
     const unitOfWork = this.unitOfWork();
@@ -76,7 +77,12 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     }
 
     unitOfWork.changes();
-    return unitOfWork.hasChanges() && !resource.entityAspect.entityState.isDeleted();
+    return (
+      unitOfWork.hasChanges() &&
+      // The fields with errors are highlighted; Save waits until they are fixed.
+      !unitOfWork.hasValidationErrors() &&
+      !resource.entityAspect.entityState.isDeleted()
+    );
   });
 
   readonly canRefresh = computed(() => {

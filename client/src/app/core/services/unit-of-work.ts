@@ -37,10 +37,11 @@ export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
  *
  * **Signals and Breeze entities.**  Breeze entities are plain mutable objects, not signals, so
  * nothing reactive notices when `address.city` changes.  The unit of work bridges the two: it
- * listens to its manager's `entityChanged` and `hasChangesChanged` events and bumps a counter
- * signal, `changes`.  Anything derived from entity state - `hasChanges` below, the toolbar's
- * `canSave` - reads that counter inside a `computed`, and so re-evaluates whenever an entity in this
- * unit of work changes.  The WPF original got the same effect from `EntityChangedMessage`.
+ * listens to its manager's `entityChanged`, `hasChangesChanged` and `validationErrorsChanged` events
+ * and bumps a counter signal, `changes`.  Anything derived from entity state - `hasChanges` and
+ * `hasValidationErrors` below, the toolbar's `canSave` - reads that counter inside a `computed`, and
+ * so re-evaluates whenever an entity in this unit of work changes.  The WPF original got the same
+ * effect from `EntityChangedMessage`.
  */
 export class UnitOfWork {
   protected readonly manager: EntityManager;
@@ -49,8 +50,8 @@ export class UnitOfWork {
 
   /**
    * Bumped on every change to an entity in this unit of work: a property edit, a state change,
-   * attach and detach, accept and reject, and `clear()`.  Read it in a `computed` to make
-   * entity-derived state reactive.
+   * attach and detach, accept and reject, `clear()`, and a change to its validation errors.  Read it
+   * in a `computed` to make entity-derived state reactive.
    */
   readonly changes: Signal<number> = this.changeCount.asReadonly();
 
@@ -58,6 +59,24 @@ export class UnitOfWork {
   readonly hasChanges: Signal<boolean> = computed(() => {
     this.changeCount();
     return this.manager.hasChanges();
+  });
+
+  /**
+   * Whether any pending change has a validation error that would stop a save - a required field
+   * left empty, a value too long.
+   *
+   * Errors the *server* reported for a failed save (`isServerError`) are left out, by the same rule
+   * Breeze applies when saving: they do not stop a save, because only the server can re-check them.
+   * Counting them would disable Save for good after, say, "a resource must have an address" -
+   * an entity-level error that no edit clears - leaving the user no way to send the fix.
+   */
+  readonly hasValidationErrors: Signal<boolean> = computed(() => {
+    this.changeCount();
+    return this.manager
+      .getChanges()
+      .some((entity) =>
+        entity.entityAspect.getValidationErrors().some((error) => !error.isServerError),
+      );
   });
 
   /**
@@ -73,6 +92,7 @@ export class UnitOfWork {
     const bump = () => this.changeCount.update((count) => count + 1);
     this.manager.entityChanged.subscribe(bump);
     this.manager.hasChangesChanged.subscribe(bump);
+    this.manager.validationErrorsChanged.subscribe(bump);
   }
 
   getChanges(): Entity[] {
