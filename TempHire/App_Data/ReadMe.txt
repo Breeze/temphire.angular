@@ -1,1 +1,0 @@
-﻿Makes sure the App_Data folder gets published.

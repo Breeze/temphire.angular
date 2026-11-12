@@ -1,47 +1,330 @@
-# Welcome to TempHire Angular #
+# TempHire (Angular + BreezeJS + .NET)
 
-This example demonstrates a reference architecture for data driven business applications. It uses Angular as the overall application framework and Breeze for the distributed client data management.
+TempHire is a **reference implementation of a data-driven line-of-business application** on a
+modern stack: **Angular** on the client, **Breeze** for data access - entity caching, change
+tracking, validation and save - and the latest **.NET** with **EF Core** on the server.  It covers
+what such applications need beyond CRUD screens: a master/detail workspace, editing in isolated
+sandboxes with save and cancel, a cached lookup data set, client- and server-side validation from
+one model, authentication, and entity classes generated from the server's model.
 
-The application demonstrates common scenarios found in these types of applications such as multi-screen routing, master-detail views, editing, saving etc.
+> **Built on Breeze 3.** TempHire uses [**Breeze 3**](https://github.com/Breeze/breeze-client-v3),
+> the new major version of Breeze released in September 2026: `breeze-client` 3 on the client, an
+> ESM-only rewrite for modern TypeScript with typed entities, typed queries and an entity class
+> generator, and the matching Breeze .NET server 8 from
+> [breeze-server-v3](https://github.com/Breeze/breeze-server-v3).  The app shows those features in
+> use: generated entity classes (see [Entity classes are generated](#entity-classes-are-generated)),
+> typed queries and `createEntity` calls, and validation driven by the Breeze model (see
+> [Validation comes from the model](#validation-comes-from-the-model)).
 
-### Prerequisites ###
+It is also a **modernization example**.  TempHire began as a .NET **Silverlight** and **WPF**
+application built on IdeaBlade's **Punch** framework, which combines DevForce, Caliburn.Micro and
+Entity Framework.  (Punch was first called Cocktail, and its code still uses that name: the
+original sample's `using Cocktail;` is Punch.)  It was converted to this
+web stack, and then brought up to current Angular, Breeze and .NET, with the help of AI.  The
+original Silverlight and WPF versions are in the
+[Punch repository](https://github.com/IdeaBlade/Punch/tree/master/Samples/TempHire)
+(`TempHire.Silverlight.sln` and `TempHire.Wpf.sln`), so the two can be read side by side: every
+ported file names the file it came from, and `docs/CONVERSION-NOTES.md` maps the old architecture
+onto the new one.
 
-TempHire is available with both a .NET server and a Node.js server. Pick the technology you are familiar with. 
+| | Original (Silverlight / WPF) | This version |
+|---|---|---|
+| Client | Silverlight or WPF + Punch (Caliburn.Micro) | **Angular 22** (standalone, zoneless, signals) + **PrimeNG 22** |
+| Data access (client) | DevForce `EntityManager` | **[breeze-client 3](https://github.com/Breeze/breeze-client-v3)** |
+| Server | DevForce EntityServer (WCF) | **ASP.NET Core 10** + **Breeze.AspNetCore 8** |
+| ORM | Entity Framework 6 (Code First) | **EF Core 10** |
+| Database | SQL Server Compact (`.sdf`) | **SQL Server LocalDB / Express** |
+| Auth | DevForce `IEntityLoginManager` + server session | **JWT bearer** + PBKDF2 password hashing |
 
-#### Node requirements ####
+The application behaves the same as the original: log in, search staffing resources, view one,
+edit it in an isolated sandbox, and save or cancel. `docs/CONVERSION-NOTES.md` maps every piece of
+the old architecture onto its replacement and records the places where behaviour deliberately
+changed. The conversion was made from the WPF version, so where the two originals differ, the
+table and the notes describe WPF.
 
-1. Node 8.11.1 or higher
-2. Npm 5.0 or higher
-3. Gulp `npm install gulp -g`
+> **A note on the .NET version.** The server targets **`net10.0`** (LTS, supported to November
+> 2028) with the 10.0.x package set. It stays on .NET 10 rather than .NET 11 because Breeze 8
+> supports .NET 8, 9 and 10, and `Breeze.Persistence.EFCore` 8 requires EF Core 10 (it pins
+> `Microsoft.EntityFrameworkCore.Relational` to `[10.0.0, 11.0.0)`).
 
-#### .NET requirements ####
+---
 
-1. Visual Studio 2015 Update 3 or higher
-2. [TypeScript 2.4](https://blogs.msdn.microsoft.com/typescript/2017/06/27/announcing-typescript-2-4/) or higher
-1. [Node 8.11.1 LTS](https://nodejs.org/en/) or higher
-2. Npm 5.0 or higher
-3. Gulp `npm install gulp -g`
+## Prerequisites
 
-### Build and run the application ###
+- [.NET SDK](https://dotnet.microsoft.com/download) — the 10.0 SDK or later
+- [Node.js](https://nodejs.org) **26.13.0**, the version pinned in `.node-version` (with npm 11.20.0).
+  With [nvs](https://github.com/jasongin/nvs), `nvs auto` (or `nvs auto on`) selects it, and adds
+  it if it is missing, in any directory of the repository; fnm reads the file as well.  The
+  Angular 22 CLI itself accepts 22.22.3+, 24.15+ or 26+.
+- SQL Server **LocalDB** (ships with the Visual Studio "Data storage and processing" workload and
+  with [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads)), or any
+  SQL Server instance — see [Using a different database](#using-a-different-database)
 
-#### Node ####
+## Running it
 
-1. `npm install`
-2. `gulp`
-3. Open browser to http://localhost:3000/
+Two terminals. Server first, because the client fetches its Breeze metadata from it.
 
-For more information on the node server, read the [Server Readme](./Express/README.md).
+**1. Server** (`http://localhost:5000`)
 
-#### Visual Studio ####
+```
+cd server/TempHire.Server
+dotnet restore
+dotnet run
+```
 
-Open the solution in Visual Studio, build and run. It should automatically restore all npm and NuGet packages. The database gets automatically created. 
+On first run this creates two databases (`TempHire` and `TempHireSecurity`) and seeds them with the
+same eight staffing resources the original sample shipped with, plus the `Admin` user.
 
-If there are issues with building the solution, then it's most likely because Visual Studio is using outdated versions of the web tools or is missing them. In this case install the latest Node 6.x from [https://nodejs.org](https://nodejs.org) and make sure you choose to add it to your path.
+**2. Client** (`http://localhost:4200`)
 
-You will also need to install Gulp globally, so that Visual Studio will find it in your path.
+```
+cd client
+npm install
+npm start
+```
 
-`npm install gulp -g`
+Then open <http://localhost:4200> and sign in with **`Admin`** / **`password`** — the credentials
+from the original `SecuritySampleDataProvider`.
 
-Once everything is installed, in Visual Studio go to Tools|Options|Project and Solutions|External Web Tools and make sure Visual Studio is using $(PATH) as seen below as the location for the external web tools.
+### Building for production
 
-![External Web Tools](vs-config.png?raw=true "External Web Tools")
+```
+cd client
+npm run build:server     # builds into ../server/TempHire.Server/wwwroot
+cd ../server/TempHire.Server
+dotnet run --environment Production
+```
+
+`Program.cs` already serves static files and falls back to `index.html`, so the whole app is then
+available from the server's own origin and no CORS is involved.
+
+---
+
+## Entity classes are generated
+
+The TypeScript entity classes in `client/src/app/core/model/` are written by the entity generator
+that ships with `breeze-client` 3 (`breeze-gen-entities`), from the same Breeze metadata the server
+publishes. The flow has three steps, and `npm run model` in `client/` runs the first two:
+
+```
+EF Core model ──► client/metadata.json ──► client/src/app/core/model/*.ts ──► registerModelClasses
+   (server)      npm run model:metadata     npm run model:generate           (at login, client)
+```
+
+1. **Export the metadata.** `npm run model:metadata` runs the server with `--export-metadata`, which
+   writes exactly what `GET /api/breeze/Metadata` serves to `client/metadata.json` and exits. It
+   reads the EF Core model only, so it needs no database and no login. The file is checked in, so a
+   schema change shows up in review as a metadata diff next to the class diff it causes.
+2. **Generate the classes.** `npm run model:generate` writes one class per entity type, each
+   extending the hand-written `BaseEntity`, plus an `index.ts` barrel with `registerModelClasses`.
+   Generated lines end in `// @generated`; constructors, getters and methods you add (such as
+   `StaffingResource.addAddress`) are never touched, so regenerating is always safe.
+3. **Register them.** `core/model-registration.ts` calls `registerModelClasses` on the master
+   manager's `MetadataStore` once the metadata has loaded. From then on Breeze builds entities from
+   these classes, and the typed APIs work: `EntityQuery.from(StaffingResource)` is an
+   `EntityQuery<StaffingResource>`, and `createEntity(Address, { ... })` checks its initial values
+   against the class.
+
+**After changing an entity on the server**, run `npm run model` in `client/` and commit the
+metadata and class changes together. `client/src/app/core/model/README.md` covers the markers for
+keeping a hand-written property away from the generator.
+
+---
+
+## Layout
+
+```
+TempHire.Angular/
+├── TempHire.Angular.sln
+├── server/
+│   ├── TempHire.Model/            # POCO entities, DbContexts, sample data
+│   │   ├── Entities/              # ← DomainModel/ + Security/User.cs
+│   │   ├── Projections/           # ← DomainModel/Projections/
+│   │   ├── SampleData/            # ← DomainServices/SampleData/
+│   │   └── TempHireDbContext.cs   # business + security contexts
+│   └── TempHire.Server/
+│       ├── Controllers/
+│       │   ├── BreezeController.cs   # metadata, queries, SaveChanges, lookups, search
+│       │   └── AccountController.cs  # login / logout / me
+│       ├── Persistence/
+│       │   └── TempHirePersistenceManager.cs   # ← DomainModel/SaveInterceptor.cs
+│       ├── Auth/                  # JWT options + token service
+│       └── Program.cs
+└── client/
+    ├── metadata.json              # Breeze metadata exported from the server (npm run model:metadata)
+    └── src/app/
+        ├── core/
+        │   ├── model/             # generated entity classes + hand-written methods (npm run model)
+        │   ├── model-registration.ts   # registers the classes and adds client-only validators
+        │   ├── model-display-names.ts  # friendly property names for validation messages
+        │   ├── projections/       # non-entity query results (StaffingResourceListItem)
+        │   ├── services/          # ← Punch: EntityManagerProvider, UnitOfWork,
+        │   │                      #   Repository, UnitOfWorkManager, toolbar, dialogs, auth
+        │   └── dialogs/
+        ├── login/                 # ← ViewModels/Login/
+        ├── home/                  # ← ViewModels/HomeViewModel.cs
+        ├── resource-mgt/          # ← ViewModels/StaffingResource/
+        │   └── sections/          # the four detail tabs
+        ├── app.ts / app.html      # ← Views/ShellView.Wpf.xaml
+        └── app.routes.ts          # ← Punch workspaces + INavigator
+```
+
+Every ported file carries a doc comment naming the WPF file it came from, so you can read the two
+side by side.
+
+---
+
+## Why these libraries
+
+**PrimeNG** for the UI. TempHire is a data-dense desktop-style app: its screens are grids, tabs,
+modal dialogs and inline editors. PrimeNG's `p-table`, `p-tabs`, `DynamicDialog`, `p-select`,
+`p-inputNumber` and `p-datePicker` map almost one-to-one onto the WPF `DataGrid`, `TabControl`,
+Punch dialogs, `ComboBox` and Xceed editors, which keeps the conversion honest. Angular Material
+would also work but its table is lower-level, so the address/phone/rates/skills grids would need
+noticeably more hand-written code.
+
+The rest of the WPF-era dependencies did not need replacing so much as *deleting*:
+
+| Original | Replacement | Why |
+|---|---|---|
+| Caliburn.Micro (MVVM, conventions, `IEventAggregator`) | Angular components and signals | Angular already is an MVVM framework; the event aggregator's messages become signals (`UnitOfWork.changes`, `UnitOfWorkManager.saves`) |
+| Punch (`IUnitOfWorkManager`, `IRepository`, `IFactory`, `IDialogManager`, `IBusyWatcher`, `INavigator`) | Hand-ported into `core/services` | These are ~250 lines of pattern, and porting them keeps the app's architecture recognisable. Navigation becomes the Angular router |
+| MEF (`[Export]`, `[ImportMany]`) | Angular DI + explicit lists | Angular DI covers the singleton/scoped cases; the two places MEF was used for *discovery* (workspaces, detail sections) are now explicit lists, called out in the code |
+| Xceed WPF Toolkit `BusyIndicator` | `BusyService` + `p-progressSpinner` | |
+| `System.Windows.Interactivity` behaviours | Native DOM behaviour / directives | `SelectAllOnFocusBehavior`, `InitialFocusBehavior` etc. are one-liners in HTML |
+| `IdeaBlade.Validation` | Breeze validators, derived from the EF Core model | `[Required]`/`[StringLength]` on the server entities reach the client automatically in the Breeze metadata |
+
+No date, HTTP or utility library was added: Angular's `HttpClient` and the platform's `Intl` cover
+what jQuery/lodash/moment would once have been used for.
+
+### Angular as of version 22
+
+The client is meant to show current Angular, not just to run on it:
+
+- **Standalone components, no NgModules**, lazy-loaded routes, functional guards and interceptors.
+- **Zoneless and OnPush.** There is no zone.js, and Angular 22 makes OnPush the default change
+  detection for every component.  Views update from signals, so state lives in signals.
+- **Signals throughout.** `input()` / `output()` instead of decorators, `computed` for derived
+  state, `linkedSignal` where a value must survive a reload (the search grid keeps its rows while
+  new ones load), and `effect` only for genuine side effects.
+- **Breeze entities and signals.** Entities are plain mutable objects, so a unit of work turns its
+  `EntityManager`'s change events into a counter signal, `UnitOfWork.changes`, plus a `hasChanges`
+  signal.  The toolbar's Save and Cancel derive from those, so an edit anywhere in a sandbox
+  enables Save without any subscription.
+- **`resource()`** loads the search results; its params are the search text and the save counter,
+  so a save anywhere reloads the list.
+- **Signal Forms** (`@angular/forms/signals`) for the forms over plain data: login, the search box
+  and the name editor.  The entity editors keep `[(ngModel)]` bound straight to the Breeze
+  entities, as Breeze recommends: a Signal Form would hold a second copy of every value, kept in
+  step with the entity by hand.  Either way, validation comes from Breeze; see below.
+- **`@defer`** for the Rates, Work Experience and Skills tabs, each loaded as its own chunk when its
+  tab is first opened.
+- **Injection functions** such as `registerToolbarGroup`, which adds a toolbar group and removes
+  it through `DestroyRef`, in place of lifecycle hooks.
+- **The `@angular/build` builder** (esbuild, a Vite dev server, Vitest for `ng test`); there is no
+  Webpack.
+- **No deprecated APIs.** Buttons use PrimeNG's `[pButton]` directive (the `<p-button>` component
+  is deprecated in PrimeNG 22), and new keys come from `crypto.randomUUID()` rather than Breeze's
+  deprecated `core.getUuid()`.  `crypto.randomUUID()` needs a secure context, which `localhost` and
+  any HTTPS deployment are; serving the app over plain HTTP from another host would need a
+  fallback.
+
+### Validation comes from the model
+
+The validation rules are written once, on the server's entities - `[Required]`, `[StringLength]` -
+and reach the client in the Breeze metadata as validators.  Breeze runs them as properties change,
+when an entity is attached, and before a save.  The forms add no rules of their own; they show
+Breeze's verdict:
+
+- **Entity editors** (`[(ngModel)]` on Breeze entities) carry the `BreezeFieldDirective`
+  (`core/validation`), which registers the entity's errors for that property as an Angular
+  validator - so the control and its form are invalid when Breeze says so - and exposes them as
+  signals for PrimeNG's `[invalid]` input and the field's tooltip.  It follows the entity's
+  `validationErrorsChanged` event, so errors found on save, or on a new, empty entity, highlight
+  their fields without the user touching them.
+
+  ```html
+  <input pInputText [(ngModel)]="address.city"
+         [breezeField]="address" breezeProperty="city" #cityField="breezeField"
+         [invalid]="cityField.invalid()" />
+  ```
+
+- **The name editor**, a Signal Form over names for a `StaffingResource` that does not exist yet,
+  applies `StaffingResource`'s Breeze validators to its fields with `validateWithBreeze`
+  (`core/validation`).  Signal Forms then hand the result to PrimeNG themselves.
+- **Login** keeps Signal Forms' `required`: credentials are not an entity, so there is no Breeze
+  model to validate them against.
+
+Breeze names a property in its messages by its `displayName` - `'%displayName%' is required` - and
+the Breeze .NET server does not send display names.  So once the metadata has loaded,
+`setDisplayNames` (`core/model-display-names.ts`) gives every property one: derived from the
+property name (`positionTitle` is "Position title", `stateId` is "State"), or taken from a short
+table of overrides that match the labels on screen (`number` is "Phone number").  The table is
+keyed by the generated classes, so a misspelt or removed property is a compile error.  Messages
+then read `'First name' is required`, in the entity editors and in the name editor alike.
+
+---
+
+## Using a different database
+
+The server targets SQL Server through `Microsoft.EntityFrameworkCore.SqlServer`. To point at a real
+instance instead of LocalDB, change the two connection strings in
+`server/TempHire.Server/appsettings.json`.
+
+To move to another provider, swap the package in `TempHire.Model.csproj` and the two
+`options.UseSqlServer(...)` calls in `Program.cs`. Nothing else in the model is SQL Server-specific
+apart from `[Column(TypeName = "decimal(18,2)")]` on `Rate.Amount`.
+
+Schema creation uses `Database.EnsureCreated()` (see `SampleDataProvider.Initialize`), which is
+right for a sample but not for a system that has to evolve. For real work, replace it with EF Core
+migrations:
+
+```
+dotnet tool install --global dotnet-ef --version 9.*
+dotnet ef migrations add Initial --project ../TempHire.Model --startup-project .
+dotnet ef database update
+```
+
+(The `dotnet-ef` tool's major version has to match the EF Core packages, hence the `9.*`.)
+
+## Configuration
+
+| Setting | Where | Notes |
+|---|---|---|
+| `ConnectionStrings:TempHire` | `appsettings.json` | Business data |
+| `ConnectionStrings:TempHireSecurity` | `appsettings.json` | Users — a separate database, as in the original |
+| `Jwt:SigningKey` | `appsettings.Development.json` | **Development placeholder.** Set a real one before deploying: `dotnet user-secrets set "Jwt:SigningKey" "<long random string>"` |
+| `Jwt:ExpiryMinutes` | `appsettings.json` | Defaults to 8 hours |
+| `AllowedClientOrigins` | `appsettings.json` | CORS allow-list for the dev server |
+| `breezeApiRoot` / `accountApiRoot` | `client/src/environments/` | `environment.ts` is the **production** file; `environment.development.ts` replaces it during `ng serve` |
+
+---
+
+## Known gaps
+
+- **A temporary workaround for a breeze-client 3.0.0 bug.** Breeze 3.0.0 fails any request whose
+  successful response has an empty body: a **204 No Content**, which ASP.NET Core sends whenever a
+  controller action returns `null`, or a 200 with no body. The query rejects with
+  `SyntaxError: Unexpected end of JSON input` instead of resolving with no results. None of
+  TempHire's current endpoints send such a response, but a new action that can return `null`
+  would. `app.config.ts` therefore wraps Breeze's fetch function in `emptyBodyAsNull`
+  (`client/src/app/core/services/breeze-fetch.ts`), the workaround from the
+  [breeze-client release notes](https://github.com/Breeze/breeze-client-v3/blob/fix/empty-response-body/RELEASE-NOTES.md).
+  The fix is on the `fix/empty-response-body` branch of breeze-client-v3 and not yet released.
+  **When you upgrade to a release with the fix**, `breeze-fetch.spec.ts` fails its "without the
+  workaround" test; that is the signal to delete `breeze-fetch.ts` and its spec, and to pass
+  `httpClientFetch(inject(HttpClient))` to `configureBreeze` directly.
+- **No automated tests beyond a shell smoke test and the workaround above.** The original had none
+  either. `ng test` runs Vitest; the server has no test project.
+- **`Database.EnsureCreated()` instead of migrations**, as described above.
+- **Logout does not revoke the token.** A JWT is valid until it expires; `AccountController.Logout`
+  is the hook where a revocation list would go.
+- **Search has no paging.** `StaffingResourceListItems` returns every match, exactly as
+  `StaffingResourceSearchService.Simple` did. `[BreezeQueryFilter(MaxTake = ...)]` is the place to
+  add a cap.
+- **The `.sdf` sample databases are not migrated.** The seed data is re-created from the ported
+  `SampleDataProvider`, so ids match the original, but any data you added to the old SQL Compact
+  files does not come across.
+
+See `docs/CONVERSION-NOTES.md` for the full architecture mapping and the list of deliberate
+behavioural changes.

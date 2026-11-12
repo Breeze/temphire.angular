@@ -1,0 +1,41 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/*
+ * The WPF shell rendered the toolbar as a horizontal StackPanel with the background #FFC6DBF1
+ * (see ShellView.Wpf.xaml).  Kept, so the converted app is recognisably the same application.
+ */
+.app-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: #c6dbf1;
+  border-bottom: 1px solid #a8c4e0;
+}
+
+.app-toolbar__brand {
+  font-family: Verdana, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1d5380;
+  margin-right: 1rem;
+}
+
+.app-toolbar__spacer {
+  flex: 1 1 auto;
+}
+
+.app-toolbar__user {
+  font-size: 0.85rem;
+  color: #1d5380;
+}
+
+.app-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #ffffff;
+}

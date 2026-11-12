@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <RootNamespace>TempHire.Server</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Breeze: the direct replacement for the DevForce server-side runtime. -->
+    <PackageReference Include="Breeze.AspNetCore.NetCore" Version="8.0.0" />
+    <PackageReference Include="Breeze.Persistence.EFCore" Version="8.0.0" />
+    <!-- Breeze serializes entities with Json.NET, so MVC has to as well. -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.15" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.15" />
+    <!-- Referenced explicitly because TokenService.cs uses JwtSecurityToken /
+         JwtSecurityTokenHandler directly.  The version must be >= the one
+         Microsoft.AspNetCore.Authentication.JwtBearer pulls in transitively, or NuGet
+         reports NU1605 (package downgrade). -->
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TempHire.Model\TempHire.Model.csproj" />
+  </ItemGroup>
+
+</Project>

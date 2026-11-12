@@ -1,0 +1,32 @@
+.resource-mgt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.resource-mgt__search {
+  flex: 0 0 auto;
+}
+
+.resource-mgt__detail {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.resource-mgt__empty {
+  color: #6b7280;
+  font-style: italic;
+  padding: 2rem 0.5rem;
+}
+
+.resource-mgt__spinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.6);
+  z-index: 10;
+}

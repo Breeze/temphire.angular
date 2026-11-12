@@ -1,0 +1,30 @@
+<!--
+  Port of Views/StaffingResource/ResourceMgtView.xaml: the search pane sits in a fixed-height row
+  at the top, the active detail fills the rest.
+-->
+<div class="resource-mgt" [class.resource-mgt--busy]="busy.isBusy()">
+  <section class="resource-mgt__search">
+    <app-resource-search
+      [selectedId]="selectedId()"
+      (selectionChange)="onSelectionChange($event)"
+    />
+  </section>
+
+  <section class="resource-mgt__detail">
+    @if (staffingResource(); as resource) {
+      <app-resource-detail
+        [staffingResource]="resource"
+        [readOnly]="isReadOnly()"
+        [unitOfWork]="unitOfWork()!"
+      />
+    } @else {
+      <p class="resource-mgt__empty">Select a staffing resource, or choose Add to create one.</p>
+    }
+  </section>
+
+  @if (busy.isBusy()) {
+    <div class="resource-mgt__spinner">
+      <p-progress-spinner strokeWidth="4" ariaLabel="Please wait" />
+    </div>
+  }
+</div>
