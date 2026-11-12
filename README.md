@@ -1,10 +1,24 @@
-# TempHire (Angular + BreezeJS)
+# TempHire (Angular + BreezeJS + .NET)
 
-A conversion of the WPF/DevForce **TempHire** sample (`../TempHire.Wpf.sln`) to a modern web stack.
+TempHire is a **reference implementation of a data-driven line-of-business application** on a
+modern stack: **Angular** on the client, **Breeze** for data access - entity caching, change
+tracking, validation and save - and the latest **.NET** with **EF Core** on the server.  It covers
+what such applications need beyond CRUD screens: a master/detail workspace, editing in isolated
+sandboxes with save and cancel, a cached lookup data set, client- and server-side validation from
+one model, authentication, and entity classes generated from the server's model.
 
-| | Original | This version |
+It is also a **modernization example**.  TempHire began as a .NET **Silverlight** and **WPF**
+application built on IdeaBlade DevForce, Cocktail and Caliburn.Micro.  It was converted to this
+web stack, and then brought up to current Angular, Breeze and .NET, with the help of AI.  The
+original Silverlight and WPF versions are in the
+[Punch repository](https://github.com/IdeaBlade/Punch/tree/master/Samples/TempHire)
+(`TempHire.Silverlight.sln` and `TempHire.Wpf.sln`), so the two can be read side by side: every
+ported file names the file it came from, and `docs/CONVERSION-NOTES.md` maps the old architecture
+onto the new one.
+
+| | Original (Silverlight / WPF) | This version |
 |---|---|---|
-| Client | WPF + Caliburn.Micro + Cocktail | **Angular 22** (standalone, zoneless, signals) + **PrimeNG 22** |
+| Client | Silverlight or WPF + Caliburn.Micro + Cocktail | **Angular 22** (standalone, zoneless, signals) + **PrimeNG 22** |
 | Data access (client) | DevForce `EntityManager` | **breeze-client 3** |
 | Server | DevForce EntityServer (WCF) | **ASP.NET Core 10** + **Breeze.AspNetCore 8** |
 | ORM | Entity Framework 6 (Code First) | **EF Core 10** |
@@ -14,7 +28,8 @@ A conversion of the WPF/DevForce **TempHire** sample (`../TempHire.Wpf.sln`) to 
 The application behaves the same as the original: log in, search staffing resources, view one,
 edit it in an isolated sandbox, and save or cancel. `docs/CONVERSION-NOTES.md` maps every piece of
 the old architecture onto its replacement and records the places where behaviour deliberately
-changed.
+changed. The conversion was made from the WPF version, so where the two originals differ, the
+table and the notes describe WPF.
 
 > **A note on the .NET version.** The server targets **`net10.0`** (LTS, supported to November
 > 2028) with the 10.0.x package set. It stays on .NET 10 rather than .NET 11 because Breeze 8
