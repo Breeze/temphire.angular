@@ -8,7 +8,7 @@ import {
   required,
 } from '@angular/forms/signals';
 import { Router } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
@@ -33,7 +33,7 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
   imports: [
     FormField,
     FormRoot,
-    ButtonModule,
+    ButtonDirective,
     CardModule,
     InputTextModule,
     MessageModule,
@@ -71,12 +71,16 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
           }
 
           <div class="login__actions">
-            <p-button
+            <button
+              pButton
               type="submit"
-              label="Login"
               [disabled]="loginForm().invalid() || loginForm().submitting()"
-              [loading]="loginForm().submitting()"
-            />
+            >
+              @if (loginForm().submitting()) {
+                <i class="pi pi-spin pi-spinner"></i>
+              }
+              Login
+            </button>
           </div>
 
           <p class="login__hint">Sample credentials: <code>Admin</code> / <code>password</code></p>

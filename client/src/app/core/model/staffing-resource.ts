@@ -2,7 +2,6 @@
 // Properties of this type in the server metadata are written here and rewritten on
 // every run. Everything else in this file is yours and is never touched.
 // To keep one of those too, see the manual markers in ./README.md.
-import { core } from 'breeze-client';
 
 import { Address } from './address';
 import { BaseEntity } from './base-entity';
@@ -45,7 +44,7 @@ export class StaffingResource extends BaseEntity {
     super();
     // DevForce used CombGuid.NewGuid() so that clustered indexes stayed happy; the server maps the
     // key with DatabaseGeneratedOption.None, so the client is still responsible for generating it.
-    this.id = core.getUuid();
+    this.id = crypto.randomUUID();
   }
 
   /** Port of the `FullName` calculated property. */

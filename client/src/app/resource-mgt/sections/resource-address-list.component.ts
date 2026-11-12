@@ -1,6 +1,6 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
@@ -32,17 +32,20 @@ import { ItemSelectorComponent } from '../item-selector.component';
  */
 @Component({
   selector: 'app-resource-address-list',
-  imports: [FormsModule, ButtonModule, InputTextModule, RadioButtonModule, SelectModule],
+  imports: [FormsModule, ButtonDirective, InputTextModule, RadioButtonModule, SelectModule],
   template: `
     <div class="addresses">
-      <p-button
-        label="Add"
-        icon="pi pi-plus"
+      <button
+        pButton
+        type="button"
         size="small"
         [outlined]="true"
         [disabled]="readOnly()"
-        (onClick)="add()"
-      />
+        (click)="add()"
+      >
+        <i class="pi pi-plus"></i>
+        Add
+      </button>
 
       @for (address of staffingResource().addresses; track address.id) {
         <div class="address temphire-elevated">
@@ -108,14 +111,17 @@ import { ItemSelectorComponent } from '../item-selector.component';
               <label [for]="'primary-' + address.id">Primary</label>
             </div>
 
-            <p-button
-              label="Delete"
+            <button
+              pButton
+              type="button"
               severity="danger"
               size="small"
               [outlined]="true"
               [disabled]="!canDelete(address)"
-              (onClick)="delete(address)"
-            />
+              (click)="delete(address)"
+            >
+              Delete
+            </button>
           </div>
         </div>
       }

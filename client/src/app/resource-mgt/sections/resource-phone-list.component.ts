@@ -1,6 +1,6 @@
 import { Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 
@@ -22,17 +22,20 @@ import { ItemSelectorComponent } from '../item-selector.component';
  */
 @Component({
   selector: 'app-resource-phone-list',
-  imports: [FormsModule, ButtonModule, InputTextModule, RadioButtonModule],
+  imports: [FormsModule, ButtonDirective, InputTextModule, RadioButtonModule],
   template: `
     <div class="phones">
-      <p-button
-        label="Add"
-        icon="pi pi-plus"
+      <button
+        pButton
+        type="button"
         size="small"
         [outlined]="true"
         [disabled]="readOnly()"
-        (onClick)="add()"
-      />
+        (click)="add()"
+      >
+        <i class="pi pi-plus"></i>
+        Add
+      </button>
 
       @for (phoneNumber of staffingResource().phoneNumbers; track phoneNumber.id) {
         <div class="phone temphire-elevated">
@@ -66,14 +69,17 @@ import { ItemSelectorComponent } from '../item-selector.component';
             <label [for]="'primary-phone-' + phoneNumber.id">Primary</label>
           </div>
 
-          <p-button
-            label="Delete"
+          <button
+            pButton
+            type="button"
             severity="danger"
             size="small"
             [outlined]="true"
             [disabled]="!canDelete(phoneNumber)"
-            (onClick)="delete(phoneNumber)"
-          />
+            (click)="delete(phoneNumber)"
+          >
+            Delete
+          </button>
         </div>
       }
     </div>

@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { SelectModule } from 'primeng/select';
 
@@ -22,7 +22,7 @@ export interface ItemSelectorData<T = Record<string, unknown>> {
  */
 @Component({
   selector: 'app-item-selector',
-  imports: [FormsModule, ButtonModule, SelectModule],
+  imports: [FormsModule, ButtonDirective, SelectModule],
   template: `
     <div class="item-selector">
       <label class="item-selector__prompt" for="item-selector-list">{{ data.prompt }}</label>
@@ -38,8 +38,10 @@ export interface ItemSelectorData<T = Record<string, unknown>> {
       />
 
       <div class="item-selector__buttons">
-        <p-button label="OK" [disabled]="!selectedItem()" (onClick)="accept()" />
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancel()" />
+        <button pButton type="button" [disabled]="!selectedItem()" (click)="accept()">OK</button>
+        <button pButton type="button" severity="secondary" [outlined]="true" (click)="cancel()">
+          Cancel
+        </button>
       </div>
     </div>
   `,

@@ -1,7 +1,7 @@
 import { CurrencyPipe } from '@angular/common';
 import { Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 
 import { Rate, RateType, StaffingResource } from '../../core/model';
@@ -30,20 +30,17 @@ import { ItemSelectorComponent, ItemSelectorData } from '../item-selector.compon
  */
 @Component({
   selector: 'app-resource-rates',
-  imports: [FormsModule, CurrencyPipe, ButtonModule, InputNumberModule],
+  imports: [FormsModule, CurrencyPipe, ButtonDirective, InputNumberModule],
   template: `
     <div class="rates">
       <div class="rates__header">
         <h3 class="temphire-section-heading">Rates:</h3>
 
         @if (!readOnly()) {
-          <p-button
-            label="Add"
-            icon="pi pi-plus"
-            size="small"
-            [outlined]="true"
-            (onClick)="add()"
-          />
+          <button pButton type="button" size="small" [outlined]="true" (click)="add()">
+            <i class="pi pi-plus"></i>
+            Add
+          </button>
         }
       </div>
 
@@ -72,14 +69,17 @@ import { ItemSelectorComponent, ItemSelectorData } from '../item-selector.compon
                 />
               }
 
-              <p-button
-                label="Delete"
+              <button
+                pButton
+                type="button"
                 severity="danger"
                 size="small"
                 [text]="true"
                 [disabled]="readOnly()"
-                (onClick)="delete(rate)"
-              />
+                (click)="delete(rate)"
+              >
+                Delete
+              </button>
             </div>
           }
         </div>

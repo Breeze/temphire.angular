@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { Skill, StaffingResource } from '../../core/model';
@@ -23,20 +23,17 @@ import { Skill, StaffingResource } from '../../core/model';
  */
 @Component({
   selector: 'app-resource-skills',
-  imports: [FormsModule, ButtonModule, InputTextModule],
+  imports: [FormsModule, ButtonDirective, InputTextModule],
   template: `
     <div class="skills">
       <div class="skills__header">
         <h3 class="temphire-section-heading">Skills:</h3>
 
         @if (!readOnly()) {
-          <p-button
-            label="Add"
-            icon="pi pi-plus"
-            size="small"
-            [outlined]="true"
-            (onClick)="add()"
-          />
+          <button pButton type="button" size="small" [outlined]="true" (click)="add()">
+            <i class="pi pi-plus"></i>
+            Add
+          </button>
         }
       </div>
 
@@ -56,14 +53,17 @@ import { Skill, StaffingResource } from '../../core/model';
                 [readOnly]="readOnly()"
               />
 
-              <p-button
-                label="Delete"
+              <button
+                pButton
+                type="button"
                 severity="danger"
                 size="small"
                 [text]="true"
                 [disabled]="readOnly()"
-                (onClick)="delete(skill)"
-              />
+                (click)="delete(skill)"
+              >
+                Delete
+              </button>
             </div>
           }
         </div>

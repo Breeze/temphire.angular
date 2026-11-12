@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormField, FormRoot, form, required } from '@angular/forms/signals';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
@@ -19,7 +19,7 @@ export interface ResourceName {
  */
 @Component({
   selector: 'app-resource-name-editor',
-  imports: [FormField, FormRoot, ButtonModule, InputTextModule],
+  imports: [FormField, FormRoot, ButtonDirective, InputTextModule],
   template: `
     <form class="name-editor" [formRoot]="nameForm">
       <div class="name-editor__field">
@@ -38,8 +38,10 @@ export interface ResourceName {
       </div>
 
       <div class="name-editor__buttons">
-        <p-button type="submit" label="OK" [disabled]="nameForm().invalid()" />
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="cancel()" />
+        <button pButton type="submit" [disabled]="nameForm().invalid()">OK</button>
+        <button pButton type="button" severity="secondary" [outlined]="true" (click)="cancel()">
+          Cancel
+        </button>
       </div>
     </form>
   `,

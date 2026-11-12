@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DividerModule } from 'primeng/divider';
 import { InputTextModule } from 'primeng/inputtext';
@@ -31,7 +31,7 @@ import { StaffingResource, WorkExperienceItem } from '../../core/model';
   selector: 'app-resource-work-experience',
   imports: [
     FormsModule,
-    ButtonModule,
+    ButtonDirective,
     DatePickerModule,
     DividerModule,
     InputTextModule,
@@ -43,13 +43,10 @@ import { StaffingResource, WorkExperienceItem } from '../../core/model';
         <h3 class="temphire-section-heading">Work Experience:</h3>
 
         @if (!readOnly()) {
-          <p-button
-            label="Add"
-            icon="pi pi-plus"
-            size="small"
-            [outlined]="true"
-            (onClick)="add()"
-          />
+          <button pButton type="button" size="small" [outlined]="true" (click)="add()">
+            <i class="pi pi-plus"></i>
+            Add
+          </button>
         }
       </div>
 
@@ -101,14 +98,17 @@ import { StaffingResource, WorkExperienceItem } from '../../core/model';
               </label>
 
               <div class="work__field work__field--action">
-                <p-button
-                  label="Delete"
+                <button
+                  pButton
+                  type="button"
                   severity="danger"
                   size="small"
                   [text]="true"
                   [disabled]="readOnly()"
-                  (onClick)="delete(item)"
-                />
+                  (click)="delete(item)"
+                >
+                  Delete
+                </button>
               </div>
             </div>
 

@@ -3,14 +3,19 @@
     <span class="app-toolbar__brand">TempHire</span>
 
     @for (action of actions(); track action.label) {
-      <p-button
-        [label]="action.label"
-        [icon]="action.icon ?? ''"
+      <button
+        pButton
+        type="button"
         [disabled]="action.canExecute ? !action.canExecute() : false"
         [text]="true"
         severity="contrast"
-        (onClick)="action.execute()"
-      />
+        (click)="action.execute()"
+      >
+        @if (action.icon; as icon) {
+          <i [class]="icon"></i>
+        }
+        {{ action.label }}
+      </button>
     }
 
     <span class="app-toolbar__spacer"></span>

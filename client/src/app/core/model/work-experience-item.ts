@@ -2,7 +2,6 @@
 // Properties of this type in the server metadata are written here and rewritten on
 // every run. Everything else in this file is yours and is never touched.
 // To keep one of those too, see the manual markers in ./README.md.
-import { core } from 'breeze-client';
 
 import { BaseEntity } from './base-entity';
 import type { StaffingResource } from './staffing-resource';
@@ -27,7 +26,7 @@ export class WorkExperienceItem extends BaseEntity {
 
   constructor() {
     super();
-    this.id = core.getUuid();
+    this.id = crypto.randomUUID();
   }
 
   get root(): StaffingResource {

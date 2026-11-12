@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { DynamicDialogModule } from 'primeng/dynamicdialog';
 import { ToastModule } from 'primeng/toast';
 
@@ -22,7 +22,7 @@ import { ToolbarGroup, ToolbarService, toolbarActions } from './core/services/to
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ButtonModule, ToastModule, DynamicDialogModule],
+  imports: [RouterOutlet, ButtonDirective, ToastModule, DynamicDialogModule],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

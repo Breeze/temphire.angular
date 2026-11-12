@@ -11,7 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { FormField, FormRoot, form } from '@angular/forms/signals';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TableModule } from 'primeng/table';
@@ -39,7 +39,14 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
  */
 @Component({
   selector: 'app-resource-search',
-  imports: [FormField, FormRoot, ButtonModule, InputTextModule, TableModule, ProgressSpinnerModule],
+  imports: [
+    FormField,
+    FormRoot,
+    ButtonDirective,
+    InputTextModule,
+    TableModule,
+    ProgressSpinnerModule,
+  ],
   template: `
     <div class="search">
       <form class="search__bar" [formRoot]="searchForm">
@@ -51,14 +58,17 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
           aria-label="Search staffing resources"
           [formField]="searchForm.text"
         />
-        <p-button type="submit" label="Search" [disabled]="!canSearch()" />
-        <p-button
-          label="Clear"
+        <button pButton type="submit" [disabled]="!canSearch()">Search</button>
+        <button
+          pButton
+          type="button"
           severity="secondary"
           [outlined]="true"
           [disabled]="!canClear()"
-          (onClick)="clear()"
-        />
+          (click)="clear()"
+        >
+          Clear
+        </button>
         @if (results.isLoading()) {
           <p-progress-spinner
             styleClass="search__spinner"

@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
+import { ButtonDirective } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 export interface MessageBoxButton {
@@ -23,17 +23,20 @@ export interface MessageBoxData {
  */
 @Component({
   selector: 'app-message-box',
-  imports: [ButtonModule],
+  imports: [ButtonDirective],
   template: `
     <p class="message-box__text">{{ data.message }}</p>
     <div class="message-box__buttons">
       @for (button of data.buttons; track button.value) {
-        <p-button
-          [label]="button.label"
+        <button
+          pButton
+          type="button"
           [severity]="button.severity === 'primary' ? undefined : button.severity"
           [outlined]="button.severity === 'secondary'"
-          (onClick)="close(button.value)"
-        />
+          (click)="close(button.value)"
+        >
+          {{ button.label }}
+        </button>
       }
     </div>
   `,
