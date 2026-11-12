@@ -30,7 +30,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // Sniffing the body to tell the two apart is not an option either - Breeze's
       // `httpClientFetch` issues its requests with `responseType: 'text'`, so
       // `HttpErrorResponse.error` is an unparsed string rather than the object it looks like.
-      if (error instanceof HttpErrorResponse && error.status === 401) {
+      //
+      // And only a 401 for a request that *carried* a token means the session has gone.  A failed
+      // login is also a 401, and so is the logout call itself once the token is no longer accepted;
+      // logging out in response to either would post another logout, get another 401, and loop.
+      const sessionRejected = !!token && !req.url.endsWith('/account/logout');
+      if (error instanceof HttpErrorResponse && error.status === 401 && sessionRejected) {
         auth.logout().finally(() => router.navigate(['/login']));
       }
 

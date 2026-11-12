@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { DataService, EntityManager, EntityQuery } from 'breeze-client';
+import { DataService, EntityManager, EntityQuery, MetadataStore } from 'breeze-client';
 
 import { environment } from '../../../environments/environment';
 import { registerModel } from '../model-registration';
@@ -29,11 +29,26 @@ import { registerModel } from '../model-registration';
 export class EntityManagerProvider {
   private readonly http = inject(HttpClient);
 
+  private readonly dataService = new DataService({
+    serviceName: environment.breezeApiRoot,
+    hasServerMetadata: true,
+  });
+
+  /**
+   * The one `MetadataStore` for the life of the page.  Breeze binds each registered entity class to
+   * a single store - registering `StaffingResource` with a second store throws - so the store has to
+   * outlive a logout, or the next login could not register the classes again.  The metadata is the
+   * same for every user, so nothing is lost by keeping it.
+   */
+  private readonly metadataStore = new MetadataStore();
+  private metadataPromise?: Promise<void>;
+
   private masterManager?: EntityManager;
   private preparePromise?: Promise<void>;
 
   /**
-   * Downloads the metadata and the lookup bundle.  Must complete before any manager is created.
+   * Downloads the metadata (on the first login only) and the lookup bundle.  Must complete before
+   * any manager is created.
    *
    * Both endpoints require authentication (`[Authorize]` on `BreezeController`, matching DevForce's
    * `[RequiresAuthentication]`), so this runs immediately after a successful login - exactly where
@@ -41,20 +56,14 @@ export class EntityManagerProvider {
    */
   prepare(): Promise<void> {
     if (!this.preparePromise) {
-      const dataService = new DataService({
-        serviceName: environment.breezeApiRoot,
-        hasServerMetadata: true,
+      const masterManager = new EntityManager({
+        dataService: this.dataService,
+        metadataStore: this.metadataStore,
       });
 
-      const masterManager = new EntityManager({ dataService });
-
-      this.preparePromise = masterManager
-        .fetchMetadata()
-        .then(() => {
-          registerModel(masterManager.metadataStore);
-          // One request for every lookup table - the `Lookups` action on the server.
-          return masterManager.executeQuery(EntityQuery.from('Lookups'));
-        })
+      this.preparePromise = this.loadMetadata(masterManager)
+        // One request for every lookup table - the `Lookups` action on the server.
+        .then(() => masterManager.executeQuery(EntityQuery.from('Lookups')))
         .then(() => {
           this.masterManager = masterManager;
         })
@@ -68,11 +77,27 @@ export class EntityManagerProvider {
     return this.preparePromise;
   }
 
+  /** Fetches the metadata and registers the model on the shared store, once per page. */
+  private loadMetadata(manager: EntityManager): Promise<void> {
+    this.metadataPromise ??= manager
+      .fetchMetadata()
+      .then(() => registerModel(this.metadataStore))
+      .catch((error) => {
+        this.metadataPromise = undefined;
+        throw error;
+      });
+
+    return this.metadataPromise;
+  }
+
   get isPrepared(): boolean {
     return !!this.masterManager;
   }
 
-  /** Forgets the master manager so the next login starts from a clean cache. */
+  /**
+   * Forgets the master manager so the next login starts from a clean cache.  The metadata store is
+   * kept; see `metadataStore`.
+   */
   reset(): void {
     this.masterManager = undefined;
     this.preparePromise = undefined;
