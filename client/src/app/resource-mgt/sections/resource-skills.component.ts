@@ -1,9 +1,10 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { Skill, StaffingResource } from '../../core/model';
+import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
 
 /**
@@ -19,8 +20,9 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
  *    lazily through a `RelatedEntityList<Skill>`.  Breeze has no lazy loading - the skills arrive
  *    with the resource via `expand` in `ResourceMgtUnitOfWork.loadStaffingResource` - so the flag
  *    has no equivalent and is dropped.  `IsEmpty` survives as the placeholder below.
- *  - The view model handled `SavedMessage` purely to re-raise `SkillsSorted` after a save.  Angular
- *    re-evaluates `sortedSkills()` on every change detection pass, so nothing to subscribe to.
+ *  - The view model handled `SavedMessage` purely to re-raise `SkillsSorted` after a save.  Here
+ *    `sortedSkills` is a `computed` over the unit of work's `changes` signal, so it re-sorts
+ *    whenever a skill changes; there is nothing to subscribe to.
  */
 @Component({
   selector: 'app-resource-skills',
@@ -121,16 +123,24 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
 export class ResourceSkillsComponent {
   readonly staffingResource = input.required<StaffingResource>();
   readonly readOnly = input.required<boolean>();
+  readonly unitOfWork = input.required<ResourceMgtUnitOfWork>();
 
   /**
    * Port of the `SkillsSorted` property.  A skill added by `Add` starts with no description, so the
    * comparison has to tolerate an undefined value - `OrderBy` on a null string was happy to.
    */
-  sortedSkills(): Skill[] {
+  /**
+   * The rows to show.  Breeze changes `staffingResource.skills` in place, which nothing reactive sees, and
+   * an add finishes after the type dialog closes - outside any event in this component - so with
+   * OnPush change detection the view would not re-render.  Reading the unit of work's `changes`
+   * signal re-derives the rows, and re-renders the view, whenever an entity in it changes.
+   */
+  readonly sortedSkills = computed<Skill[]>(() => {
+    this.unitOfWork().changes();
     const skills = this.staffingResource().skills ?? [];
 
     return [...skills].sort((a, b) => (a.description ?? '').localeCompare(b.description ?? ''));
-  }
+  });
 
   /** Port of `StaffingResourceSkillsViewModel.Add`. */
   add(): void {

@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -38,7 +38,7 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
         Add
       </button>
 
-      @for (phoneNumber of staffingResource().phoneNumbers; track phoneNumber.id) {
+      @for (phoneNumber of phoneNumbers(); track phoneNumber.id) {
         <div class="phone temphire-elevated">
           <span class="phone__type">{{ phoneNumber.phoneNumberType?.name }}</span>
 
@@ -139,6 +139,17 @@ export class ResourcePhoneListComponent {
   readonly staffingResource = input.required<StaffingResource>();
   readonly readOnly = input.required<boolean>();
   readonly unitOfWork = input.required<ResourceMgtUnitOfWork>();
+
+  /**
+   * The rows to show.  Breeze changes `staffingResource.phoneNumbers` in place, which nothing reactive sees, and
+   * an add finishes after the type dialog closes - outside any event in this component - so with
+   * OnPush change detection the view would not re-render.  Reading the unit of work's `changes`
+   * signal re-derives the rows, and re-renders the view, whenever an entity in it changes.
+   */
+  readonly phoneNumbers = computed(() => {
+    this.unitOfWork().changes();
+    return [...this.staffingResource().phoneNumbers];
+  });
 
   /** Port of `StaffingResourcePhoneItemViewModel.CanDelete`. */
   canDelete(phoneNumber: PhoneNumber): boolean {

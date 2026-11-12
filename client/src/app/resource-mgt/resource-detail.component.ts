@@ -73,6 +73,7 @@ import { ResourceSummaryComponent } from './resource-summary.component';
               <app-resource-work-experience
                 [staffingResource]="staffingResource()"
                 [readOnly]="readOnly()"
+                [unitOfWork]="unitOfWork()"
               />
             }
           </p-tabpanel>
@@ -82,6 +83,7 @@ import { ResourceSummaryComponent } from './resource-summary.component';
               <app-resource-skills
                 [staffingResource]="staffingResource()"
                 [readOnly]="readOnly()"
+                [unitOfWork]="unitOfWork()"
               />
             }
           </p-tabpanel>

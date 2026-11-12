@@ -55,7 +55,7 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
         Add
       </button>
 
-      @for (address of staffingResource().addresses; track address.id) {
+      @for (address of addresses(); track address.id) {
         <div class="address temphire-elevated">
           <div class="address__header">{{ address.addressType?.displayName }}</div>
 
@@ -225,6 +225,17 @@ export class ResourceAddressListComponent {
    * The states the dropdown offers, ordered by name as `LoadDataAsync` ordered them.  Computed so
    * the cache query runs once per unit of work rather than on every change detection pass.
    */
+  /**
+   * The rows to show.  Breeze changes `staffingResource.addresses` in place, which nothing reactive sees, and
+   * an add finishes after the type dialog closes - outside any event in this component - so with
+   * OnPush change detection the view would not re-render.  Reading the unit of work's `changes`
+   * signal re-derives the rows, and re-renders the view, whenever an entity in it changes.
+   */
+  readonly addresses = computed(() => {
+    this.unitOfWork().changes();
+    return [...this.staffingResource().addresses];
+  });
+
   readonly states = computed(() => this.unitOfWork().states.allInCache('name'));
 
   /** Port of `StaffingResourceAddressItemViewModel.CanDelete`. */

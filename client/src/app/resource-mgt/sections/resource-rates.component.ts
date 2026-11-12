@@ -1,5 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -160,11 +160,18 @@ export class ResourceRatesComponent {
    * Port of the `RatesSorted` property.  Breeze navigation collections come back in whatever order
    * the server sent them, so the sort has to happen here just as it did in the view model.
    */
-  sortedRates(): Rate[] {
+  /**
+   * The rows to show.  Breeze changes `staffingResource.rates` in place, which nothing reactive sees, and
+   * an add finishes after the type dialog closes - outside any event in this component - so with
+   * OnPush change detection the view would not re-render.  Reading the unit of work's `changes`
+   * signal re-derives the rows, and re-renders the view, whenever an entity in it changes.
+   */
+  readonly sortedRates = computed<Rate[]>(() => {
+    this.unitOfWork().changes();
     const rates = this.staffingResource().rates ?? [];
 
     return [...rates].sort((a, b) => (a.rateType?.sequence ?? 0) - (b.rateType?.sequence ?? 0));
-  }
+  });
 
   /** Port of `StaffingResourceRatesViewModel.Add`. */
   async add(): Promise<void> {

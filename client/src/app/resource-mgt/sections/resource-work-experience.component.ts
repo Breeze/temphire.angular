@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -7,6 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 
 import { StaffingResource, WorkExperienceItem } from '../../core/model';
+import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
 
 /**
@@ -25,8 +26,9 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
  *    faulted `RelatedEntityList<WorkExperienceItem>`.  Breeze eager-loads the children via `expand`
  *    in `ResourceMgtUnitOfWork.loadStaffingResource`, so there is nothing to wait for and the flag
  *    is dropped.  `IsEmpty` survives as the placeholder below.
- *  - The original also subscribed to `SavedMessage` to re-sort after a save.  Angular re-renders
- *    from `staffingResource()` on every change detection pass, so no subscription is needed.
+ *  - The original also subscribed to `SavedMessage` to re-sort after a save.  Here
+ *    `sortedWorkExperience` is a `computed` over the unit of work's `changes` signal, so it re-sorts
+ *    whenever an item changes; no subscription is needed.
  */
 @Component({
   selector: 'app-resource-work-experience',
@@ -249,13 +251,21 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
 export class ResourceWorkExperienceComponent {
   readonly staffingResource = input.required<StaffingResource>();
   readonly readOnly = input.required<boolean>();
+  readonly unitOfWork = input.required<ResourceMgtUnitOfWork>();
 
   /** The `WorkExperienceSorted` property, flipped to most-recent-first. */
-  sortedWorkExperience(): WorkExperienceItem[] {
+  /**
+   * The rows to show.  Breeze changes `staffingResource.workExperience` in place, which nothing reactive sees, and
+   * an add finishes after the type dialog closes - outside any event in this component - so with
+   * OnPush change detection the view would not re-render.  Reading the unit of work's `changes`
+   * signal re-derives the rows, and re-renders the view, whenever an entity in it changes.
+   */
+  readonly sortedWorkExperience = computed<WorkExperienceItem[]>(() => {
+    this.unitOfWork().changes();
     const items = this.staffingResource().workExperience ?? [];
 
     return [...items].sort((a, b) => this.timeOf(b.from) - this.timeOf(a.from));
-  }
+  });
 
   /** Port of `StaffingResourceWorkExperienceViewModel.Add`. */
   add(): void {
