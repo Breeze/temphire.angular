@@ -7,6 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 
 import { StaffingResource, WorkExperienceItem } from '../../core/model';
+import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceWorkExperienceViewModel.cs` +
@@ -30,6 +31,7 @@ import { StaffingResource, WorkExperienceItem } from '../../core/model';
 @Component({
   selector: 'app-resource-work-experience',
   imports: [
+    BreezeFieldDirective,
     FormsModule,
     ButtonDirective,
     DatePickerModule,
@@ -62,6 +64,10 @@ import { StaffingResource, WorkExperienceItem } from '../../core/model';
                 <span class="work__label">From:</span>
                 <p-datepicker
                   [(ngModel)]="item.from"
+                  [breezeField]="item"
+                  breezeProperty="from"
+                  #fromField="breezeField"
+                  [invalid]="fromField.invalid()"
                   [disabled]="readOnly()"
                   [showIcon]="true"
                   appendTo="body"
@@ -74,6 +80,10 @@ import { StaffingResource, WorkExperienceItem } from '../../core/model';
                 <span class="work__label">To:</span>
                 <p-datepicker
                   [(ngModel)]="item.to"
+                  [breezeField]="item"
+                  breezeProperty="to"
+                  #toField="breezeField"
+                  [invalid]="toField.invalid()"
                   [disabled]="readOnly()"
                   [showIcon]="true"
                   appendTo="body"
@@ -88,13 +98,26 @@ import { StaffingResource, WorkExperienceItem } from '../../core/model';
                   pInputText
                   type="text"
                   [(ngModel)]="item.positionTitle"
+                  [breezeField]="item"
+                  breezeProperty="positionTitle"
+                  #positionTitleField="breezeField"
+                  [invalid]="positionTitleField.invalid()"
                   [readOnly]="readOnly()"
                 />
               </label>
 
               <label class="work__field work__field--location">
                 <span class="work__label">Location:</span>
-                <input pInputText type="text" [(ngModel)]="item.location" [readOnly]="readOnly()" />
+                <input
+                  pInputText
+                  type="text"
+                  [(ngModel)]="item.location"
+                  [breezeField]="item"
+                  breezeProperty="location"
+                  #locationField="breezeField"
+                  [invalid]="locationField.invalid()"
+                  [readOnly]="readOnly()"
+                />
               </label>
 
               <div class="work__field work__field--action">
@@ -114,7 +137,16 @@ import { StaffingResource, WorkExperienceItem } from '../../core/model';
 
             <label class="work__field">
               <span class="work__label">Company:</span>
-              <input pInputText type="text" [(ngModel)]="item.company" [readOnly]="readOnly()" />
+              <input
+                pInputText
+                type="text"
+                [(ngModel)]="item.company"
+                [breezeField]="item"
+                breezeProperty="company"
+                #companyField="breezeField"
+                [invalid]="companyField.invalid()"
+                [readOnly]="readOnly()"
+              />
             </label>
 
             <label class="work__field">
@@ -123,6 +155,10 @@ import { StaffingResource, WorkExperienceItem } from '../../core/model';
                 pTextarea
                 rows="4"
                 [(ngModel)]="item.description"
+                [breezeField]="item"
+                breezeProperty="description"
+                #descriptionField="breezeField"
+                [invalid]="descriptionField.invalid()"
                 [readOnly]="readOnly()"
               ></textarea>
             </label>

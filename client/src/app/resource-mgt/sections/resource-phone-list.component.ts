@@ -8,6 +8,7 @@ import { PhoneNumber, PhoneNumberType, StaffingResource } from '../../core/model
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
+import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourcePhoneListViewModel.cs` +
@@ -22,7 +23,7 @@ import { ItemSelectorComponent } from '../item-selector.component';
  */
 @Component({
   selector: 'app-resource-phone-list',
-  imports: [FormsModule, ButtonDirective, InputTextModule, RadioButtonModule],
+  imports: [BreezeFieldDirective, FormsModule, ButtonDirective, InputTextModule, RadioButtonModule],
   template: `
     <div class="phones">
       <button
@@ -47,6 +48,10 @@ import { ItemSelectorComponent } from '../item-selector.component';
             aria-label="Area code"
             [readOnly]="readOnly()"
             [(ngModel)]="phoneNumber.areaCode"
+            [breezeField]="phoneNumber"
+            breezeProperty="areaCode"
+            #areaCodeField="breezeField"
+            [invalid]="areaCodeField.invalid()"
           />
 
           <input
@@ -55,6 +60,10 @@ import { ItemSelectorComponent } from '../item-selector.component';
             aria-label="Number"
             [readOnly]="readOnly()"
             [(ngModel)]="phoneNumber.number"
+            [breezeField]="phoneNumber"
+            breezeProperty="number"
+            #numberField="breezeField"
+            [invalid]="numberField.invalid()"
           />
 
           <div class="phone__primary">

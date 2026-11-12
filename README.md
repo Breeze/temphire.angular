@@ -186,13 +186,47 @@ The client is meant to show current Angular, not just to run on it:
 - **Signal Forms** (`@angular/forms/signals`) for the forms over plain data: login, the search box
   and the name editor.  The entity editors keep `[(ngModel)]` bound straight to the Breeze
   entities, as Breeze recommends: a Signal Form would hold a second copy of every value, kept in
-  step with the entity by hand.
+  step with the entity by hand.  Either way, validation comes from Breeze; see below.
 - **`@defer`** for the Rates, Work Experience and Skills tabs, each loaded as its own chunk when its
   tab is first opened.
 - **Injection functions** such as `registerToolbarGroup`, which adds a toolbar group and removes
   it through `DestroyRef`, in place of lifecycle hooks.
 - **The `@angular/build` builder** (esbuild, a Vite dev server, Vitest for `ng test`); there is no
   Webpack.
+- **No deprecated APIs.** Buttons use PrimeNG's `[pButton]` directive (the `<p-button>` component
+  is deprecated in PrimeNG 22), and new keys come from `crypto.randomUUID()` rather than Breeze's
+  deprecated `core.getUuid()`.  `crypto.randomUUID()` needs a secure context, which `localhost` and
+  any HTTPS deployment are; serving the app over plain HTTP from another host would need a
+  fallback.
+
+### Validation comes from the model
+
+The validation rules are written once, on the server's entities - `[Required]`, `[StringLength]` -
+and reach the client in the Breeze metadata as validators.  Breeze runs them as properties change,
+when an entity is attached, and before a save.  The forms add no rules of their own; they show
+Breeze's verdict:
+
+- **Entity editors** (`[(ngModel)]` on Breeze entities) carry the `BreezeFieldDirective`
+  (`core/validation`), which registers the entity's errors for that property as an Angular
+  validator - so the control and its form are invalid when Breeze says so - and exposes them as
+  signals for PrimeNG's `[invalid]` input and the field's tooltip.  It follows the entity's
+  `validationErrorsChanged` event, so errors found on save, or on a new, empty entity, highlight
+  their fields without the user touching them.
+
+  ```html
+  <input pInputText [(ngModel)]="address.city"
+         [breezeField]="address" breezeProperty="city" #cityField="breezeField"
+         [invalid]="cityField.invalid()" />
+  ```
+
+- **The name editor**, a Signal Form over names for a `StaffingResource` that does not exist yet,
+  applies `StaffingResource`'s Breeze validators to its fields with `validateWithBreeze`
+  (`core/validation`).  Signal Forms then hand the result to PrimeNG themselves.
+- **Login** keeps Signal Forms' `required`: credentials are not an entity, so there is no Breeze
+  model to validate them against.
+
+Messages read like `'city' is required`, because Breeze names a property by its `displayName`
+and the Breeze .NET server does not send one.
 
 ---
 

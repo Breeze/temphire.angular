@@ -40,7 +40,7 @@ export class EntityManagerProvider {
    * outlive a logout, or the next login could not register the classes again.  The metadata is the
    * same for every user, so nothing is lost by keeping it.
    */
-  private readonly metadataStore = new MetadataStore();
+  readonly metadataStore = new MetadataStore();
   private metadataPromise?: Promise<void>;
 
   private masterManager?: EntityManager;

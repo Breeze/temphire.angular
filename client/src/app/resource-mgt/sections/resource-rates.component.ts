@@ -8,6 +8,7 @@ import { Rate, RateType, StaffingResource } from '../../core/model';
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent, ItemSelectorData } from '../item-selector.component';
+import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceRatesViewModel.cs` +
@@ -30,7 +31,7 @@ import { ItemSelectorComponent, ItemSelectorData } from '../item-selector.compon
  */
 @Component({
   selector: 'app-resource-rates',
-  imports: [FormsModule, CurrencyPipe, ButtonDirective, InputNumberModule],
+  imports: [BreezeFieldDirective, FormsModule, CurrencyPipe, ButtonDirective, InputNumberModule],
   template: `
     <div class="rates">
       <div class="rates__header">
@@ -60,6 +61,10 @@ import { ItemSelectorComponent, ItemSelectorData } from '../item-selector.compon
                 <p-inputnumber
                   class="rates__amount"
                   [(ngModel)]="rate.amount"
+                  [breezeField]="rate"
+                  breezeProperty="amount"
+                  #amountField="breezeField"
+                  [invalid]="amountField.invalid()"
                   mode="currency"
                   currency="USD"
                   locale="en-US"

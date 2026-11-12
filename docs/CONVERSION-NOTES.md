@@ -216,9 +216,15 @@ Everything below is a conscious departure from the original.
   button does, reads `UnitOfWork.changes` (or `hasChanges`) inside a `computed`.
 - **Signal Forms and PrimeNG.** `[formField]` passes the field's `invalid` state to PrimeNG's
   `pInputText`, which shows its red border at once, and binding `[invalid]` yourself next to
-  `[formField]` is a compile error (NG8022).  `app.config.ts` therefore adds an `ng-touched` class
-  through `provideSignalFormsConfig`, and `styles.css` holds back the invalid border until a field
-  has been touched.
+  `[formField]` is a compile error (NG8022).  `app.config.ts` therefore adds a
+  `signal-form-untouched` class through `provideSignalFormsConfig`, and `styles.css` holds back the
+  invalid border on those fields until they have been touched.  Entity fields are not held back:
+  a Breeze error shows at once.
+- **Adding an editable entity field** means binding it with `[(ngModel)]` plus
+  `[breezeField]="entity" breezeProperty="name" #nameField="breezeField"
+  [invalid]="nameField.invalid()"`.  Without the directive the field still works, but its Breeze
+  errors reach neither the form nor PrimeNG.  Validation rules belong on the server's entity, not
+  in the form.
 - **One `MetadataStore` for the page.** Breeze binds each registered entity class to a single
   store, so `EntityManagerProvider` keeps one store across logout and login and registers the
   classes once.  Creating a new store per login made the second login in a page fail.

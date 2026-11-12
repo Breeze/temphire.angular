@@ -9,6 +9,7 @@ import { Address, AddressType, StaffingResource } from '../../core/model';
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
+import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceAddressListViewModel.cs` +
@@ -32,7 +33,14 @@ import { ItemSelectorComponent } from '../item-selector.component';
  */
 @Component({
   selector: 'app-resource-address-list',
-  imports: [FormsModule, ButtonDirective, InputTextModule, RadioButtonModule, SelectModule],
+  imports: [
+    BreezeFieldDirective,
+    FormsModule,
+    ButtonDirective,
+    InputTextModule,
+    RadioButtonModule,
+    SelectModule,
+  ],
   template: `
     <div class="addresses">
       <button
@@ -58,6 +66,10 @@ import { ItemSelectorComponent } from '../item-selector.component';
               [id]="'address1-' + address.id"
               [readOnly]="readOnly()"
               [(ngModel)]="address.address1"
+              [breezeField]="address"
+              breezeProperty="address1"
+              #address1Field="breezeField"
+              [invalid]="address1Field.invalid()"
             />
 
             <label [for]="'address2-' + address.id">Address 2:</label>
@@ -66,6 +78,10 @@ import { ItemSelectorComponent } from '../item-selector.component';
               [id]="'address2-' + address.id"
               [readOnly]="readOnly()"
               [(ngModel)]="address.address2"
+              [breezeField]="address"
+              breezeProperty="address2"
+              #address2Field="breezeField"
+              [invalid]="address2Field.invalid()"
             />
 
             <label [for]="'city-' + address.id">City:</label>
@@ -74,6 +90,10 @@ import { ItemSelectorComponent } from '../item-selector.component';
               [id]="'city-' + address.id"
               [readOnly]="readOnly()"
               [(ngModel)]="address.city"
+              [breezeField]="address"
+              breezeProperty="city"
+              #cityField="breezeField"
+              [invalid]="cityField.invalid()"
             />
 
             <label [for]="'state-' + address.id">State:</label>
@@ -84,6 +104,10 @@ import { ItemSelectorComponent } from '../item-selector.component';
               optionLabel="name"
               [disabled]="readOnly()"
               [(ngModel)]="address.stateId"
+              [breezeField]="address"
+              breezeProperty="stateId"
+              #stateIdField="breezeField"
+              [invalid]="stateIdField.invalid()"
               appendTo="body"
               styleClass="address__state"
             />
@@ -95,6 +119,10 @@ import { ItemSelectorComponent } from '../item-selector.component';
               [id]="'zipcode-' + address.id"
               [readOnly]="readOnly()"
               [(ngModel)]="address.zipcode"
+              [breezeField]="address"
+              breezeProperty="zipcode"
+              #zipcodeField="breezeField"
+              [invalid]="zipcodeField.invalid()"
             />
           </div>
 

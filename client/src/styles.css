@@ -40,14 +40,15 @@ body {
 /*
  * Signal Forms pass a field's `invalid` state straight to PrimeNG's `pInputText`, which then shows
  * its red border as soon as a required field is empty - before the user has typed anything.  Keep
- * the normal border until the field has been touched.  `ng-touched` is added by the
- * `provideSignalFormsConfig` call in `app.config.ts`.
+ * the normal border until the field has been touched.  `signal-form-untouched` is added by the
+ * `provideSignalFormsConfig` call in `app.config.ts`, to Signal Forms fields only; fields bound to
+ * Breeze entities show their errors at once (see `BreezeFieldDirective`).
  */
-.p-inputtext.p-invalid:not(.ng-touched) {
+.p-inputtext.p-invalid.signal-form-untouched {
   border-color: var(--p-inputtext-border-color);
 }
 
-.p-inputtext.p-invalid:not(.ng-touched)::placeholder {
+.p-inputtext.p-invalid.signal-form-untouched::placeholder {
   color: var(--p-inputtext-placeholder-color);
 }
 

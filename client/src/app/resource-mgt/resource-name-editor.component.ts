@@ -1,8 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormField, FormRoot, form, required } from '@angular/forms/signals';
+import { FormField, FormRoot, form } from '@angular/forms/signals';
 import { ButtonDirective } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+
+import { StaffingResource } from '../core/model';
+import { EntityManagerProvider } from '../core/services/entity-manager-provider';
+import { validateWithBreeze } from '../core/validation/breeze-validators';
 
 export interface ResourceName {
   firstName: string;
@@ -25,16 +29,31 @@ export interface ResourceName {
       <div class="name-editor__field">
         <label for="name-editor-first">First name</label>
         <input pInputText id="name-editor-first" [formField]="nameForm.firstName" autofocus />
+        @if (nameForm.firstName().touched()) {
+          @for (error of nameForm.firstName().errors(); track error.kind) {
+            <small class="temphire-field-error">{{ error.message }}</small>
+          }
+        }
       </div>
 
       <div class="name-editor__field">
         <label for="name-editor-middle">Middle name</label>
         <input pInputText id="name-editor-middle" [formField]="nameForm.middleName" />
+        @if (nameForm.middleName().touched()) {
+          @for (error of nameForm.middleName().errors(); track error.kind) {
+            <small class="temphire-field-error">{{ error.message }}</small>
+          }
+        }
       </div>
 
       <div class="name-editor__field">
         <label for="name-editor-last">Last name</label>
         <input pInputText id="name-editor-last" [formField]="nameForm.lastName" />
+        @if (nameForm.lastName().touched()) {
+          @for (error of nameForm.lastName().errors(); track error.kind) {
+            <small class="temphire-field-error">{{ error.message }}</small>
+          }
+        }
       </div>
 
       <div class="name-editor__buttons">
@@ -75,9 +94,18 @@ export interface ResourceName {
 export class ResourceNameEditorComponent {
   private readonly ref = inject(DynamicDialogRef);
 
+  /** The metadata for the entity these names are for. */
+  private readonly staffingResourceType =
+    inject(EntityManagerProvider).metadataStore.getAsEntityType(StaffingResource);
+
   /**
-   * A Signal Form over the name being edited, seeded from the dialog's data when renaming.
-   * `required` on first and last name is the original's `CanOk` rule; OK (or Enter) submits.
+   * A Signal Form over the name being edited, seeded from the dialog's data when renaming.  OK (or
+   * Enter) submits.
+   *
+   * There are no Angular validators here.  The names end up on a `StaffingResource`, so the form
+   * applies `StaffingResource`'s own Breeze validators: first and last name required, and at most
+   * 100 characters each, from `[Required]` / `[StringLength]` on the server's model.  That is the
+   * original's `CanOk` rule, taken from the model instead of restated here.
    */
   readonly nameForm = form(
     signal<ResourceName>({
@@ -87,8 +115,9 @@ export class ResourceNameEditorComponent {
       ...(inject(DynamicDialogConfig).data as Partial<ResourceName> | undefined),
     }),
     (name) => {
-      required(name.firstName);
-      required(name.lastName);
+      validateWithBreeze(name.firstName, this.staffingResourceType.getDataProperty('firstName'));
+      validateWithBreeze(name.middleName, this.staffingResourceType.getDataProperty('middleName'));
+      validateWithBreeze(name.lastName, this.staffingResourceType.getDataProperty('lastName'));
     },
     { submission: { action: async (field) => this.accept(field().value()) } },
   );

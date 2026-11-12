@@ -4,6 +4,7 @@ import { ButtonDirective } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { Skill, StaffingResource } from '../../core/model';
+import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceSkillsViewModel.cs` +
@@ -23,7 +24,7 @@ import { Skill, StaffingResource } from '../../core/model';
  */
 @Component({
   selector: 'app-resource-skills',
-  imports: [FormsModule, ButtonDirective, InputTextModule],
+  imports: [BreezeFieldDirective, FormsModule, ButtonDirective, InputTextModule],
   template: `
     <div class="skills">
       <div class="skills__header">
@@ -50,6 +51,10 @@ import { Skill, StaffingResource } from '../../core/model';
                 type="text"
                 class="skills__input"
                 [(ngModel)]="skill.description"
+                [breezeField]="skill"
+                breezeProperty="description"
+                #descriptionField="breezeField"
+                [invalid]="descriptionField.invalid()"
                 [readOnly]="readOnly()"
               />
 

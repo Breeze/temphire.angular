@@ -34,10 +34,12 @@ export const appConfig: ApplicationConfig = {
     ConfirmationService,
     DialogService,
 
-    // Signal Forms add no CSS classes by default.  `ng-touched` lets `styles.css` hold back
-    // PrimeNG's invalid styling until the user has left the field.
+    // Signal Forms add no CSS classes by default.  `signal-form-untouched` lets `styles.css` hold
+    // back PrimeNG's invalid styling on Signal Forms fields until the user has left the field.  It
+    // is deliberately not `ng-untouched`: `NgModel` sets that too, and an entity field must show a
+    // Breeze error at once, even untouched - say, when a save finds it empty.
     provideSignalFormsConfig({
-      classes: { 'ng-touched': (field) => field.state().touched() },
+      classes: { 'signal-form-untouched': (field) => !field.state().touched() },
     }),
 
     // Port of `Common/Errors/ErrorHandler.cs`, which Cocktail installed as the global handler.

@@ -5,6 +5,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { StaffingResource } from '../core/model';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { ResourceName, ResourceNameEditorComponent } from './resource-name-editor.component';
+import { BreezeFieldDirective } from '../core/validation/breeze-field.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceSummaryViewModel.cs` +
@@ -15,7 +16,7 @@ import { ResourceName, ResourceNameEditorComponent } from './resource-name-edito
  */
 @Component({
   selector: 'app-resource-summary',
-  imports: [FormsModule, TextareaModule],
+  imports: [BreezeFieldDirective, FormsModule, TextareaModule],
   template: `
     <div class="summary">
       <button
@@ -34,6 +35,10 @@ import { ResourceName, ResourceNameEditorComponent } from './resource-name-edito
         rows="4"
         [readOnly]="readOnly()"
         [(ngModel)]="staffingResource().summary"
+        [breezeField]="staffingResource()"
+        breezeProperty="summary"
+        #summaryField="breezeField"
+        [invalid]="summaryField.invalid()"
         placeholder="Summary"
       ></textarea>
     </div>
