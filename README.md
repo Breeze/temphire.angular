@@ -142,6 +142,7 @@ TempHire.Angular/
         ├── core/
         │   ├── model/             # generated entity classes + hand-written methods (npm run model)
         │   ├── model-registration.ts   # registers the classes and adds client-only validators
+        │   ├── model-display-names.ts  # friendly property names for validation messages
         │   ├── projections/       # non-entity query results (StaffingResourceListItem)
         │   ├── services/          # ← Cocktail: EntityManagerProvider, UnitOfWork,
         │   │                      #   Repository, UnitOfWorkManager, toolbar, dialogs, auth
@@ -240,8 +241,13 @@ Breeze's verdict:
 - **Login** keeps Signal Forms' `required`: credentials are not an entity, so there is no Breeze
   model to validate them against.
 
-Messages read like `'city' is required`, because Breeze names a property by its `displayName`
-and the Breeze .NET server does not send one.
+Breeze names a property in its messages by its `displayName` - `'%displayName%' is required` - and
+the Breeze .NET server does not send display names.  So once the metadata has loaded,
+`setDisplayNames` (`core/model-display-names.ts`) gives every property one: derived from the
+property name (`positionTitle` is "Position title", `stateId` is "State"), or taken from a short
+table of overrides that match the labels on screen (`number` is "Phone number").  The table is
+keyed by the generated classes, so a misspelt or removed property is a compile error.  Messages
+then read `'First name' is required`, in the entity editors and in the name editor alike.
 
 ---
 

@@ -1,9 +1,11 @@
 import { MetadataStore, Validator } from 'breeze-client';
 
+import { setDisplayNames } from './model-display-names';
 import { Address, Rate, registerModelClasses } from './model';
 
 /**
- * Binds the generated entity classes to the entity types in the server metadata, and adds the few
+ * Binds the generated entity classes to the entity types in the server metadata, gives every
+ * property a friendly display name for validation messages (`setDisplayNames`), and adds the few
  * validation rules that cannot be inferred from the model.
  *
  * In the DevForce app there was nothing to do here: client and server shared the same assembly, so
@@ -25,6 +27,7 @@ import { Address, Rate, registerModelClasses } from './model';
  */
 export function registerModel(metadataStore: MetadataStore): void {
   registerModelClasses(metadataStore);
+  setDisplayNames(metadataStore);
   addValidators(metadataStore);
 }
 
@@ -36,7 +39,8 @@ function addValidators(metadataStore: MetadataStore): void {
   const stateRequired = new Validator(
     'stateRequired',
     (value: unknown) => !!value && value !== emptyGuid,
-    { messageTemplate: 'The State field is required' },
+    // Worded like Breeze's own `required` message, and named by the property's display name.
+    { messageTemplate: "'%displayName%' is required" },
   );
 
   // Passing the class rather than the name `'Address'` is checked: the class only resolves to an
