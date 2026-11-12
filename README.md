@@ -41,7 +41,10 @@ table and the notes describe WPF.
 ## Prerequisites
 
 - [.NET SDK](https://dotnet.microsoft.com/download) — the 10.0 SDK or later
-- [Node.js](https://nodejs.org) **22.22.3+**, 24.15+, or 26+ (required by the Angular 22 CLI)
+- [Node.js](https://nodejs.org) **26.13.0**, the version pinned in `.node-version` (with npm 11.20.0).
+  With [nvs](https://github.com/jasongin/nvs), `nvs auto` (or `nvs auto on`) selects it, and adds
+  it if it is missing, in any directory of the repository; fnm reads the file as well.  The
+  Angular 22 CLI itself accepts 22.22.3+, 24.15+ or 26+.
 - SQL Server **LocalDB** (ships with the Visual Studio "Data storage and processing" workload and
   with [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads)), or any
   SQL Server instance — see [Using a different database](#using-a-different-database)
