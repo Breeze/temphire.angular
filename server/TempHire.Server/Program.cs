@@ -3,10 +3,14 @@ using Breeze.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using TempHire.Model;
 using TempHire.Model.SampleData;
 using TempHire.Server.Auth;
+using TempHire.Server.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -93,6 +97,33 @@ var app = builder.Build();
 // Breeze 8 no longer puts the server stack trace in error responses by default; keep it in
 // development, where it helps, and leave it out everywhere else.
 Breeze.Persistence.BreezeConfig.Instance.IncludeStackTraceInErrors = app.Environment.IsDevelopment();
+
+// ---------------------------------------------------------------------------------------------
+// Metadata export:  dotnet run -- --export-metadata <file>
+//
+// Writes the same Breeze metadata the `Metadata` endpoint serves, then exits without starting the
+// web server.  The client checks this file in and generates its entity classes from it (see
+// `npm run model` in the client), so the generator needs neither a running server nor a login.
+// The metadata comes from the EF Core model alone; no database connection is opened.
+// ---------------------------------------------------------------------------------------------
+var exportIndex = Array.IndexOf(args, "--export-metadata");
+if (exportIndex >= 0)
+{
+    if (exportIndex + 1 >= args.Length)
+    {
+        throw new ArgumentException("--export-metadata needs a file path.");
+    }
+
+    var path = Path.GetFullPath(args[exportIndex + 1]);
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<TempHireDbContext>();
+    var metadata = new TempHirePersistenceManager(context, new ClaimsPrincipal()).Metadata();
+
+    // Indented, so that a schema change shows up as a readable diff in review.
+    File.WriteAllText(path, JToken.Parse(metadata).ToString(Formatting.Indented) + Environment.NewLine);
+    Console.WriteLine($"Breeze metadata written to {path}");
+    return;
+}
 
 // ---------------------------------------------------------------------------------------------
 // First-run database creation and seeding.

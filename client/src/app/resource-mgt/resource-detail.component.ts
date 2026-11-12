@@ -1,7 +1,7 @@
 import { Component, input, signal } from '@angular/core';
 import { TabsModule } from 'primeng/tabs';
 
-import { StaffingResource } from '../core/entities/staffing-resource';
+import { StaffingResource } from '../core/model';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { ResourceContactInfoComponent } from './sections/resource-contact-info.component';
 import { ResourceRatesComponent } from './sections/resource-rates.component';

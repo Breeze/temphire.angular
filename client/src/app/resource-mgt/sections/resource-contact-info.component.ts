@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 
-import { StaffingResource } from '../../core/entities/staffing-resource';
+import { StaffingResource } from '../../core/model';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ResourceAddressListComponent } from './resource-address-list.component';
 import { ResourcePhoneListComponent } from './resource-phone-list.component';

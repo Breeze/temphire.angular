@@ -3,8 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { Skill } from '../../core/entities/skill';
-import { StaffingResource } from '../../core/entities/staffing-resource';
+import { Skill, StaffingResource } from '../../core/model';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceSkillsViewModel.cs` +

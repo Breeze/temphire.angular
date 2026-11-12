@@ -10,6 +10,11 @@ import { EntityBase } from 'breeze-client';
  *
  * So `entity.EntityFacts.EntityState.IsAdded()` in the old code becomes
  * `entity.entityAspect.entityState.isAdded()` here.
+ *
+ * Every generated entity class extends this one: `npm run model:generate` passes
+ * `--base BaseEntity`.  Unlike the generated classes, this file is never rewritten.  The audit
+ * columns (`created`, `modifyUser`, ...) that the server's `AuditEntityBase` contributes are not
+ * declared here; the generator writes them onto each entity that has them.
  */
 export class BaseEntity extends EntityBase {
   // `EntityBase` declares the members Breeze installs: `entityAspect`, `entityType`,
@@ -19,16 +24,4 @@ export class BaseEntity extends EntityBase {
   get isDetached(): boolean {
     return !this.entityAspect || this.entityAspect.entityState.isDetached();
   }
-}
-
-/**
- * Base for the auditable entities.  Mirrors `AuditEntityBase` on the server: the four audit columns
- * are stamped server-side by `TempHirePersistenceManager`, so the client only ever reads them.
- */
-export class AuditEntityBase extends BaseEntity {
-  created!: Date;
-  createdUser!: string;
-  modified!: Date;
-  modifyUser!: string;
-  rowVersion!: number;
 }

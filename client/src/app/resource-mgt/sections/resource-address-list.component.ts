@@ -5,9 +5,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
 
-import { Address } from '../../core/entities/address';
-import { AddressType } from '../../core/entities/lookups';
-import { StaffingResource } from '../../core/entities/staffing-resource';
+import { Address, AddressType, StaffingResource } from '../../core/model';
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';

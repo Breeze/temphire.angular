@@ -1,13 +1,18 @@
-import { EntityManager, EntityQuery, FilterQueryOp, Predicate } from 'breeze-client';
+import { EntityManager, EntityQuery, FilterQueryOp, InitialValues, Predicate } from 'breeze-client';
 
-import { Address } from '../entities/address';
-import { AddressType, PhoneNumberType, RateType, State } from '../entities/lookups';
-import { PhoneNumber } from '../entities/phone-number';
-import { Rate } from '../entities/rate';
-import { Skill } from '../entities/skill';
-import { StaffingResourceListItem } from '../entities/staffing-resource-list-item';
-import { StaffingResource } from '../entities/staffing-resource';
-import { WorkExperienceItem } from '../entities/work-experience-item';
+import {
+  Address,
+  AddressType,
+  PhoneNumber,
+  PhoneNumberType,
+  Rate,
+  RateType,
+  Skill,
+  StaffingResource,
+  State,
+  WorkExperienceItem,
+} from '../model';
+import { StaffingResourceListItem } from '../projections/staffing-resource-list-item';
 import { EntityManagerProvider } from './entity-manager-provider';
 import { IRepository } from './repository';
 import { EntityFactory, UnitOfWork } from './unit-of-work';
@@ -26,10 +31,10 @@ export class StaffingResourceFactory extends EntityFactory<StaffingResource> {
     private readonly addressTypes: IRepository<AddressType>,
     private readonly phoneNumberTypes: IRepository<PhoneNumberType>,
   ) {
-    super('StaffingResource', manager);
+    super(StaffingResource, manager);
   }
 
-  override async create(config?: Record<string, unknown>): Promise<StaffingResource> {
+  override async create(config?: InitialValues<StaffingResource>): Promise<StaffingResource> {
     const staffingResource = await super.create(config);
 
     const isDefault = new Predicate('default', FilterQueryOp.Equals, true);
@@ -73,27 +78,17 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
   constructor(emProvider: EntityManagerProvider) {
     super(emProvider);
 
-    this.staffingResources = this.createRepository<StaffingResource>(
-      'StaffingResource',
-      'StaffingResources',
-    );
-    this.addresses = this.createRepository<Address>('Address', 'Addresses');
-    this.phoneNumbers = this.createRepository<PhoneNumber>('PhoneNumber', 'PhoneNumbers');
-    this.rates = this.createRepository<Rate>('Rate', 'Rates');
-    this.skills = this.createRepository<Skill>('Skill', 'Skills');
-    this.workExperienceItems = this.createRepository<WorkExperienceItem>(
-      'WorkExperienceItem',
-      'WorkExperienceItems',
-    );
+    this.staffingResources = this.createRepository(StaffingResource);
+    this.addresses = this.createRepository(Address);
+    this.phoneNumbers = this.createRepository(PhoneNumber);
+    this.rates = this.createRepository(Rate);
+    this.skills = this.createRepository(Skill);
+    this.workExperienceItems = this.createRepository(WorkExperienceItem);
 
-    this.addressTypes = this.createRepository<AddressType>('AddressType', 'AddressTypes', true);
-    this.phoneNumberTypes = this.createRepository<PhoneNumberType>(
-      'PhoneNumberType',
-      'PhoneNumberTypes',
-      true,
-    );
-    this.rateTypes = this.createRepository<RateType>('RateType', 'RateTypes', true);
-    this.states = this.createRepository<State>('State', 'States', true);
+    this.addressTypes = this.createRepository(AddressType, true);
+    this.phoneNumberTypes = this.createRepository(PhoneNumberType, true);
+    this.rateTypes = this.createRepository(RateType, true);
+    this.states = this.createRepository(State, true);
 
     this.staffingResourceFactory = new StaffingResourceFactory(
       this.manager,
@@ -110,13 +105,17 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
    * array rather than entities, which is why it bypasses the repositories.
    */
   async search(searchText?: string): Promise<StaffingResourceListItem[]> {
-    const query = EntityQuery.from('StaffingResourceListItems').withParameters({
+    // A DTO has no entity class to pass, so the type argument here is an assertion rather than
+    // something Breeze checks against the metadata.
+    const query = EntityQuery.from<StaffingResourceListItem>(
+      'StaffingResourceListItems',
+    ).withParameters({
       searchText: searchText ?? '',
     });
 
     const data = await this.manager.executeQuery(query);
 
-    return data.results as unknown as StaffingResourceListItem[];
+    return data.results;
   }
 
   /**
@@ -125,14 +124,15 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
    * child collections are requested up front with `expand`.
    */
   async loadStaffingResource(id: string): Promise<StaffingResource | null> {
-    const query = EntityQuery.from('StaffingResources')
+    // `from(StaffingResource)` makes this an `EntityQuery<StaffingResource>`: the resource name
+    // comes from the metadata, and `data.results` is `StaffingResource[]` with no cast.
+    const query = EntityQuery.from(StaffingResource)
       .where('id', FilterQueryOp.Equals, id)
       .expand(['addresses', 'phoneNumbers', 'rates', 'skills', 'workExperience'].join(','));
 
     const data = await this.manager.executeQuery(query);
-    const results = data.results as unknown as StaffingResource[];
 
-    return results.length ? results[0] : null;
+    return data.results[0] ?? null;
   }
 
   /** Exposes the manager so the detail screens can create entities directly. */

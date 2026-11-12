@@ -7,7 +7,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "build:server": "ng build --output-path ../server/TempHire.Server/wwwroot"
+    "build:server": "ng build --output-path ../server/TempHire.Server/wwwroot",
+    "model": "npm run model:metadata && npm run model:generate",
+    "model:metadata": "dotnet run --project ../server/TempHire.Server -- --export-metadata ../../client/metadata.json",
+    "model:generate": "breeze-gen-entities --metadata metadata.json --out src/app/core/model --base BaseEntity --base-module ./base-entity"
   },
   "private": true,
   "packageManager": "npm@11.20.0",

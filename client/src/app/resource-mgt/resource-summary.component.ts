@@ -2,7 +2,7 @@ import { Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TextareaModule } from 'primeng/textarea';
 
-import { StaffingResource } from '../core/entities/staffing-resource';
+import { StaffingResource } from '../core/model';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { ResourceName, ResourceNameEditorComponent } from './resource-name-editor.component';
 

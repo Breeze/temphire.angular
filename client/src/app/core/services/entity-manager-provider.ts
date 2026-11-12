@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { DataService, EntityManager, EntityQuery } from 'breeze-client';
 
 import { environment } from '../../../environments/environment';
-import { RegistrationHelper } from '../entities/registration-helper';
+import { registerModel } from '../model-registration';
 
 /**
  * Creates and seeds EntityManagers.
@@ -51,7 +51,7 @@ export class EntityManagerProvider {
       this.preparePromise = masterManager
         .fetchMetadata()
         .then(() => {
-          RegistrationHelper.register(masterManager.metadataStore);
+          registerModel(masterManager.metadataStore);
           // One request for every lookup table - the `Lookups` action on the server.
           return masterManager.executeQuery(EntityQuery.from('Lookups'));
         })

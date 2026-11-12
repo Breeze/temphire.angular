@@ -15,7 +15,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TableModule } from 'primeng/table';
 
-import { StaffingResourceListItem } from '../core/entities/staffing-resource-list-item';
+import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
 import { BusyService } from '../core/services/busy.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';
 import { UnitOfWork } from '../core/services/unit-of-work';

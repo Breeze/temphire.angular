@@ -1,12 +1,19 @@
+// @generated-by generate-entity-classes v1.1.0
+// Properties of this type in the server metadata are written here and rewritten on
+// every run. Everything else in this file is yours and is never touched.
+// To keep one of those too, see the manual markers in ./README.md.
 import { core } from 'breeze-client';
 
 import { Address } from './address';
-import { AuditEntityBase } from './base-entity';
-import { AddressType, PhoneNumberType, RateType } from './lookups';
+import { BaseEntity } from './base-entity';
+import type { AddressType } from './address-type';
+import type { PhoneNumberType } from './phone-number-type';
+import type { RateType } from './rate-type';
 import { PhoneNumber } from './phone-number';
 import { Rate } from './rate';
 import { Skill } from './skill';
 import { WorkExperienceItem } from './work-experience-item';
+import type { RelationArray } from 'breeze-client'; // @generated
 
 /**
  * The aggregate root, ported from `DomainModel/StaffingResource.cs`.
@@ -16,18 +23,23 @@ import { WorkExperienceItem } from './work-experience-item';
  * where the domain behaviour lives.  The methods below are one-for-one with the originals, with
  * `EntityFacts.EntityAspect.Delete()` becoming `entityAspect.setDeleted()`.
  */
-export class StaffingResource extends AuditEntityBase {
-  id!: string;
-  firstName!: string;
-  middleName?: string;
-  lastName!: string;
-  summary!: string;
+export class StaffingResource extends BaseEntity {
+  declare id: string;  // @generated
+  declare firstName: string;  // @generated
+  declare middleName: string;  // @generated
+  declare lastName: string;  // @generated
+  declare summary: string;  // @generated
 
-  addresses!: Address[];
-  phoneNumbers!: PhoneNumber[];
-  rates!: Rate[];
-  skills!: Skill[];
-  workExperience!: WorkExperienceItem[];
+  declare addresses: RelationArray<Address>;  // @generated
+  declare phoneNumbers: RelationArray<PhoneNumber>;  // @generated
+  declare rates: RelationArray<Rate>;  // @generated
+  declare skills: RelationArray<Skill>;  // @generated
+  declare workExperience: RelationArray<WorkExperienceItem>;  // @generated
+  declare created: Date;  // @generated
+  declare createdUser: string;  // @generated
+  declare modified: Date;  // @generated
+  declare modifyUser: string;  // @generated
+  declare rowVersion: number;  // @generated
 
   constructor() {
     super();
@@ -55,10 +67,10 @@ export class StaffingResource extends AuditEntityBase {
   }
 
   addAddress(type: AddressType): Address {
-    const address = this.entityAspect.entityManager!.createEntity('Address', {
+    const address = this.entityAspect.entityManager!.createEntity(Address, {
       addressTypeId: type.id,
       staffingResourceId: this.id,
-    }) as Address;
+    });
 
     return address;
   }
@@ -78,10 +90,10 @@ export class StaffingResource extends AuditEntityBase {
   }
 
   addPhoneNumber(type: PhoneNumberType): PhoneNumber {
-    return this.entityAspect.entityManager!.createEntity('PhoneNumber', {
+    return this.entityAspect.entityManager!.createEntity(PhoneNumber, {
       phoneNumberTypeId: type.id,
       staffingResourceId: this.id,
-    }) as PhoneNumber;
+    });
   }
 
   deletePhoneNumber(phoneNumber: PhoneNumber): void {
@@ -96,11 +108,11 @@ export class StaffingResource extends AuditEntityBase {
   }
 
   addRate(type: RateType): Rate {
-    return this.entityAspect.entityManager!.createEntity('Rate', {
+    return this.entityAspect.entityManager!.createEntity(Rate, {
       rateTypeId: type.id,
       staffingResourceId: this.id,
       amount: 0,
-    }) as Rate;
+    });
   }
 
   deleteRate(rate: Rate): void {
@@ -110,11 +122,11 @@ export class StaffingResource extends AuditEntityBase {
 
   addWorkExperience(): WorkExperienceItem {
     const today = new Date();
-    return this.entityAspect.entityManager!.createEntity('WorkExperienceItem', {
+    return this.entityAspect.entityManager!.createEntity(WorkExperienceItem, {
       staffingResourceId: this.id,
       from: today,
       to: today,
-    }) as WorkExperienceItem;
+    });
   }
 
   deleteWorkExperience(item: WorkExperienceItem): void {
@@ -123,9 +135,9 @@ export class StaffingResource extends AuditEntityBase {
   }
 
   addSkill(): Skill {
-    return this.entityAspect.entityManager!.createEntity('Skill', {
+    return this.entityAspect.entityManager!.createEntity(Skill, {
       staffingResourceId: this.id,
-    }) as Skill;
+    });
   }
 
   deleteSkill(skill: Skill): void {
@@ -145,12 +157,11 @@ export class StaffingResource extends AuditEntityBase {
       return;
     }
 
+    // Passing the classes types the result as `(Address | PhoneNumber | ...)[]`, so
+    // `staffingResourceId` is checked against every child type rather than reached through a cast.
     manager
-      .getEntities()
-      .filter(
-        (entity) =>
-          (entity as unknown as { staffingResourceId?: string }).staffingResourceId === this.id,
-      )
+      .getEntities([Address, PhoneNumber, Rate, Skill, WorkExperienceItem])
+      .filter((entity) => entity.staffingResourceId === this.id)
       .forEach((entity) => {
         if (!entity.entityAspect.entityState.isDeleted()) {
           entity.entityAspect.setDeleted();
@@ -165,6 +176,4 @@ export class StaffingResource extends AuditEntityBase {
       throw new Error(`${typeName} is not associated with this StaffingResource.`);
     }
   }
-
-  static initializer(_entity: StaffingResource) {}
 }

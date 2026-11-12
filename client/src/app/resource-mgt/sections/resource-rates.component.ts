@@ -4,9 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 
-import { RateType } from '../../core/entities/lookups';
-import { Rate } from '../../core/entities/rate';
-import { StaffingResource } from '../../core/entities/staffing-resource';
+import { Rate, RateType, StaffingResource } from '../../core/model';
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent, ItemSelectorData } from '../item-selector.component';

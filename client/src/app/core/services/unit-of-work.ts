@@ -1,22 +1,33 @@
-import { Entity, EntityChangedEventArgs, EntityManager, SaveOptions } from 'breeze-client';
+import {
+  Entity,
+  EntityChangedEventArgs,
+  EntityManager,
+  InitialValues,
+  SaveOptions,
+} from 'breeze-client';
 import { Observable, Subject } from 'rxjs';
 
 import { EntityManagerProvider } from './entity-manager-provider';
-import { IRepository, Repository } from './repository';
+import { EntityCtor, IRepository, Repository } from './repository';
 
 /** Port of Cocktail's `IFactory<T>`. */
-export interface IEntityFactory<T> {
-  create(config?: Record<string, unknown>): Promise<T>;
+export interface IEntityFactory<T extends Entity> {
+  create(config?: InitialValues<T>): Promise<T>;
 }
 
-export class EntityFactory<T> implements IEntityFactory<T> {
+/**
+ * Creates entities from a generated class.  `createEntity(ctor, values)` returns a `T` and checks
+ * `values` against the class, so a misspelt property is a compile error rather than a value Breeze
+ * silently ignores.
+ */
+export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
   constructor(
-    protected readonly entityTypeName: string,
+    protected readonly entityCtor: EntityCtor<T>,
     protected readonly manager: EntityManager,
   ) {}
 
-  create(config?: Record<string, unknown>): Promise<T> {
-    return Promise.resolve(this.manager.createEntity(this.entityTypeName, config) as unknown as T);
+  create(config?: InitialValues<T>): Promise<T> {
+    return Promise.resolve(this.manager.createEntity(this.entityCtor, config));
   }
 }
 
@@ -100,15 +111,14 @@ export class UnitOfWork {
     this.emProvider.clear(this.manager);
   }
 
-  protected createRepository<T>(
-    entityTypeName: string | null,
-    resourceName: string,
+  protected createRepository<T extends Entity>(
+    entityCtor: EntityCtor<T>,
     isCached = false,
   ): IRepository<T> {
-    return new Repository<T>(this.manager, entityTypeName, resourceName, isCached);
+    return new Repository(this.manager, entityCtor, isCached);
   }
 
-  protected createFactory<T>(entityTypeName: string): IEntityFactory<T> {
-    return new EntityFactory<T>(entityTypeName, this.manager);
+  protected createFactory<T extends Entity>(entityCtor: EntityCtor<T>): IEntityFactory<T> {
+    return new EntityFactory(entityCtor, this.manager);
   }
 }

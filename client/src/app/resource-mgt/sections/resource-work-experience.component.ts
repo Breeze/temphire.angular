@@ -6,8 +6,7 @@ import { DividerModule } from 'primeng/divider';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 
-import { StaffingResource } from '../../core/entities/staffing-resource';
-import { WorkExperienceItem } from '../../core/entities/work-experience-item';
+import { StaffingResource, WorkExperienceItem } from '../../core/model';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceWorkExperienceViewModel.cs` +

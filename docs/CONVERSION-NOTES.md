@@ -22,7 +22,9 @@ WPF client and the EntityServer, so entity *behaviour* (`StaffingResource.AddAdd
 `PrimaryAddress`, `Validate`) existed identically on both sides. Breeze cannot do that: the server
 is C#, the client is TypeScript. The behaviour is therefore written twice —
 `server/TempHire.Model/Entities/StaffingResource.cs` holds the POCO and the server-side rules,
-`client/src/app/core/entities/staffing-resource.ts` holds the client-side methods. The
+`client/src/app/core/model/staffing-resource.ts` holds the client-side methods. What *is* shared is
+the shape: the client's property declarations are generated from the server's metadata
+(`npm run model`), so only the behaviour is written by hand on the client. The
 `[Required]`/`[StringLength]` annotations *do* still cross the wire, because Breeze reads them off
 the EF Core model and publishes them in the metadata as validators.
 
@@ -33,7 +35,7 @@ everything it needs with a single `expand`
 (`ResourceMgtUnitOfWork.loadStaffingResource`). The `IsPending` flags are gone; `IsEmpty` survives.
 
 **c. Queries travel as JSON, not expression trees.** The client still writes
-`EntityQuery.from('StaffingResources').where(...)`, but `[BreezeQueryFilter]` applies it server-side
+`EntityQuery.from(StaffingResource).where(...)`, but `[BreezeQueryFilter]` applies it server-side
 to an `IQueryable<T>`. Where the original composed a LINQ predicate on the client and shipped it
 (`StaffingResourceSearchService.Simple`), the predicate now lives in
 `BreezeController.StaffingResourceListItems` and the client passes a search string.
@@ -46,14 +48,14 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 
 | Original | Converted |
 |---|---|
-| `DomainModel/EntityBase.cs` | `server/TempHire.Model/Entities/EntityBase.cs` + `client/…/entities/base-entity.ts` |
-| `DomainModel/StaffingResource.cs` | `…/Entities/StaffingResource.cs` + `…/entities/staffing-resource.ts` |
-| `DomainModel/Address.cs`, `PhoneNumber.cs`, `Rate.cs`, `Skill.cs`, `WorkExperienceItem.cs` | `…/Entities/*.cs` + `…/entities/*.ts` |
-| `DomainModel/AddressType.cs`, `PhoneNumberType.cs`, `RateType.cs`, `State.cs` | `…/Entities/*.cs` + `…/entities/lookups.ts` |
-| `DomainModel/Projections/StaffingResourceListItem.cs` | `…/Projections/StaffingResourceListItem.cs` + `…/entities/staffing-resource-list-item.ts` |
+| `DomainModel/EntityBase.cs` (`EntityBase`, `AuditEntityBase`) | `server/TempHire.Model/Entities/EntityBase.cs` + `client/…/model/base-entity.ts` (`BaseEntity`; the audit columns are generated onto each entity that has them) |
+| `DomainModel/StaffingResource.cs` | `…/Entities/StaffingResource.cs` + `…/model/staffing-resource.ts` |
+| `DomainModel/Address.cs`, `PhoneNumber.cs`, `Rate.cs`, `Skill.cs`, `WorkExperienceItem.cs` | `…/Entities/*.cs` + `…/model/*.ts` |
+| `DomainModel/AddressType.cs`, `PhoneNumberType.cs`, `RateType.cs`, `State.cs` | `…/Entities/*.cs` + `…/model/address-type.ts` etc. (generated, no hand-written code) |
+| `DomainModel/Projections/StaffingResourceListItem.cs` | `…/Projections/StaffingResourceListItem.cs` + `client/…/projections/staffing-resource-list-item.ts` |
 | `DomainModel/TempHireDbContext.cs` (EF6) | `…/TempHireDbContext.cs` (EF Core 10, fluent config) |
 | `DomainModel/TempHireEntities.cs` (`EntityManager` subclass) | *gone* — the EntityManager is a client concept now |
-| `DomainModel/TempHireEntities.ibmmx` (IdeaBlade model file) | *gone* — metadata is generated from the EF Core model at `GET /api/breeze/Metadata` |
+| `DomainModel/TempHireEntities.ibmmx` (IdeaBlade model file) | *gone* — metadata is generated from the EF Core model at `GET /api/breeze/Metadata`, and exported to `client/metadata.json`, from which `breeze-gen-entities` (`npm run model`) writes the client classes |
 | `DomainModel/SaveInterceptor.cs` | `server/TempHire.Server/Persistence/TempHirePersistenceManager.cs` |
 | `Security/User.cs`, `LoginManager.cs`, `CryptoHelper.cs` | `…/Entities/User.cs` + `Controllers/AccountController.cs` + `Auth/TokenService.cs` |
 | `Security/SecurityDbContext.cs` | `SecurityDbContext` in `…/TempHireDbContext.cs` |
@@ -212,10 +214,12 @@ Everything below is a conscious departure from the original.
 - **Adding a detail tab** means editing `resource-detail.component.ts`. The original got this for
   free from MEF's `[ImportMany] IEnumerable<IStaffingResourceDetailSection>` ordered by `Index`.
 - **Adding a workspace** means adding a route in `app.routes.ts` and an entry in `WORKSPACES`.
-- **Adding an entity type** means: POCO + `DbSet` on the server, a TypeScript class, a
-  `registerEntityTypeCtor` line in `registration-helper.ts`, a `[HttpGet]` action returning
-  `IQueryable<T>` on `BreezeController`, and a repository on `ResourceMgtUnitOfWork`. The resource
-  name passed to `createRepository` must match the controller action name.
+- **Adding an entity type** means: POCO + `DbSet` on the server, a `[HttpGet]` action returning
+  `IQueryable<T>` on `BreezeController`, then `npm run model` in `client/` to export the metadata
+  and generate the TypeScript class (registration is generated too), and a repository on
+  `ResourceMgtUnitOfWork` (`this.createRepository(MyEntity)`). Repositories query the entity
+  type's `defaultResourceName` from the metadata, which is the `DbSet` name, so the controller
+  action must be named after the `DbSet`.
 - **Breeze's `EntityErrorsException` returns HTTP 403**, not 400. `auth.interceptor.ts` deliberately
   does *not* treat 403 as an authentication failure — doing so would log the user out whenever a
   save failed validation.

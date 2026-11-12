@@ -2,8 +2,8 @@ import { Component, OnDestroy, computed, inject, signal, viewChild } from '@angu
 import { Subscription } from 'rxjs';
 
 import { CanComponentDeactivate } from '../app.routes';
-import { StaffingResourceListItem } from '../core/entities/staffing-resource-list-item';
-import { StaffingResource } from '../core/entities/staffing-resource';
+import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
+import { StaffingResource } from '../core/model';
 import { BusyService } from '../core/services/busy.service';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';

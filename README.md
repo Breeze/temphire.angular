@@ -71,6 +71,37 @@ available from the server's own origin and no CORS is involved.
 
 ---
 
+## Entity classes are generated
+
+The TypeScript entity classes in `client/src/app/core/model/` are written by the entity generator
+that ships with `breeze-client` 3 (`breeze-gen-entities`), from the same Breeze metadata the server
+publishes. The flow has three steps, and `npm run model` in `client/` runs the first two:
+
+```
+EF Core model ──► client/metadata.json ──► client/src/app/core/model/*.ts ──► registerModelClasses
+   (server)      npm run model:metadata     npm run model:generate           (at login, client)
+```
+
+1. **Export the metadata.** `npm run model:metadata` runs the server with `--export-metadata`, which
+   writes exactly what `GET /api/breeze/Metadata` serves to `client/metadata.json` and exits. It
+   reads the EF Core model only, so it needs no database and no login. The file is checked in, so a
+   schema change shows up in review as a metadata diff next to the class diff it causes.
+2. **Generate the classes.** `npm run model:generate` writes one class per entity type, each
+   extending the hand-written `BaseEntity`, plus an `index.ts` barrel with `registerModelClasses`.
+   Generated lines end in `// @generated`; constructors, getters and methods you add (such as
+   `StaffingResource.addAddress`) are never touched, so regenerating is always safe.
+3. **Register them.** `core/model-registration.ts` calls `registerModelClasses` on the master
+   manager's `MetadataStore` once the metadata has loaded. From then on Breeze builds entities from
+   these classes, and the typed APIs work: `EntityQuery.from(StaffingResource)` is an
+   `EntityQuery<StaffingResource>`, and `createEntity(Address, { ... })` checks its initial values
+   against the class.
+
+**After changing an entity on the server**, run `npm run model` in `client/` and commit the
+metadata and class changes together. `client/src/app/core/model/README.md` covers the markers for
+keeping a hand-written property away from the generator.
+
+---
+
 ## Layout
 
 ```
@@ -91,9 +122,12 @@ TempHire.Angular/
 │       ├── Auth/                  # JWT options + token service
 │       └── Program.cs
 └── client/
+    ├── metadata.json              # Breeze metadata exported from the server (npm run model:metadata)
     └── src/app/
         ├── core/
-        │   ├── entities/          # TypeScript entity classes + Breeze registration
+        │   ├── model/             # generated entity classes + hand-written methods (npm run model)
+        │   ├── model-registration.ts   # registers the classes and adds client-only validators
+        │   ├── projections/       # non-entity query results (StaffingResourceListItem)
         │   ├── services/          # ← Cocktail: EntityManagerProvider, UnitOfWork,
         │   │                      #   Repository, UnitOfWorkManager, toolbar, dialogs, auth
         │   └── dialogs/
