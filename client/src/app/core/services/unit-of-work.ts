@@ -4,7 +4,7 @@ import { Entity, EntityManager, InitialValues, SaveOptions } from 'breeze-client
 import { EntityManagerProvider } from './entity-manager-provider';
 import { EntityCtor, IRepository, Repository } from './repository';
 
-/** Port of Cocktail's `IFactory<T>`. */
+/** Port of Punch's `IFactory<T>`. */
 export interface IEntityFactory<T extends Entity> {
   create(config?: InitialValues<T>): Promise<T>;
 }
@@ -26,7 +26,7 @@ export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
 }
 
 /**
- * Port of Cocktail's `UnitOfWork` (`DomainServices/ResourceMgtUnitOfWork.cs` and its base).
+ * Port of Punch's `UnitOfWork` (`DomainServices/ResourceMgtUnitOfWork.cs` and its base).
  *
  * A unit of work owns exactly one Breeze `EntityManager`, which is where TempHire's "sandbox
  * editing" comes from: the search list and every read-only view share one unit of work, while each
@@ -81,7 +81,7 @@ export class UnitOfWork {
 
   /**
    * @param onCommitted called after every successful save, so the owner can publish it.  This is
-   *   the replacement for Cocktail's `SavedMessage`; see `UnitOfWorkManager.saves`.
+   *   the replacement for Punch's `SavedMessage`; see `UnitOfWorkManager.saves`.
    */
   constructor(
     protected readonly emProvider: EntityManagerProvider,

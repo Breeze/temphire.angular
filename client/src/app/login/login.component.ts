@@ -22,7 +22,7 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
  *
  * The WPF version was a modal dialog that the shell popped on load and again after logout, with a
  * `FailureMessage` shown inline and the OK button disabled until both fields had content.  All of
- * that is preserved; the presentation changed from a Cocktail dialog to a route, and the form is a
+ * that is preserved; the presentation changed from a Punch dialog to a route, and the form is a
  * Signal Form.
  *
  * The original pre-filled Admin/password under `#if DEBUG`, and the credentials are unchanged in the

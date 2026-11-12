@@ -42,13 +42,13 @@ export const appConfig: ApplicationConfig = {
       classes: { 'signal-form-untouched': (field) => !field.state().touched() },
     }),
 
-    // Port of `Common/Errors/ErrorHandler.cs`, which Cocktail installed as the global handler.
+    // Port of `Common/Errors/ErrorHandler.cs`, which Punch installed as the global handler.
     { provide: ErrorHandler, useClass: AppErrorHandler },
 
     /**
      * Breeze configuration.
      *
-     * This is the counterpart of `TempHire/AppBootstrapper.cs`, which configured Cocktail and
+     * This is the counterpart of `TempHire/AppBootstrapper.cs`, which configured Punch and
      * DevForce before the shell was shown.  Breeze 3's defaults already match this server:
      *
      *  - the backing-store model library, so plain property access works in Angular templates;

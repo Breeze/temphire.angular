@@ -15,7 +15,7 @@ interface LoginResponse {
 const TOKEN_STORAGE_KEY = 'temphire.token';
 
 /**
- * Port of `TempHire/Authentication/TempHireAuthenticationService.cs` (Cocktail's
+ * Port of `TempHire/Authentication/TempHireAuthenticationService.cs` (Punch's
  * `IAuthenticationService`) plus the `LoggedInMessage` / `LoggedOutMessage` events.
  *
  * DevForce logged in by handing credentials to the EntityServer, which then kept a session and

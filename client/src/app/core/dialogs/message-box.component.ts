@@ -16,7 +16,7 @@ export interface MessageBoxData {
 /**
  * The message box behind `AppDialogService.showMessage`.
  *
- * Cocktail's `IDialogManager.ShowMessageAsync` accepted an arbitrary set of `DialogButtons`
+ * Punch's `IDialogManager.ShowMessageAsync` accepted an arbitrary set of `DialogButtons`
  * (Ok/OkCancel/YesNo/YesNoCancel), which PrimeNG's two-button `p-confirmDialog` cannot express -
  * TempHire genuinely needs the three-button "save / discard / cancel" prompt when closing a screen
  * with unsaved changes.  So the buttons are data here, just as they were in the original.

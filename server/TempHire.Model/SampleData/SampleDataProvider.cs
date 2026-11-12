@@ -6,7 +6,7 @@ namespace TempHire.Model.SampleData
     /// Ported from <c>DomainServices/SampleData/TempHireSampleDataProvider.cs</c> and
     /// <c>SecuritySampleDataProvider.cs</c>.
     /// <para>
-    /// The original implemented Cocktail's <c>ISampleDataProvider&lt;TempHireEntities&gt;</c> and attached
+    /// The original implemented Punch's <c>ISampleDataProvider&lt;TempHireEntities&gt;</c> and attached
     /// entities to an in-memory DevForce <c>EntityManager</c> backed by a "fake store".  Breeze has no
     /// such concept - the client always talks to a real server - so the same data is now written to the
     /// database on first run.  The bodies of the entity-building helpers and the data itself are

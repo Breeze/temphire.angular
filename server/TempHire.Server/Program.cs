@@ -128,7 +128,7 @@ if (exportIndex >= 0)
 // ---------------------------------------------------------------------------------------------
 // First-run database creation and seeding.
 //
-// This is the replacement for Cocktail's ISampleDataProvider / "fake store", which populated an
+// This is the replacement for Punch's ISampleDataProvider / "fake store", which populated an
 // in-memory DevForce EntityManager at startup.  A Breeze client always talks to a real server, so
 // the sample data now lives in the database.
 // ---------------------------------------------------------------------------------------------

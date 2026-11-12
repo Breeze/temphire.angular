@@ -8,7 +8,9 @@ sandboxes with save and cancel, a cached lookup data set, client- and server-sid
 one model, authentication, and entity classes generated from the server's model.
 
 It is also a **modernization example**.  TempHire began as a .NET **Silverlight** and **WPF**
-application built on IdeaBlade DevForce, Cocktail and Caliburn.Micro.  It was converted to this
+application built on IdeaBlade's **Punch** framework, which combines DevForce, Caliburn.Micro and
+Entity Framework.  (Punch was first called Cocktail, and its code still uses that name: the
+original sample's `using Cocktail;` is Punch.)  It was converted to this
 web stack, and then brought up to current Angular, Breeze and .NET, with the help of AI.  The
 original Silverlight and WPF versions are in the
 [Punch repository](https://github.com/IdeaBlade/Punch/tree/master/Samples/TempHire)
@@ -18,7 +20,7 @@ onto the new one.
 
 | | Original (Silverlight / WPF) | This version |
 |---|---|---|
-| Client | Silverlight or WPF + Caliburn.Micro + Cocktail | **Angular 22** (standalone, zoneless, signals) + **PrimeNG 22** |
+| Client | Silverlight or WPF + Punch (Caliburn.Micro) | **Angular 22** (standalone, zoneless, signals) + **PrimeNG 22** |
 | Data access (client) | DevForce `EntityManager` | **breeze-client 3** |
 | Server | DevForce EntityServer (WCF) | **ASP.NET Core 10** + **Breeze.AspNetCore 8** |
 | ORM | Entity Framework 6 (Code First) | **EF Core 10** |
@@ -147,7 +149,7 @@ TempHire.Angular/
         │   ├── model-registration.ts   # registers the classes and adds client-only validators
         │   ├── model-display-names.ts  # friendly property names for validation messages
         │   ├── projections/       # non-entity query results (StaffingResourceListItem)
-        │   ├── services/          # ← Cocktail: EntityManagerProvider, UnitOfWork,
+        │   ├── services/          # ← Punch: EntityManagerProvider, UnitOfWork,
         │   │                      #   Repository, UnitOfWorkManager, toolbar, dialogs, auth
         │   └── dialogs/
         ├── login/                 # ← ViewModels/Login/
@@ -155,7 +157,7 @@ TempHire.Angular/
         ├── resource-mgt/          # ← ViewModels/StaffingResource/
         │   └── sections/          # the four detail tabs
         ├── app.ts / app.html      # ← Views/ShellView.Wpf.xaml
-        └── app.routes.ts          # ← Cocktail workspaces + INavigator
+        └── app.routes.ts          # ← Punch workspaces + INavigator
 ```
 
 Every ported file carries a doc comment naming the WPF file it came from, so you can read the two
@@ -168,7 +170,7 @@ side by side.
 **PrimeNG** for the UI. TempHire is a data-dense desktop-style app: its screens are grids, tabs,
 modal dialogs and inline editors. PrimeNG's `p-table`, `p-tabs`, `DynamicDialog`, `p-select`,
 `p-inputNumber` and `p-datePicker` map almost one-to-one onto the WPF `DataGrid`, `TabControl`,
-Cocktail dialogs, `ComboBox` and Xceed editors, which keeps the conversion honest. Angular Material
+Punch dialogs, `ComboBox` and Xceed editors, which keeps the conversion honest. Angular Material
 would also work but its table is lower-level, so the address/phone/rates/skills grids would need
 noticeably more hand-written code.
 
@@ -177,7 +179,7 @@ The rest of the WPF-era dependencies did not need replacing so much as *deleting
 | Original | Replacement | Why |
 |---|---|---|
 | Caliburn.Micro (MVVM, conventions, `IEventAggregator`) | Angular components and signals | Angular already is an MVVM framework; the event aggregator's messages become signals (`UnitOfWork.changes`, `UnitOfWorkManager.saves`) |
-| Cocktail (`IUnitOfWorkManager`, `IRepository`, `IFactory`, `IDialogManager`, `IBusyWatcher`, `INavigator`) | Hand-ported into `core/services` | These are ~250 lines of pattern, and porting them keeps the app's architecture recognisable. Navigation becomes the Angular router |
+| Punch (`IUnitOfWorkManager`, `IRepository`, `IFactory`, `IDialogManager`, `IBusyWatcher`, `INavigator`) | Hand-ported into `core/services` | These are ~250 lines of pattern, and porting them keeps the app's architecture recognisable. Navigation becomes the Angular router |
 | MEF (`[Export]`, `[ImportMany]`) | Angular DI + explicit lists | Angular DI covers the singleton/scoped cases; the two places MEF was used for *discovery* (workspaces, detail sections) are now explicit lists, called out in the code |
 | Xceed WPF Toolkit `BusyIndicator` | `BusyService` + `p-progressSpinner` | |
 | `System.Windows.Interactivity` behaviours | Native DOM behaviour / directives | `SelectAllOnFocusBehavior`, `InitialFocusBehavior` etc. are one-liners in HTML |

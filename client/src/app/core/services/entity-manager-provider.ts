@@ -10,7 +10,7 @@ import { registerModel } from '../model-registration';
  *
  * This is the direct replacement for three pieces of the WPF app:
  *
- *  - `TempHire/EntityManagerProviderFactory.cs` (Cocktail's `IEntityManagerProvider`),
+ *  - `TempHire/EntityManagerProviderFactory.cs` (Punch's `IEntityManagerProvider`),
  *  - `TempHire/GlobalCache.cs`, and
  *  - `DomainServices/Repositories/GlobalCacheRepository.cs`.
  *

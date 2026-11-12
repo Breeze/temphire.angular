@@ -61,7 +61,7 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 | `Security/SecurityDbContext.cs` | `SecurityDbContext` in `…/TempHireDbContext.cs` |
 | `DomainServices/SampleData/*.cs` | `…/SampleData/SampleDataProvider.cs` |
 
-### DevForce / Cocktail attributes
+### DevForce / Punch attributes
 
 | Attribute | Replacement |
 |---|---|
@@ -74,9 +74,12 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 | `[BeforeSet]` string trimming on `EntityBase` | Not ported. It silently trimmed every string on assignment; doing that on the client would fight the user's cursor. Trim at the point of use instead |
 | `[AfterSet("FirstName")] → ForcePropertyChanged("FullName")` | Unnecessary — `fullName` is a plain getter and Angular re-evaluates it each change detection pass |
 
-### Client services (Cocktail → `client/src/app/core/services/`)
+### Client services (Punch → `client/src/app/core/services/`)
 
-| Cocktail | Converted | Notes |
+Punch was first called Cocktail, and its code still uses that name: the types below are in the
+`Cocktail` namespace, which the original sample imports with `using Cocktail;`.
+
+| Punch | Converted | Notes |
 |---|---|---|
 | `IEntityManagerProvider` + `GlobalCache` + `GlobalCacheRepository<T>` | `entity-manager-provider.ts` | One master manager holds metadata + all lookups; every sandbox is `createEmptyCopy()` seeded via `exportEntities`/`importEntities`. This is the same trick `GlobalCacheRepository.OnManagerCreated` used, and it is why `QueryStrategy.CacheOnly` becomes `FetchStrategy.FromLocalCache` |
 | `IUnitOfWork` | `unit-of-work.ts` | Owns one `EntityManager` |
@@ -111,7 +114,7 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 | `StaffingResourceSkillsViewModel` + view | `sections/resource-skills.component.ts` |
 | `StaffingResourceNameEditorViewModel` + view | `resource-mgt/resource-name-editor.component.ts` |
 | `ItemSelectorViewModel` + view | `resource-mgt/item-selector.component.ts` |
-| `Harness` project (Cocktail development harness) | Not ported — `ng serve` with hot reload covers what it was for |
+| `Harness` project (Punch development harness) | Not ported — `ng serve` with hot reload covers what it was for |
 | `TempHire.SL`, `*.SL` projects (Silverlight) | Not ported — Silverlight is dead, and the browser is now the only target |
 
 ---
@@ -142,7 +145,7 @@ Two consequences are worth calling out because they are not obvious:
    The save happened in the sandbox, so the shared manager still holds the children it loaded
    earlier — including any that were just deleted. A Breeze query merge never detaches entities the
    server omitted, so re-querying would not remove them; the cache has to be cleared and re-seeded.
-2. **A sandbox is released once it is clean** (`releaseIfClean`), mirroring Cocktail's automatic
+2. **A sandbox is released once it is clean** (`releaseIfClean`), mirroring Punch's automatic
    eviction, so a cancelled edit does not leak its `EntityManager` for the rest of the session.
 
 ---
@@ -194,7 +197,7 @@ Everything below is a conscious departure from the original.
 
 **Not carried over**
 
-- The Silverlight projects (`*.SL`) and the Cocktail development `Harness`.
+- The Silverlight projects (`*.SL`) and the Punch development `Harness`.
 - `DemoConnectionOptionsResolver`, `FakeLoginManager`, `DesignTimeSupport/` — DevForce's design-time
   and fake-store scaffolding, which has no counterpart when the client always talks to a real server.
 - `Common/Behaviors/*` — `BindablePasswordBehavior`, `InitialFocusBehavior`,

@@ -252,7 +252,7 @@ export class ResourceAddressListComponent {
    *
    * The original passed the address types to `ItemSelectorViewModel.Start` as a query callback; the
    * dialog here takes the already-cached entities.  Cancelling throws `DialogCancelledError` where
-   * Cocktail's `ShowDialogAsync` threw `TaskCanceledException`, which is why the add is abandoned in
+   * Punch's `ShowDialogAsync` threw `TaskCanceledException`, which is why the add is abandoned in
    * a catch rather than by testing a result.
    */
   async add(): Promise<void> {

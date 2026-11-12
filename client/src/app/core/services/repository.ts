@@ -4,7 +4,7 @@ import { Entity, EntityManager, EntityQuery, FetchStrategy, Predicate } from 'br
 export type EntityCtor<T extends Entity> = new () => T;
 
 /**
- * Port of Cocktail's `IRepository<T>` (`DomainServices/Repositories/...`).
+ * Port of Punch's `IRepository<T>` (`DomainServices/Repositories/...`).
  *
  * The DevForce version wrapped an `EntityQuery<T>` and a `QueryStrategy`; this wraps a Breeze
  * `EntityQuery<T>` and a `FetchStrategy`.  `isCached` is the analogue of

@@ -4,13 +4,13 @@ import { firstValueFrom } from 'rxjs';
 
 import { MessageBoxComponent, MessageBoxData } from '../dialogs/message-box.component';
 
-/** Port of Cocktail's `DialogResult`. */
+/** Port of Punch's `DialogResult`. */
 export type DialogResult = 'ok' | 'cancel' | 'yes' | 'no';
 
 /**
  * Raised instead of returning when the user dismisses a dialog.
  *
- * Cocktail's `IDialogManager` rejected its task with `TaskCanceledException`, and the WPF view
+ * Punch's `IDialogManager` rejected its task with `TaskCanceledException`, and the WPF view
  * models were written around that - `ResourceMgtViewModel.Add` catches `TaskCanceledException` to
  * abandon the add.  Keeping the same shape means the ported control flow reads the same.
  */
@@ -22,7 +22,7 @@ export class DialogCancelledError extends Error {
 }
 
 /**
- * Port of Cocktail's `IDialogManager`, on top of PrimeNG's DynamicDialog.
+ * Port of Punch's `IDialogManager`, on top of PrimeNG's DynamicDialog.
  */
 @Injectable({ providedIn: 'root' })
 export class AppDialogService {

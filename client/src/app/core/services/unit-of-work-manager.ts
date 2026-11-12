@@ -7,7 +7,7 @@ import { ResourceMgtUnitOfWork } from './resource-mgt-unit-of-work';
 export const SHARED_UNIT_OF_WORK_KEY = '00000000-0000-0000-0000-000000000000';
 
 /**
- * Port of Cocktail's `IUnitOfWorkManager<T>` (`DomainServices/UnitOfWorkManager.cs`).
+ * Port of Punch's `IUnitOfWorkManager<T>` (`DomainServices/UnitOfWorkManager.cs`).
  *
  * This is the heart of TempHire's editing model and it survives the port unchanged in spirit:
  *
@@ -18,7 +18,7 @@ export const SHARED_UNIT_OF_WORK_KEY = '00000000-0000-0000-0000-000000000000';
  *    Because it owns a separate `EntityManager`, edits are completely isolated: `Cancel` is a
  *    `rejectChanges()` on the sandbox and the read-only views never flicker.
  *
- * Cocktail also evicted a unit of work once it had no pending changes, so that a cancelled or saved
+ * Punch also evicted a unit of work once it had no pending changes, so that a cancelled or saved
  * edit did not leak its manager for the life of the session.  `releaseIfClean` does the same job.
  */
 @Injectable({ providedIn: 'root' })
@@ -28,7 +28,7 @@ export class UnitOfWorkManager {
   private readonly saveCount = signal(0);
 
   /**
-   * Bumped after every successful save in any unit of work - port of Cocktail's `SavedMessage`,
+   * Bumped after every successful save in any unit of work - port of Punch's `SavedMessage`,
    * which the search list handled (`IHandle<SavedMessage>`) to re-run its query.  As a signal it
    * needs no subscription: `ResourceSearchComponent` reads it in its `resource()` params, so a save
    * anywhere reloads the list.
@@ -72,7 +72,7 @@ export class UnitOfWorkManager {
     }
   }
 
-  /** Drops a sandbox once it has nothing left to save - port of Cocktail's automatic eviction. */
+  /** Drops a sandbox once it has nothing left to save - port of Punch's automatic eviction. */
   releaseIfClean(key: string): void {
     if (key === SHARED_UNIT_OF_WORK_KEY) {
       return;

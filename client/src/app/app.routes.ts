@@ -17,10 +17,10 @@ export const pendingChangesGuard: CanDeactivateFn<CanComponentDeactivate> = (com
   component.canDeactivate();
 
 /**
- * Port of Cocktail's workspace navigation.
+ * Port of Punch's workspace navigation.
  *
  * The WPF shell discovered `IWorkspace` exports through MEF and rendered one toolbar button per
- * workspace, then used Cocktail's `INavigator` to swap the active view model
+ * workspace, then used Punch's `INavigator` to swap the active view model
  * (`ShellViewModel.NavigateToWorkspace`).  The router does both jobs here: the `WORKSPACES` list
  * below is the direct replacement for the MEF `[ImportMany] IEnumerable<IWorkspace>`.
  */

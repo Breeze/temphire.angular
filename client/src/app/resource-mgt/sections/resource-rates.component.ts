@@ -190,7 +190,7 @@ export class ResourceRatesComponent {
 
       this.staffingResource().addRate(rateType);
     } catch (error) {
-      // Cocktail's dialog manager cancelled its task; ours throws - see `AppDialogService`.
+      // Punch's dialog manager cancelled its task; ours throws - see `AppDialogService`.
       if (!(error instanceof DialogCancelledError)) {
         throw error;
       }
