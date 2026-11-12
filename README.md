@@ -7,6 +7,15 @@ what such applications need beyond CRUD screens: a master/detail workspace, edit
 sandboxes with save and cancel, a cached lookup data set, client- and server-side validation from
 one model, authentication, and entity classes generated from the server's model.
 
+> **Built on Breeze 3.** TempHire uses [**Breeze 3**](https://github.com/Breeze/breeze-client-v3),
+> the new major version of Breeze released in September 2026: `breeze-client` 3 on the client, an
+> ESM-only rewrite for modern TypeScript with typed entities, typed queries and an entity class
+> generator, and the matching Breeze .NET server 8 from
+> [breeze-server-v3](https://github.com/Breeze/breeze-server-v3).  The app shows those features in
+> use: generated entity classes (see [Entity classes are generated](#entity-classes-are-generated)),
+> typed queries and `createEntity` calls, and validation driven by the Breeze model (see
+> [Validation comes from the model](#validation-comes-from-the-model)).
+
 It is also a **modernization example**.  TempHire began as a .NET **Silverlight** and **WPF**
 application built on IdeaBlade's **Punch** framework, which combines DevForce, Caliburn.Micro and
 Entity Framework.  (Punch was first called Cocktail, and its code still uses that name: the
@@ -21,7 +30,7 @@ onto the new one.
 | | Original (Silverlight / WPF) | This version |
 |---|---|---|
 | Client | Silverlight or WPF + Punch (Caliburn.Micro) | **Angular 22** (standalone, zoneless, signals) + **PrimeNG 22** |
-| Data access (client) | DevForce `EntityManager` | **breeze-client 3** |
+| Data access (client) | DevForce `EntityManager` | **[breeze-client 3](https://github.com/Breeze/breeze-client-v3)** |
 | Server | DevForce EntityServer (WCF) | **ASP.NET Core 10** + **Breeze.AspNetCore 8** |
 | ORM | Entity Framework 6 (Code First) | **EF Core 10** |
 | Database | SQL Server Compact (`.sdf`) | **SQL Server LocalDB / Express** |
