@@ -5,9 +5,9 @@ A conversion of the WPF/DevForce **TempHire** sample (`../TempHire.Wpf.sln`) to 
 | | Original | This version |
 |---|---|---|
 | Client | WPF + Caliburn.Micro + Cocktail | **Angular 22** (standalone, zoneless, signals) + **PrimeNG 22** |
-| Data access (client) | DevForce `EntityManager` | **breeze-client 2.2.2** |
-| Server | DevForce EntityServer (WCF) | **ASP.NET Core 9** + **Breeze.AspNetCore 7.5.1** |
-| ORM | Entity Framework 6 (Code First) | **EF Core 9** |
+| Data access (client) | DevForce `EntityManager` | **breeze-client 3** |
+| Server | DevForce EntityServer (WCF) | **ASP.NET Core 10** + **Breeze.AspNetCore 8** |
+| ORM | Entity Framework 6 (Code First) | **EF Core 10** |
 | Database | SQL Server Compact (`.sdf`) | **SQL Server LocalDB / Express** |
 | Auth | DevForce `IEntityLoginManager` + server session | **JWT bearer** + PBKDF2 password hashing |
 
@@ -16,19 +16,16 @@ edit it in an isolated sandbox, and save or cancel. `docs/CONVERSION-NOTES.md` m
 the old architecture onto its replacement and records the places where behaviour deliberately
 changed.
 
-> **A note on the .NET version.** The server targets **`net9.0`** with the 9.0.19 package set.
-> .NET 9 is an STS release: it is in maintenance support (security fixes only) and reaches
-> end of support on **10 November 2026**. Moving to .NET 10 (LTS, supported to November 2028) is a
-> two-line change — set `<TargetFramework>net10.0</TargetFramework>` in both `.csproj` files and
-> move the `Microsoft.*` package versions to `10.0.*`. Breeze 7.5.1 supports .NET 5 through 10, so
-> nothing else has to change.
+> **A note on the .NET version.** The server targets **`net10.0`** (LTS, supported to November
+> 2028) with the 10.0.x package set. It stays on .NET 10 rather than .NET 11 because Breeze 8
+> supports .NET 8, 9 and 10, and `Breeze.Persistence.EFCore` 8 requires EF Core 10 (it pins
+> `Microsoft.EntityFrameworkCore.Relational` to `[10.0.0, 11.0.0)`).
 
 ---
 
 ## Prerequisites
 
-- [.NET SDK](https://dotnet.microsoft.com/download) — the 9.0 SDK, or the 10.0 SDK, which can build
-  a `net9.0` project as well
+- [.NET SDK](https://dotnet.microsoft.com/download) — the 10.0 SDK or later
 - [Node.js](https://nodejs.org) **22.22.3+**, 24.15+, or 26+ (required by the Angular 22 CLI)
 - SQL Server **LocalDB** (ships with the Visual Studio "Data storage and processing" workload and
   with [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads)), or any

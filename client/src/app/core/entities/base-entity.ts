@@ -1,4 +1,4 @@
-import { Entity, EntityAspect, EntityType } from 'breeze-client';
+import { EntityBase } from 'breeze-client';
 
 /**
  * Client-side root of the domain model.
@@ -11,10 +11,9 @@ import { Entity, EntityAspect, EntityType } from 'breeze-client';
  * So `entity.EntityFacts.EntityState.IsAdded()` in the old code becomes
  * `entity.entityAspect.entityState.isAdded()` here.
  */
-export class BaseEntity implements Entity {
-  // Assigned by Breeze when the entity is attached to an EntityManager.
-  entityAspect!: EntityAspect;
-  entityType!: EntityType;
+export class BaseEntity extends EntityBase {
+  // `EntityBase` declares the members Breeze installs: `entityAspect`, `entityType`,
+  // `getProperty` and `setProperty`.
 
   /** Convenience mirror of DevForce's `EntityFacts.IsNullOrPendingEntity`. */
   get isDetached(): boolean {

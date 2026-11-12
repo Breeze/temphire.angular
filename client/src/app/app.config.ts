@@ -9,11 +9,8 @@ import {
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import Aura from '@primeuix/themes/aura';
-import { NamingConvention } from 'breeze-client';
-import { AjaxHttpClientAdapter } from 'breeze-client/adapter-ajax-httpclient';
-import { DataServiceWebApiAdapter } from 'breeze-client/adapter-data-service-webapi';
-import { ModelLibraryBackingStoreAdapter } from 'breeze-client/adapter-model-library-backing-store';
-import { UriBuilderJsonAdapter } from 'breeze-client/adapter-uri-builder-json';
+import { configureBreeze } from 'breeze-client';
+import { httpClientFetch } from 'breeze-client/adapter-angular-httpclient';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -39,32 +36,23 @@ export const appConfig: ApplicationConfig = {
     { provide: ErrorHandler, useClass: AppErrorHandler },
 
     /**
-     * Breeze adapter registration.
+     * Breeze configuration.
      *
      * This is the counterpart of `TempHire/AppBootstrapper.cs`, which configured Cocktail and
-     * DevForce before the shell was shown.  Order matters: `AjaxHttpClientAdapter` must be
-     * registered before `DataServiceWebApiAdapter`, because the data service adapter resolves the
-     * ajax adapter when it initialises.
+     * DevForce before the shell was shown.  Breeze 3's defaults already match this server:
      *
-     *  - `ModelLibraryBackingStoreAdapter` - stores entity property values in a backing store so
-     *    that plain property access works in Angular templates.
-     *  - `UriBuilderJsonAdapter`           - encodes Breeze queries as JSON in the query string,
-     *    which is what `[BreezeQueryFilter]` on the server expects.
-     *  - `AjaxHttpClientAdapter`           - routes Breeze traffic through Angular's HttpClient, so
-     *    it picks up `authInterceptor` and the bearer token.
-     *  - `DataServiceWebApiAdapter`        - materialises server responses into entities.
-     *  - `NamingConvention.camelCase`      - the server sends PascalCase (see `Program.cs`, where
-     *    the Json.NET naming strategy is cleared); this converts to idiomatic camelCase on the
-     *    client, so `FirstName` on the wire is `firstName` in TypeScript.
+     *  - the backing-store model library, so plain property access works in Angular templates;
+     *  - the JSON URI builder, which is what `[BreezeQueryFilter]` on the server expects;
+     *  - the Web API data service adapter, which materialises server responses into entities;
+     *  - `NamingConvention.camelCase` - the server sends PascalCase (see `Program.cs`, where the
+     *    Json.NET naming strategy is cleared), so `FirstName` on the wire is `firstName` here.
+     *
+     * The one thing left to configure is transport.  Breeze 3 makes its requests with `fetch`,
+     * which Angular's interceptors never see; `httpClientFetch` routes them through `HttpClient`
+     * instead, so they pick up `authInterceptor` and the bearer token.
      */
     provideAppInitializer(() => {
-      const http = inject(HttpClient);
-
-      ModelLibraryBackingStoreAdapter.register();
-      UriBuilderJsonAdapter.register();
-      AjaxHttpClientAdapter.register(http);
-      DataServiceWebApiAdapter.register();
-      NamingConvention.camelCase.setAsDefault();
+      configureBreeze({ fetch: httpClientFetch(inject(HttpClient)) });
     }),
   ],
 };

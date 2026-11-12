@@ -51,7 +51,7 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 | `DomainModel/Address.cs`, `PhoneNumber.cs`, `Rate.cs`, `Skill.cs`, `WorkExperienceItem.cs` | `…/Entities/*.cs` + `…/entities/*.ts` |
 | `DomainModel/AddressType.cs`, `PhoneNumberType.cs`, `RateType.cs`, `State.cs` | `…/Entities/*.cs` + `…/entities/lookups.ts` |
 | `DomainModel/Projections/StaffingResourceListItem.cs` | `…/Projections/StaffingResourceListItem.cs` + `…/entities/staffing-resource-list-item.ts` |
-| `DomainModel/TempHireDbContext.cs` (EF6) | `…/TempHireDbContext.cs` (EF Core 9, fluent config) |
+| `DomainModel/TempHireDbContext.cs` (EF6) | `…/TempHireDbContext.cs` (EF Core 10, fluent config) |
 | `DomainModel/TempHireEntities.cs` (`EntityManager` subclass) | *gone* — the EntityManager is a client concept now |
 | `DomainModel/TempHireEntities.ibmmx` (IdeaBlade model file) | *gone* — metadata is generated from the EF Core model at `GET /api/breeze/Metadata` |
 | `DomainModel/SaveInterceptor.cs` | `server/TempHire.Server/Persistence/TempHirePersistenceManager.cs` |

@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { MessageService } from 'primeng/api';
 
 import { App } from './app';
 import { routes } from './app.routes';
@@ -16,7 +17,13 @@ describe('App', () => {
 
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
+      // MessageService is needed by the shell's <p-toast>.
+      providers: [
+        provideRouter(routes),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        MessageService,
+      ],
     }).compileComponents();
   });
 

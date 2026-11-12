@@ -90,6 +90,10 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Breeze 8 no longer puts the server stack trace in error responses by default; keep it in
+// development, where it helps, and leave it out everywhere else.
+Breeze.Persistence.BreezeConfig.Instance.IncludeStackTraceInErrors = app.Environment.IsDevelopment();
+
 // ---------------------------------------------------------------------------------------------
 // First-run database creation and seeding.
 //

@@ -28,7 +28,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // would throw away the user's pending edits instead of showing them what to fix.
       //
       // Sniffing the body to tell the two apart is not an option either - Breeze's
-      // `AjaxHttpClientAdapter` issues its requests with `responseType: 'text'`, so
+      // `httpClientFetch` issues its requests with `responseType: 'text'`, so
       // `HttpErrorResponse.error` is an unparsed string rather than the object it looks like.
       if (error instanceof HttpErrorResponse && error.status === 401) {
         auth.logout().finally(() => router.navigate(['/login']));

@@ -10,30 +10,30 @@
     "build:server": "ng build --output-path ../server/TempHire.Server/wwwroot"
   },
   "private": true,
-  "packageManager": "npm@10.9.7",
+  "packageManager": "npm@11.20.0",
   "dependencies": {
-    "@angular/cdk": "^22.1.2",
-    "@angular/common": "^22.1.0",
-    "@angular/compiler": "^22.1.0",
-    "@angular/core": "^22.1.0",
-    "@angular/forms": "^22.1.0",
-    "@angular/platform-browser": "^22.1.0",
-    "@angular/router": "^22.1.0",
-    "@primeuix/themes": "^3.0.0",
-    "breeze-client": "^2.2.2",
-    "primeicons": "^8.0.0",
-    "primeng": "^22.0.0",
-    "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "@angular/cdk": "^22.2.7",
+    "@angular/common": "^22.2.6",
+    "@angular/compiler": "^22.2.6",
+    "@angular/core": "^22.2.6",
+    "@angular/forms": "^22.2.6",
+    "@angular/platform-browser": "^22.2.6",
+    "@angular/router": "^22.2.6",
+    "@primeuix/themes": "^3.1.1",
+    "breeze-client": "^3.0.0",
+    "primeicons": "^8.0.2",
+    "primeng": "^22.1.5",
+    "rxjs": "~7.8.2",
+    "tslib": "^2.9.1"
   },
   "devDependencies": {
-    "@angular/build": "^22.1.4",
-    "@angular/cli": "^22.1.4",
-    "@angular/compiler-cli": "^22.1.0",
-    "jsdom": "^28.0.0",
-    "prettier": "^3.8.1",
+    "@angular/build": "^22.2.7",
+    "@angular/cli": "^22.2.7",
+    "@angular/compiler-cli": "^22.2.6",
+    "jsdom": "^31.0.0",
+    "prettier": "^3.10.1",
     "typescript": "~6.0.2",
-    "vitest": "^4.0.8"
+    "vitest": "^5.1.0"
   },
   "description": "TempHire - Angular + BreezeJS client (converted from the WPF/DevForce sample)"
 }
