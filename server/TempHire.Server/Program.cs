@@ -3,13 +3,15 @@ using Breeze.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Net;
 using System.Security.Claims;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using TempHire.Model;
-using TempHire.Model.SampleData;
+using TempHire.Server.Agent;
 using TempHire.Server.Auth;
+using TempHire.Server.Mcp;
 using TempHire.Server.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,8 +34,12 @@ builder.Services.AddControllers()
         }
     })
     // Turns server-side exceptions - including the EntityErrorsException our persistence manager
-    // throws for validation failures - into the error shape the Breeze client understands.
-    .AddMvcOptions(o => o.Filters.Add(new GlobalExceptionFilter()));
+    // throws for validation failures - into the error shape the Breeze client understands.  A save
+    // that touches another tenant's row (TenantAccessException) answers 403.
+    .AddMvcOptions(o => o.Filters.Add(new GlobalExceptionFilter
+    {
+        StatusCodeForException = e => e.GetBaseException() is TenantAccessException ? HttpStatusCode.Forbidden : null
+    }));
 
 // ---------------------------------------------------------------------------------------------
 // Data stores
@@ -46,6 +52,11 @@ builder.Services.AddDbContext<TempHireDbContext>(options =>
 
 builder.Services.AddDbContext<SecurityDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TempHireSecurity")));
+
+// Multi-tenancy: TempHireDbContext asks this for the current tenant, which comes from the
+// tenant_id claim in the access token.  See HttpCurrentTenant and TempHireDbContext.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentTenant, HttpCurrentTenant>();
 
 // ---------------------------------------------------------------------------------------------
 // Authentication - the replacement for the DevForce login session
@@ -79,6 +90,38 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+
+// ---------------------------------------------------------------------------------------------
+// MCP server - the staffing data as tools for an AI agent (Quinn, or any MCP client)
+//
+// Served at /mcp over the streamable HTTP transport, behind the same JWT authentication as the
+// rest of the API.  Stateless: each request carries everything, including the caller's token, and
+// gets a fresh StaffingTools with that request's tenant-filtered TempHireDbContext.
+// ---------------------------------------------------------------------------------------------
+builder.Services
+    .AddMcpServer(options =>
+    {
+        options.ServerInfo = new() { Name = "TempHire", Version = "1.0.0" };
+        options.ServerInstructions =
+            "Read-only staffing data of the signed-in user's company: staffing resources with their " +
+            "addresses, phone numbers, rates (US dollars), skills and work history.";
+    })
+    .WithHttpTransport(options => options.Stateless = true)
+    // Tool results reach the model as JSON text.  Relaxed escaping keeps them readable ("C++",
+    // "Müller") instead of the default +, ü and " escapes, which cost tokens and
+    // confuse small local models.
+    .WithTools<StaffingTools>(new System.Text.Json.JsonSerializerOptions(ModelContextProtocol.McpJsonUtilities.DefaultOptions)
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    });
+
+// ---------------------------------------------------------------------------------------------
+// Quinn, the agent - see AgentController.  Ollama or Claude, per the Agent section of appsettings.
+// ---------------------------------------------------------------------------------------------
+builder.Services.Configure<AgentOptions>(builder.Configuration.GetSection(AgentOptions.SectionName));
+builder.Services.AddSingleton<ChatClientFactory>();
+builder.Services.AddScoped<QuinnAgent>();
+builder.Services.AddHttpClient(nameof(QuinnAgent));
 
 // ---------------------------------------------------------------------------------------------
 // CORS - the Angular dev server runs on a different origin (localhost:4200)
@@ -126,17 +169,18 @@ if (exportIndex >= 0)
 }
 
 // ---------------------------------------------------------------------------------------------
-// First-run database creation and seeding.
+// Schema migration and seeding, on startup.
 //
-// This is the replacement for Punch's ISampleDataProvider / "fake store", which populated an
-// in-memory DevForce EntityManager at startup.  A Breeze client always talks to a real server, so
-// the sample data now lives in the database.
+// Applies any pending EF Core migrations, then seeds empty databases: the replacement for Punch's
+// ISampleDataProvider / "fake store", which populated an in-memory DevForce EntityManager.  Migrating
+// on startup is a convenience for this sample, not how a production app should do it; see
+// DatabaseSetup and the README.
 // ---------------------------------------------------------------------------------------------
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TempHireDbContext>();
     var securityContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
-    SampleDataProvider.Initialize(context, securityContext);
+    DatabaseSetup.Prepare(context, securityContext, app.Logger);
 }
 
 if (app.Environment.IsDevelopment())
@@ -150,6 +194,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// The MCP endpoint.  RequireAuthorization: no valid access token, no tools (401).
+app.MapMcp("/mcp").RequireAuthorization();
 
 // Serve the production Angular build when it has been copied into wwwroot
 // (see `npm run build` in the client project).  Harmless when wwwroot is empty.

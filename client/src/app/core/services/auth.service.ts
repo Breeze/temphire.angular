@@ -8,6 +8,8 @@ import { UnitOfWorkManager } from './unit-of-work-manager';
 
 interface LoginResponse {
   username: string;
+  /** The company the user works for: their tenant, from the email domain. */
+  tenantName: string;
   token: string;
   expiresUtc: string;
 }
@@ -31,12 +33,16 @@ export class AuthService {
 
   private readonly _token = signal<string | null>(sessionStorage.getItem(TOKEN_STORAGE_KEY));
   private readonly _username = signal<string | null>(null);
+  private readonly _tenantName = signal<string | null>(null);
 
   /** Where to go once login succeeds - port of the shell's post-login navigation. */
   redirectUrl: string | null = null;
 
   readonly isLoggedIn = computed(() => !!this._token());
   readonly username = computed(() => this._username());
+
+  /** The signed-in user's company (tenant), e.g. "Harbor Staffing". */
+  readonly tenantName = this._tenantName.asReadonly();
 
   get token(): string | null {
     return this._token();
@@ -57,6 +63,7 @@ export class AuthService {
     sessionStorage.setItem(TOKEN_STORAGE_KEY, response.token);
     this._token.set(response.token);
     this._username.set(response.username);
+    this._tenantName.set(response.tenantName);
 
     try {
       await this.emProvider.prepare();
@@ -92,9 +99,10 @@ export class AuthService {
 
     try {
       const me = await firstValueFrom(
-        this.http.get<{ username: string }>(`${environment.accountApiRoot}/me`),
+        this.http.get<{ username: string; tenantName: string }>(`${environment.accountApiRoot}/me`),
       );
       this._username.set(me.username);
+      this._tenantName.set(me.tenantName);
       await this.emProvider.prepare();
       return true;
     } catch {
@@ -107,6 +115,7 @@ export class AuthService {
     sessionStorage.removeItem(TOKEN_STORAGE_KEY);
     this._token.set(null);
     this._username.set(null);
+    this._tenantName.set(null);
     this.unitOfWorkManager.clear();
     this.emProvider.reset();
   }

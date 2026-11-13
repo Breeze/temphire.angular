@@ -7,6 +7,7 @@ import { ToastModule } from 'primeng/toast';
 import { WORKSPACES } from './app.routes';
 import { AuthService } from './core/services/auth.service';
 import { ToolbarGroup, ToolbarService, toolbarActions } from './core/services/toolbar.service';
+import { QuinnComponent } from './quinn/quinn.component';
 
 /**
  * Port of `TempHire/Views/ShellView.Wpf.xaml` + `ViewModels/ShellViewModel.cs`.
@@ -22,7 +23,7 @@ import { ToolbarGroup, ToolbarService, toolbarActions } from './core/services/to
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ButtonDirective, ToastModule, DynamicDialogModule],
+  imports: [RouterOutlet, ButtonDirective, ToastModule, DynamicDialogModule, QuinnComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -33,6 +34,7 @@ export class App {
 
   readonly isLoggedIn = this.auth.isLoggedIn;
   readonly username = this.auth.username;
+  readonly tenantName = this.auth.tenantName;
 
   /** Port of `ShellViewModel.StartAsync`: one toolbar group for the workspaces, one for Logout. */
   private readonly workspaceGroup: ToolbarGroup = {

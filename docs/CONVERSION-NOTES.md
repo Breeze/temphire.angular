@@ -159,7 +159,9 @@ Everything below is a conscious departure from the original.
 - *Password storage.* The original AES-encrypted the password with a key derived from the password
   itself and "authenticated" by decrypting and comparing — reversible, and not acceptable today.
   `User` now stores a PBKDF2-HMAC-SHA256 hash (210,000 iterations, 16-byte salt) and compares in
-  constant time. The seeded credentials are unchanged, so `Admin`/`password` still works.
+  constant time. The `Admin` user is gone: users now sign in with an email address, whose domain
+  picks their company (see "Multi-tenancy" in the README), and the seeded users share the password
+  `password`.
 - *Session.* A stateless JWT replaces the DevForce server session. The token lives in
   `sessionStorage` and is attached by `auth.interceptor.ts`. It cannot be revoked before it expires.
 - *Metadata requires authentication*, matching `[RequiresAuthentication]` on the DevForce

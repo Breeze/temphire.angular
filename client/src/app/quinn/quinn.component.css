@@ -1,0 +1,325 @@
+/* ---- Launcher: a round button with a 3D look, in the bottom right corner ------------------- */
+
+.quinn-launcher {
+  position: fixed;
+  /* Above the bottom edge, so it never covers PrimeUI's license notice in the corner. */
+  right: 1.5rem;
+  bottom: 4.25rem;
+  z-index: 1000;
+  width: 4rem;
+  height: 4rem;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  /* Lit from the top left: a bright highlight, a darker rim, and two shadows - one close and
+     sharp, one wide and soft - so the button seems to float above the page. */
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55) 0, rgba(255, 255, 255, 0) 38%),
+    radial-gradient(circle at 50% 55%, #3a86c8 0, #1d5380 70%, #12385a 100%);
+  box-shadow:
+    inset 0 -4px 8px rgba(0, 0, 0, 0.35),
+    inset 0 3px 5px rgba(255, 255, 255, 0.35),
+    0 3px 4px rgba(0, 0, 0, 0.25),
+    0 10px 24px rgba(29, 83, 128, 0.45);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.quinn-launcher:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow:
+    inset 0 -4px 8px rgba(0, 0, 0, 0.35),
+    inset 0 3px 5px rgba(255, 255, 255, 0.35),
+    0 5px 6px rgba(0, 0, 0, 0.25),
+    0 16px 30px rgba(29, 83, 128, 0.5);
+}
+
+.quinn-launcher:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.quinn-launcher:focus-visible {
+  outline: 3px solid #ffd166;
+  outline-offset: 3px;
+}
+
+.quinn-launcher__logo {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+}
+
+/* ---- Pane: slides in from the right ---------------------------------------------------------- */
+
+.quinn-pane {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  width: min(27rem, 100vw);
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.18);
+  transform: translateX(105%);
+  transition: transform 0.3s ease;
+}
+
+.quinn-pane--open {
+  transform: translateX(0);
+}
+
+.quinn-pane__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2f6fa8, #1d5380);
+}
+
+.quinn-pane__logo {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.quinn-pane__title {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.quinn-pane__title strong {
+  font-size: 1.1rem;
+}
+
+.quinn-pane__title span {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.quinn-pane__close {
+  color: #ffffff;
+}
+
+.quinn-pane__messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  overflow-y: auto;
+  background: #f5f7fa;
+}
+
+.quinn-pane__input {
+  padding: 0.75rem 0.75rem 0;
+  border-top: 1px solid #e2e8f0;
+}
+
+.quinn-pane__input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+/* Tall enough that the row above stays clear of the PrimeNG license badge (fixed, bottom right,
+   about 3.25rem high) when the app runs without a license key. */
+.quinn-pane__note {
+  margin: 0;
+  min-height: 3.5rem;
+  padding-top: 0.4rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.quinn-pane__input textarea {
+  flex: 1;
+  resize: none;
+}
+
+/* ---- Messages ------------------------------------------------------------------------------- */
+
+.quinn-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.quinn-message__avatar {
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0.3rem;
+  border-radius: 50%;
+  background: #1d5380;
+}
+
+.quinn-message__bubble {
+  max-width: 85%;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.9rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.quinn-message--assistant .quinn-message__bubble {
+  background: #ffffff;
+  border-top-left-radius: 0.2rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.quinn-message--user {
+  justify-content: flex-end;
+}
+
+.quinn-message--user .quinn-message__bubble {
+  color: #ffffff;
+  background: #1d5380;
+  border-top-right-radius: 0.2rem;
+}
+
+.quinn-message--error .quinn-message__bubble {
+  color: #8a1c1c;
+  background: #fdecec;
+  border: 1px solid #f5c2c2;
+}
+
+/* The rendered Markdown is inserted with [innerHTML], outside this component's style scope. */
+:host ::ng-deep .quinn-md > :first-child {
+  margin-top: 0;
+}
+
+:host ::ng-deep .quinn-md > :last-child {
+  margin-bottom: 0;
+}
+
+:host ::ng-deep .quinn-md p,
+:host ::ng-deep .quinn-md ul,
+:host ::ng-deep .quinn-md ol {
+  margin: 0.4rem 0;
+}
+
+:host ::ng-deep .quinn-md ul,
+:host ::ng-deep .quinn-md ol {
+  padding-left: 1.25rem;
+}
+
+:host ::ng-deep .quinn-md table {
+  width: 100%;
+  margin: 0.4rem 0;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+:host ::ng-deep .quinn-md th,
+:host ::ng-deep .quinn-md td {
+  padding: 0.25rem 0.45rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+:host ::ng-deep .quinn-md th {
+  background: #eef3f8;
+}
+
+:host ::ng-deep .quinn-md code {
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  background: #eef3f8;
+}
+
+/* ---- Example questions and the typing indicator --------------------------------------------- */
+
+.quinn-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-left: 2.4rem;
+}
+
+.quinn-examples__chip {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #b9cde0;
+  border-radius: 1rem;
+  color: #1d5380;
+  font: inherit;
+  font-size: 0.85rem;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.quinn-examples__chip:hover:not(:disabled) {
+  border-color: #1d5380;
+  background: #eef3f8;
+}
+
+.quinn-examples__chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.quinn-typing {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+}
+
+.quinn-typing span {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #8aa4bd;
+  animation: quinn-bounce 1.2s infinite ease-in-out;
+}
+
+.quinn-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.quinn-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes quinn-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-0.35rem);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quinn-pane,
+  .quinn-launcher {
+    transition: none;
+  }
+
+  .quinn-typing span {
+    animation: none;
+  }
+}
+
+:host ::ng-deep .quinn-md a {
+  color: #1d4ed8;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+
+:host ::ng-deep .quinn-md a:hover {
+  border-bottom-style: solid;
+}
+
+/* A person Quinn mentions: opens them in Resource Management. */
+:host ::ng-deep .quinn-md a[href^='/resourcemgt'] {
+  font-weight: 600;
+}

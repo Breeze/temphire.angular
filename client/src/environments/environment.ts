@@ -4,4 +4,6 @@ export const environment = {
   breezeApiRoot: '/api/breeze',
   /** Root of the account controller used for login / logout. */
   accountApiRoot: '/api/account',
+  /** Root of the agent controller - Quinn, see `AgentController`. */
+  agentApiRoot: '/api/agent',
 };

@@ -18,17 +18,24 @@ namespace TempHire.Server.Controllers
     /// <c>IPrincipal</c> that it stored in a server session, whereas this returns a JWT for the client
     /// to present on subsequent requests.
     /// </para>
+    /// <para>
+    /// Multi-tenancy: the user name is an email address, and its domain decides the user's tenant
+    /// (<c>anna@harbor.test</c> belongs to Harbor Staffing).  The tenant is looked up here, once, and
+    /// its id signed into the token.
+    /// </para>
     /// </summary>
     [ApiController]
     [Route("api/account/[action]")]
     public class AccountController : ControllerBase
     {
         private readonly SecurityDbContext _securityContext;
+        private readonly TempHireDbContext _context;
         private readonly TokenService _tokenService;
 
-        public AccountController(SecurityDbContext securityContext, TokenService tokenService)
+        public AccountController(SecurityDbContext securityContext, TempHireDbContext context, TokenService tokenService)
         {
             _securityContext = securityContext;
+            _context = context;
             _tokenService = tokenService;
         }
 
@@ -62,11 +69,23 @@ namespace TempHire.Server.Controllers
                 return Unauthorized(new ErrorResult { Message = "The username or password is incorrect." });
             }
 
-            var (token, expiresUtc) = _tokenService.CreateToken(user);
+            // The tenant whose email domain matches the user name's.  A user without one has proved who
+            // they are but has no company's data to see, so they are refused here rather than given a
+            // token that would only ever return empty results.
+            var domain = Tenant.DomainOf(user.Username);
+            var tenant = domain == null ? null : await _context.Tenants.SingleOrDefaultAsync(t => t.EmailDomain == domain);
+            if (tenant == null)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    new ErrorResult { Message = "Your account is not linked to a company." });
+            }
+
+            var (token, expiresUtc) = _tokenService.CreateToken(user, tenant);
 
             return new LoginResult
             {
                 Username = user.Username,
+                TenantName = tenant.Name,
                 Token = token,
                 ExpiresUtc = expiresUtc
             };
@@ -85,7 +104,11 @@ namespace TempHire.Server.Controllers
         /// <summary>Lets a reloaded client confirm that a stored token is still good.</summary>
         [HttpGet]
         [Authorize]
-        public ActionResult<UserInfo> Me() => new UserInfo { Username = User.Identity?.Name };
+        public ActionResult<UserInfo> Me() => new UserInfo
+        {
+            Username = User.Identity?.Name,
+            TenantName = User.FindFirst(HttpCurrentTenant.TenantNameClaim)?.Value
+        };
     }
 
     // ----------------------------------------------------------------------------------------------
@@ -123,6 +146,7 @@ namespace TempHire.Server.Controllers
     public class LoginResult
     {
         public string Username { get; set; }
+        public string TenantName { get; set; }
         public string Token { get; set; }
         public DateTime ExpiresUtc { get; set; }
     }
@@ -131,6 +155,7 @@ namespace TempHire.Server.Controllers
     public class UserInfo
     {
         public string Username { get; set; }
+        public string TenantName { get; set; }
     }
 
     /// <summary>Serialises as <c>{ "message": "..." }</c>, which is what the client's

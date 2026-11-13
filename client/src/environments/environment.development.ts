@@ -5,4 +5,5 @@ export const environment = {
   // allows http://localhost:4200.
   breezeApiRoot: 'http://localhost:5000/api/breeze',
   accountApiRoot: 'http://localhost:5000/api/account',
+  agentApiRoot: 'http://localhost:5000/api/agent',
 };

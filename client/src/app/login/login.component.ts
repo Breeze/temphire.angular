@@ -25,8 +25,8 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
  * that is preserved; the presentation changed from a Punch dialog to a route, and the form is a
  * Signal Form.
  *
- * The original pre-filled Admin/password under `#if DEBUG`, and the credentials are unchanged in the
- * seeded database, so they are shown as a hint rather than typed in for you.
+ * The original pre-filled Admin/password under `#if DEBUG`.  The seeded users are now one per
+ * company and sign in with an email address, so they are listed as a hint rather than typed in.
  */
 @Component({
   selector: 'app-login',
@@ -45,7 +45,7 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
         <form class="login__form" [formRoot]="loginForm">
           <fieldset class="login__fields" [disabled]="loginForm().submitting()">
             <div class="login__field">
-              <label for="login-username">Username</label>
+              <label for="login-username">Email</label>
               <input
                 pInputText
                 id="login-username"
@@ -83,7 +83,18 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
             </button>
           </div>
 
-          <p class="login__hint">Sample credentials: <code>Admin</code> / <code>password</code></p>
+          <div class="login__hint">
+            Sample users, password <code>password</code>:
+            <ul>
+              <li>
+                <code>anna&#64;harbor.test</code>, <code>ben&#64;harbor.test</code>: Harbor Staffing
+              </li>
+              <li>
+                <code>carla&#64;summit.test</code>, <code>david&#64;summit.test</code>: Summit
+                Talent
+              </li>
+            </ul>
+          </div>
         </form>
       </p-card>
     </div>
@@ -136,6 +147,11 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
         margin: 0;
         font-size: 0.8rem;
         color: #6b7280;
+      }
+
+      .login__hint ul {
+        margin: 0.25rem 0 0;
+        padding-left: 1.1rem;
       }
     `,
   ],

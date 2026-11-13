@@ -234,6 +234,12 @@ export class ResourceSearchComponent {
     }
   }
 
+  /** Puts `text` in the search box and runs the search, as if the user had typed it. */
+  searchFor(text: string): void {
+    this.searchForm.text().value.set(text);
+    this.search();
+  }
+
   /** Port of `StaffingResourceSearchViewModel.Clear`. */
   clear(): void {
     this.searchForm.text().value.set('');
