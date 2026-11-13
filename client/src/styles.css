@@ -1,6 +1,6 @@
 /*
  * Global styles.  Replaces `TempHire/Styles/Styles.xaml`, the WPF ResourceDictionary that held the
- * app's brush palette and control templates.  PrimeNG's Aura preset (configured in `app.config.ts`)
+ * app's brush palette and control templates.  Optimus UI's Aura preset (configured in `app.config.ts`)
  * supplies the control styling, so only the app-level chrome lives here.
  */
 
@@ -38,7 +38,7 @@ body {
 }
 
 /*
- * Signal Forms pass a field's `invalid` state straight to PrimeNG's `pInputText`, which then shows
+ * Signal Forms pass a field's `invalid` state straight to Optimus UI's `pInputText`, which then shows
  * its red border as soon as a required field is empty - before the user has typed anything.  Keep
  * the normal border until the field has been touched.  `signal-form-untouched` is added by the
  * `provideSignalFormsConfig` call in `app.config.ts`, to Signal Forms fields only; fields bound to

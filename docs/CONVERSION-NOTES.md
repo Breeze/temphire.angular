@@ -86,7 +86,7 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 | `IUnitOfWorkManager<T>` | `unit-of-work-manager.ts` | Keyed cache. `Guid.Empty` → `SHARED_UNIT_OF_WORK_KEY` |
 | `IRepository<T>` | `repository.ts` | |
 | `IFactory<T>` / `StaffingResourceFactory` | `EntityFactory` / `StaffingResourceFactory` in `resource-mgt-unit-of-work.ts` | |
-| `IDialogManager`, `DialogResult`, `DialogButtons` | `dialog.service.ts` + `core/dialogs/message-box.component.ts` | Cancellation still surfaces as a thrown error (`DialogCancelledError`) so the ported control flow reads like the original's `catch (TaskCanceledException)`. PrimeNG's two-button `p-confirmDialog` cannot express Yes/No/Cancel, so the buttons are data |
+| `IDialogManager`, `DialogResult`, `DialogButtons` | `dialog.service.ts` + `core/dialogs/message-box.component.ts` | Cancellation still surfaces as a thrown error (`DialogCancelledError`) so the ported control flow reads like the original's `catch (TaskCanceledException)`. Optimus UI's two-button `p-confirmDialog` cannot express Yes/No/Cancel, so the buttons are data |
 | `IBusyWatcher` / `Busy.GetTicket()` | `busy.service.ts` — `await busy.run(promise)` | |
 | `IToolbarManager`, `ToolbarAction`, `ToolbarGroup` | `toolbar.service.ts` | `CanExecute` was found by reflecting for a `Can<Method>` property; it is now an explicit `canExecute` thunk reading signals |
 | `IAuthenticationService`, `LoggedInMessage`, `LoggedOutMessage` | `auth.service.ts` (+ `auth.interceptor.ts`, `auth.guard.ts`) | The two messages become one `isLoggedIn` signal |
@@ -174,7 +174,7 @@ Everything below is a conscious departure from the original.
   `/login` route plus `authGuard` is the web idiom, and it makes browser refresh work.
 - *Selection debounce removed.* `ResourceMgtViewModel` debounced grid selection with a 200 ms
   `DispatcherTimer` because the WPF `DataGrid` fires `SelectionChanged` during keyboard navigation.
-  PrimeNG raises it once per click, so the timer is gone.
+  Optimus UI raises it once per click, so the timer is gone.
 - *Work experience is listed newest first.* The original ordered by `From` ascending.
 - *Primary address/phone is chosen with a radio button*, where the original used a "Set primary"
   button per row. The enable/disable rules (`CanSetPrimary`, `CanDelete`) are unchanged.
@@ -219,7 +219,7 @@ Everything below is a conscious departure from the original.
   with `[(ngModel)]` in the component that edits them, because that edit is an event in that
   component.  Anything that has to react to an entity change *elsewhere*, as the toolbar's Save
   button does, reads `UnitOfWork.changes` (or `hasChanges`) inside a `computed`.
-- **Signal Forms and PrimeNG.** `[formField]` passes the field's `invalid` state to PrimeNG's
+- **Signal Forms and Optimus UI.** `[formField]` passes the field's `invalid` state to Optimus UI's
   `pInputText`, which shows its red border at once, and binding `[invalid]` yourself next to
   `[formField]` is a compile error (NG8022).  `app.config.ts` therefore adds a
   `signal-form-untouched` class through `provideSignalFormsConfig`, and `styles.css` holds back the
@@ -228,7 +228,7 @@ Everything below is a conscious departure from the original.
 - **Adding an editable entity field** means binding it with `[(ngModel)]` plus
   `[breezeField]="entity" breezeProperty="name" #nameField="breezeField"
   [invalid]="nameField.invalid()"`.  Without the directive the field still works, but its Breeze
-  errors reach neither the form nor PrimeNG.  Validation rules belong on the server's entity, not
+  errors reach neither the form nor Optimus UI.  Validation rules belong on the server's entity, not
   in the form.
 - **One `MetadataStore` for the page.** Breeze binds each registered entity class to a single
   store, so `EntityManagerProvider` keeps one store across logout and login and registers the

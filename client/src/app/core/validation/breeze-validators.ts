@@ -12,7 +12,7 @@ import { DataProperty, ValidationError } from 'breeze-client';
  * before a `StaffingResource` is created - this applies the same rules the entity will: the
  * validators Breeze built from the server's `[Required]` and `[StringLength]` attributes.  Each
  * Breeze error becomes a Signal Forms error, which the form shows like any other, and which
- * `[formField]` passes on to PrimeNG as `invalid`.
+ * `[formField]` passes on to Optimus UI as `invalid`.
  *
  * ```ts
  * const firstName = metadataStore.getAsEntityType(StaffingResource).getDataProperty('firstName');

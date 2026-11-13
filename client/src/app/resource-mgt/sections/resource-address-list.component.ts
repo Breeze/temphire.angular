@@ -1,9 +1,9 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonDirective } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { RadioButtonModule } from 'primeng/radiobutton';
-import { SelectModule } from 'primeng/select';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { RadioButtonModule } from '@openng/optimus-ui/radiobutton';
+import { SelectModule } from '@openng/optimus-ui/select';
 
 import { Address, AddressType, StaffingResource } from '../../core/model';
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
@@ -55,122 +55,129 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
         Add
       </button>
 
-      @for (address of addresses(); track address.id) {
-        <div class="address temphire-elevated">
-          <div class="address__header">{{ address.addressType?.displayName }}</div>
+      <div class="addresses__cards">
+        @for (address of addresses(); track address.id) {
+          <div class="address temphire-elevated">
+            <div class="address__header">{{ address.addressType?.displayName }}</div>
 
-          <div class="address__body">
-            <div class="address__fields">
-              <label [for]="'address1-' + address.id">Address 1:</label>
-              <input
-                pInputText
-                [id]="'address1-' + address.id"
-                [readOnly]="readOnly()"
-                [(ngModel)]="address.address1"
-                [breezeField]="address"
-                breezeProperty="address1"
-                #address1Field="breezeField"
-                [invalid]="address1Field.invalid()"
-              />
-  
-              <label [for]="'address2-' + address.id">Address 2:</label>
-              <input
-                pInputText
-                [id]="'address2-' + address.id"
-                [readOnly]="readOnly()"
-                [(ngModel)]="address.address2"
-                [breezeField]="address"
-                breezeProperty="address2"
-                #address2Field="breezeField"
-                [invalid]="address2Field.invalid()"
-              />
-  
-              <label [for]="'city-' + address.id">City:</label>
-              <input
-                pInputText
-                [id]="'city-' + address.id"
-                [readOnly]="readOnly()"
-                [(ngModel)]="address.city"
-                [breezeField]="address"
-                breezeProperty="city"
-                #cityField="breezeField"
-                [invalid]="cityField.invalid()"
-              />
-  
-              <label [for]="'state-' + address.id">State:</label>
-              <p-select
-                [inputId]="'state-' + address.id"
-                [options]="states()"
-                optionValue="id"
-                optionLabel="name"
-                [disabled]="readOnly()"
-                [(ngModel)]="address.stateId"
-                [breezeField]="address"
-                breezeProperty="stateId"
-                #stateIdField="breezeField"
-                [invalid]="stateIdField.invalid()"
-                appendTo="body"
-                styleClass="address__state"
-              />
-  
-              <label [for]="'zipcode-' + address.id">Zipcode:</label>
-              <input
-                pInputText
-                class="address__zipcode"
-                [id]="'zipcode-' + address.id"
-                [readOnly]="readOnly()"
-                [(ngModel)]="address.zipcode"
-                [breezeField]="address"
-                breezeProperty="zipcode"
-                #zipcodeField="breezeField"
-                [invalid]="zipcodeField.invalid()"
-              />
-            </div>
-  
-            <div class="address__actions">
-              <div class="address__primary">
-                <p-radiobutton
-                  name="primary-address"
-                  [inputId]="'primary-' + address.id"
-                  [value]="address.id"
-                  [ngModel]="staffingResource().primaryAddress?.id"
-                  [disabled]="!canSetPrimary(address)"
-                  (ngModelChange)="setPrimary(address)"
+            <div class="address__body">
+              <div class="address__fields">
+                <label [for]="'address1-' + address.id">Address 1:</label>
+                <input
+                  pInputText
+                  [id]="'address1-' + address.id"
+                  [readOnly]="readOnly()"
+                  [(ngModel)]="address.address1"
+                  [breezeField]="address"
+                  breezeProperty="address1"
+                  #address1Field="breezeField"
+                  [invalid]="address1Field.invalid()"
                 />
-                <label [for]="'primary-' + address.id">Primary</label>
+
+                <label [for]="'address2-' + address.id">Address 2:</label>
+                <input
+                  pInputText
+                  [id]="'address2-' + address.id"
+                  [readOnly]="readOnly()"
+                  [(ngModel)]="address.address2"
+                  [breezeField]="address"
+                  breezeProperty="address2"
+                  #address2Field="breezeField"
+                  [invalid]="address2Field.invalid()"
+                />
+
+                <label [for]="'city-' + address.id">City:</label>
+                <input
+                  pInputText
+                  [id]="'city-' + address.id"
+                  [readOnly]="readOnly()"
+                  [(ngModel)]="address.city"
+                  [breezeField]="address"
+                  breezeProperty="city"
+                  #cityField="breezeField"
+                  [invalid]="cityField.invalid()"
+                />
+
+                <label [for]="'state-' + address.id">State:</label>
+                <p-select
+                  [inputId]="'state-' + address.id"
+                  [options]="states()"
+                  optionValue="id"
+                  optionLabel="name"
+                  [disabled]="readOnly()"
+                  [(ngModel)]="address.stateId"
+                  [breezeField]="address"
+                  breezeProperty="stateId"
+                  #stateIdField="breezeField"
+                  [invalid]="stateIdField.invalid()"
+                  appendTo="body"
+                  styleClass="address__state"
+                />
+
+                <label [for]="'zipcode-' + address.id">Zipcode:</label>
+                <input
+                  pInputText
+                  class="address__zipcode"
+                  [id]="'zipcode-' + address.id"
+                  [readOnly]="readOnly()"
+                  [(ngModel)]="address.zipcode"
+                  [breezeField]="address"
+                  breezeProperty="zipcode"
+                  #zipcodeField="breezeField"
+                  [invalid]="zipcodeField.invalid()"
+                />
               </div>
-  
-              <button
-                pButton
-                type="button"
-                severity="danger"
-                size="small"
-                [outlined]="true"
-                [disabled]="!canDelete(address)"
-                (click)="delete(address)"
-              >
-                Delete
-              </button>
+
+              <div class="address__actions">
+                <div class="address__primary">
+                  <p-radiobutton
+                    name="primary-address"
+                    [inputId]="'primary-' + address.id"
+                    [value]="address.id"
+                    [ngModel]="staffingResource().primaryAddress?.id"
+                    [disabled]="!canSetPrimary(address)"
+                    (ngModelChange)="setPrimary(address)"
+                  />
+                  <label [for]="'primary-' + address.id">Primary</label>
+                </div>
+
+                <button
+                  pButton
+                  type="button"
+                  severity="danger"
+                  size="small"
+                  [outlined]="true"
+                  [disabled]="!canDelete(address)"
+                  (click)="delete(address)"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      }
+        }
+      </div>
     </div>
   `,
   styles: [
     `
-      /* One column, as wide as the widest card, so every address card has the same width. */
       .addresses {
-        display: grid;
-        grid-template-columns: fit-content(100%);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
         gap: 0.75rem;
       }
 
-      .addresses > button {
-        justify-self: start;
+      /* The cards flow in a row and wrap when the row is full.  They all have the same content
+         width (same labels, same field widths), so they line up as equals. */
+      .addresses__cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
       }
 
       .address {
+        min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 0.75rem;

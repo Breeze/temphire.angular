@@ -4,7 +4,7 @@ import { Injectable, computed, signal } from '@angular/core';
  * Port of Punch's `IBusyWatcher` / `BusyWatcher`.
  *
  * The WPF views wrapped their content in an Xceed `BusyIndicator` bound to `Busy.IsBusy`; the
- * Angular views use PrimeNG's `p-blockUI` or a `<p-progressSpinner>` bound to `isBusy()`.
+ * Angular views use Optimus UI's `p-blockUI` or a `<p-progressSpinner>` bound to `isBusy()`.
  *
  * `Busy.GetTicket()` in a `using` block becomes `await busy.run(promise)` here - the counter is
  * incremented for the life of the promise and decremented in a `finally`, so nesting works the same

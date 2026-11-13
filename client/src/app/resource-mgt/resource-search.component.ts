@@ -11,10 +11,10 @@ import {
   untracked,
 } from '@angular/core';
 import { FormField, FormRoot, form } from '@angular/forms/signals';
-import { ButtonDirective } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { TableModule } from 'primeng/table';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
+import { TableModule } from '@openng/optimus-ui/table';
 
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
 import { AppErrorHandler } from '../core/services/error-handler.service';

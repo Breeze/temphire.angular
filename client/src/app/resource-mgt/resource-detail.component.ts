@@ -1,5 +1,5 @@
 import { Component, input, signal } from '@angular/core';
-import { TabsModule } from 'primeng/tabs';
+import { TabsModule } from '@openng/optimus-ui/tabs';
 
 import { StaffingResource } from '../core/model';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';

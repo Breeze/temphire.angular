@@ -23,8 +23,8 @@ import { Entity, ValidationError } from 'breeze-client';
  *    `NgModel` bound to an entity property is invalid exactly when Breeze says the property is, and
  *    gets the usual `ng-invalid` class.  There is no `required` or other Angular validator: the
  *    rules live once, on the server's model.
- *  - **to PrimeNG**, through the `invalid` signal, which the template binds to the control's
- *    `[invalid]` input.  PrimeNG components only read that input, not the form control's state.
+ *  - **to Optimus UI**, through the `invalid` signal, which the template binds to the control's
+ *    `[invalid]` input.  Optimus UI components only read that input, not the form control's state.
  *
  * It listens to the entity's `validationErrorsChanged` event, so errors that appear without the
  * user touching the field - when a new entity is attached empty, or when a save validates every

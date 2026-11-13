@@ -24,7 +24,7 @@ import { ResourceDetailComponent } from './resource-detail.component';
 import { ResourceNameEditorComponent, ResourceName } from './resource-name-editor.component';
 import { ResourceSearchComponent } from './resource-search.component';
 
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
 
 type EditMode = 'view' | 'edit';
 
@@ -208,7 +208,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
 
   /**
    * Port of `OnSelectionChangeElapsed`.  The original debounced the grid's selection with a 200 ms
-   * `DispatcherTimer`; PrimeNG raises selection once per click, so the debounce is unnecessary.
+   * `DispatcherTimer`; Optimus UI raises selection once per click, so the debounce is unnecessary.
    */
   async onSelectionChange(item: StaffingResourceListItem | null): Promise<void> {
     if (!item) {

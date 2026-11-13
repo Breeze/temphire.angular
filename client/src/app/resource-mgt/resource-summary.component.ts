@@ -1,6 +1,6 @@
 import { Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TextareaModule } from 'primeng/textarea';
+import { TextareaModule } from '@openng/optimus-ui/textarea';
 
 import { StaffingResource } from '../core/model';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';

@@ -8,11 +8,11 @@ import {
   required,
 } from '@angular/forms/signals';
 import { Router } from '@angular/router';
-import { ButtonDirective } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { InputTextModule } from 'primeng/inputtext';
-import { MessageModule } from 'primeng/message';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { CardModule } from '@openng/optimus-ui/card';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { MessageModule } from '@openng/optimus-ui/message';
+import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
 
 import { AuthService } from '../core/services/auth.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';

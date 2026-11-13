@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormField, FormRoot, form } from '@angular/forms/signals';
-import { ButtonDirective } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { InputTextModule } from 'primeng/inputtext';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { DynamicDialogConfig, DynamicDialogRef } from '@openng/optimus-ui/dynamicdialog';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
 
 import { StaffingResource } from '../core/model';
 import { EntityManagerProvider } from '../core/services/entity-manager-provider';

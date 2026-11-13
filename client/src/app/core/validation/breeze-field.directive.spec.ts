@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { DataService, Entity, EntityManager, MetadataStore } from 'breeze-client';
-import { InputTextModule } from 'primeng/inputtext';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
 
 import metadata from '../../../../metadata.json';
 import { BreezeFieldDirective } from './breeze-field.directive';
@@ -53,7 +53,7 @@ describe('BreezeFieldDirective', () => {
     return { fixture, address, input, field: input.injector.get(BreezeFieldDirective) };
   }
 
-  it('reports a Breeze error to the form and to PrimeNG', async () => {
+  it('reports a Breeze error to the form and to Optimus UI', async () => {
     const { input, field } = await render();
 
     expect(field.invalid()).toBe(true);

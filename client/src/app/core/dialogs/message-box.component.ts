@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { ButtonDirective } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { DynamicDialogConfig, DynamicDialogRef } from '@openng/optimus-ui/dynamicdialog';
 
 export interface MessageBoxButton {
   label: string;
@@ -17,7 +17,7 @@ export interface MessageBoxData {
  * The message box behind `AppDialogService.showMessage`.
  *
  * Punch's `IDialogManager.ShowMessageAsync` accepted an arbitrary set of `DialogButtons`
- * (Ok/OkCancel/YesNo/YesNoCancel), which PrimeNG's two-button `p-confirmDialog` cannot express -
+ * (Ok/OkCancel/YesNo/YesNoCancel), which Optimus UI's two-button `p-confirmDialog` cannot express -
  * TempHire genuinely needs the three-button "save / discard / cancel" prompt when closing a screen
  * with unsaved changes.  So the buttons are data here, just as they were in the original.
  */

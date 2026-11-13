@@ -1,8 +1,8 @@
 import { Component, ElementRef, afterRenderEffect, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { FormField, FormRoot, disabled, form } from '@angular/forms/signals';
-import { ButtonDirective } from 'primeng/button';
-import { TextareaModule } from 'primeng/textarea';
+import { FormRoot, disabled, form } from '@angular/forms/signals';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { TextareaModule } from '@openng/optimus-ui/textarea';
 
 import { MarkdownPipe } from './markdown.pipe';
 import { QuinnLogoComponent } from './quinn-logo.component';
@@ -24,7 +24,7 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
  */
 @Component({
   selector: 'app-quinn',
-  imports: [FormField, FormRoot, ButtonDirective, TextareaModule, MarkdownPipe, QuinnLogoComponent],
+  imports: [FormRoot, ButtonDirective, TextareaModule, MarkdownPipe, QuinnLogoComponent],
   providers: [QuinnService],
   host: { '(document:keydown.escape)': 'quinn.close()' },
   template: `
@@ -117,14 +117,15 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
             placeholder="Ask Quinn about your staffing data..."
             aria-label="Your question"
             #questionBox
-            [formField]="questionForm.question"
+            [value]="questionForm.question().value()"
+            (input)="questionForm.question().value.set(questionBox.value)"
+            [disabled]="questionForm.question().disabled()"
             (keydown.enter)="sendOnEnter($event)"
           ></textarea>
           <button pButton type="submit" aria-label="Send" [disabled]="!canSend()">
             <i class="pi pi-send"></i>
           </button>
         </div>
-        <!-- Also keeps Send clear of PrimeNG's license badge in the bottom right corner. -->
         <p class="quinn-pane__note">Quinn can make mistakes.</p>
       </form>
     </aside>
@@ -139,7 +140,18 @@ export class QuinnComponent {
   private readonly messageList = viewChild.required<ElementRef<HTMLElement>>('messageList');
   private readonly questionBox = viewChild.required<ElementRef<HTMLTextAreaElement>>('questionBox');
 
-  /** The question box: a Signal Form, disabled while Quinn is answering. */
+  /**
+   * The question box: a Signal Form, disabled while Quinn is answering.
+   *
+   * The textarea is bound to the field by hand rather than with `[formField]`, because Optimus UI
+   * 2.0.2's `pTextarea` cannot sit next to `[formField]`: it subscribes to the `valueChanges` of the
+   * element's `NgControl`, and the one Signal Forms provides has none, so it throws on init.  Once
+   * Optimus UI handles Signal Forms there, go back to `[formField]="questionForm.question"` and
+   * drop the extra clearing in the submit action.
+   *
+   * Reported as https://github.com/openng-org/optimus-ui/issues/203, with a fix pending in
+   * https://github.com/openng-org/optimus-ui/pull/1956.
+   */
   protected readonly questionForm = form(
     signal({ question: '' }),
     (path) => disabled(path.question, () => this.quinn.busy()),
@@ -148,6 +160,10 @@ export class QuinnComponent {
         action: async (field) => {
           const question = field.question().value();
           field.question().value.set('');
+          // Also clear the element itself: when Enter follows the last keystroke before the view
+          // has re-rendered, the `[value]` binding never saw the text, so '' would not count as a
+          // change and the question would stay in the box.
+          this.questionBox().nativeElement.value = '';
           await this.quinn.ask(question);
         },
       },
@@ -177,6 +193,20 @@ export class QuinnComponent {
         }
       }
       wasBusy = busy;
+    });
+
+    // Opening the pane puts the cursor in the question box, so a question can be typed straight
+    // away.  After rendering, because the pane is inert while closed and inert elements cannot take
+    // focus.  `preventScroll`, because the pane is still sliding in from beyond the right edge.  If
+    // Quinn is still busy with an earlier question the box is disabled; the effect above focuses it
+    // once the answer is in.
+    let wasOpen = false;
+    afterRenderEffect(() => {
+      const open = this.quinn.isOpen();
+      if (open && !wasOpen) {
+        this.questionBox().nativeElement.focus({ preventScroll: true });
+      }
+      wasOpen = open;
     });
   }
 

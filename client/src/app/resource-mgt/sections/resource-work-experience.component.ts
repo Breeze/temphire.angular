@@ -1,10 +1,10 @@
 import { Component, computed, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonDirective } from 'primeng/button';
-import { DatePickerModule } from 'primeng/datepicker';
-import { DividerModule } from 'primeng/divider';
-import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { DatePickerModule } from '@openng/optimus-ui/datepicker';
+import { DividerModule } from '@openng/optimus-ui/divider';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { TextareaModule } from '@openng/optimus-ui/textarea';
 
 import { StaffingResource, WorkExperienceItem } from '../../core/model';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
