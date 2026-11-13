@@ -146,7 +146,11 @@ export class QuinnComponent {
    * The textarea is bound to the field by hand rather than with `[formField]`, because Optimus UI
    * 2.0.2's `pTextarea` cannot sit next to `[formField]`: it subscribes to the `valueChanges` of the
    * element's `NgControl`, and the one Signal Forms provides has none, so it throws on init.  Once
-   * Optimus UI handles Signal Forms there, go back to `[formField]="questionForm.question"`.
+   * Optimus UI handles Signal Forms there, go back to `[formField]="questionForm.question"` and
+   * drop the extra clearing in the submit action.
+   *
+   * Reported as https://github.com/openng-org/optimus-ui/issues/203, with a fix pending in
+   * https://github.com/openng-org/optimus-ui/pull/1956.
    */
   protected readonly questionForm = form(
     signal({ question: '' }),
