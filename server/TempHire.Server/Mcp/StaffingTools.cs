@@ -17,6 +17,11 @@ namespace TempHire.Server.Mcp
     /// so neither the model nor a prompt injection can widen what they see.
     /// </para>
     /// <para>
+    /// Every person in a result comes with their id (<c>id</c>, or <c>personId</c> next to
+    /// <c>person</c>).  The model has no use for it, but <c>ResourceLinker</c> turns the names in
+    /// Quinn's answer into links to those people.
+    /// </para>
+    /// <para>
     /// A new instance is created per request, with that request's <see cref="TempHireDbContext"/>.
     /// </para>
     /// </summary>
@@ -32,6 +37,7 @@ namespace TempHire.Server.Mcp
 
         [McpServerTool(Name = "search_staffing_resources", Title = "Search staffing resources", ReadOnly = true)]
         [Description("Finds staffing resources (the people the company places) by name, skill or location. " +
+                     "Use it for any question about who has a skill or who lives somewhere. " +
                      "Returns each person's name, primary city and state, primary phone, skills and hourly rate. " +
                      "Call it with no filters to list everyone.")]
         public async Task<object> SearchStaffingResources(
@@ -71,6 +77,7 @@ namespace TempHire.Server.Mcp
                 .Take(Math.Clamp(limit, 1, 100))
                 .Select(r => new
                 {
+                    id = r.Id,
                     name = r.FirstName + " " + r.LastName,
                     city = r.Addresses.Where(a => a.Primary).Select(a => a.City).FirstOrDefault(),
                     state = r.Addresses.Where(a => a.Primary).Select(a => a.State.ShortName).FirstOrDefault(),
@@ -105,7 +112,7 @@ namespace TempHire.Server.Mcp
 
             if (matches.Count > 1)
             {
-                return new { found = false, message = "Several people match; ask about one of them.", matches = matches.Select(m => m.Name) };
+                return new { found = false, message = "Several people match; ask about one of them.", matches = matches.Select(m => new { id = m.Id, name = m.Name }) };
             }
 
             var id = matches[0].Id;
@@ -114,6 +121,7 @@ namespace TempHire.Server.Mcp
                 .Select(r => new
                 {
                     found = true,
+                    id = r.Id,
                     name = r.FirstName + " " + (r.MiddleName == "" ? "" : r.MiddleName + " ") + r.LastName,
                     summary = r.Summary,
                     addresses = r.Addresses.OrderByDescending(a => a.Primary).Select(a => new
@@ -147,7 +155,8 @@ namespace TempHire.Server.Mcp
         }
 
         [McpServerTool(Name = "list_skills", Title = "List skills", ReadOnly = true)]
-        [Description("Every skill in the staffing pool, with how many people have it, most common first.")]
+        [Description("Every skill in the staffing pool, with how many people have it, most common first. " +
+                     "Only counts: to find out who has a skill, use search_staffing_resources with that skill.")]
         public async Task<object> ListSkills(CancellationToken cancellationToken = default)
         {
             var skills = await _db.Skills.AsNoTracking()
@@ -204,10 +213,10 @@ namespace TempHire.Server.Mcp
             };
 
             var highest = await rates.OrderByDescending(x => x.Amount)
-                .Select(x => new { name = x.StaffingResource.FirstName + " " + x.StaffingResource.LastName, amountUsd = x.Amount })
+                .Select(x => new { id = x.StaffingResourceId, name = x.StaffingResource.FirstName + " " + x.StaffingResource.LastName, amountUsd = x.Amount })
                 .FirstOrDefaultAsync(cancellationToken);
             var lowest = await rates.OrderBy(x => x.Amount)
-                .Select(x => new { name = x.StaffingResource.FirstName + " " + x.StaffingResource.LastName, amountUsd = x.Amount })
+                .Select(x => new { id = x.StaffingResourceId, name = x.StaffingResource.FirstName + " " + x.StaffingResource.LastName, amountUsd = x.Amount })
                 .FirstOrDefaultAsync(cancellationToken);
 
             return new { rateType = type, currency = "USD", rows, highest, lowest };
@@ -266,6 +275,7 @@ namespace TempHire.Server.Mcp
                 .Take(Math.Clamp(limit, 1, 100))
                 .Select(w => new
                 {
+                    personId = w.StaffingResourceId,
                     person = w.StaffingResource.FirstName + " " + w.StaffingResource.LastName,
                     w.Company,
                     position = w.PositionTitle,

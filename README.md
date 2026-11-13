@@ -157,7 +157,8 @@ Once you are signed in, a round button in the bottom right corner opens a chat p
 who answers questions about your company's staffing data: *Who knows SQL?*, *How many people do we
 have in each state?*, *Who has worked as a project manager?*  The first time the pane opens, Quinn
 introduces themselves and offers example questions to click.  Answers are Markdown, rendered in the
-pane, so figures arrive as lists and tables.
+pane, so figures arrive as lists and tables.  The people Quinn mentions are links: a click closes
+the pane and opens that person in Resource Management, searched for by last name and selected.
 
 Ask Quinn about their name, and they tell you where it comes from: *Punch*, the drink, is named
 after the Hindi *panch*, five, for its five ingredients, and TempHire began on IdeaBlade's Punch
@@ -192,6 +193,14 @@ client ──POST /api/agent/chat──► AgentController ──► QuinnAgent 
   the signed-in user's own bearer token, so the tools run with that user's identity and company.
   Nothing in the agent can reach another company's data, whatever the model asks for.  Any other
   MCP client with a valid TempHire token can use `/mcp` too.
+- **Links to people are added by the server, not written by the model.**  The tools return each
+  person's id along with their name.  After the model has answered, `ResourceLinker` takes the
+  people from the tool results of that answer and turns their names in the text into Markdown
+  links to `/resourcemgt?resource=<id>`.  So only people the tools really returned are linked, and
+  always to the right record; a name the model gets wrong, or invents, stays plain text.  In the
+  client, the pane catches clicks on links into the app and routes them; `ResourceMgtComponent`
+  receives the id as its `resource` input (the router binds query parameters to inputs), opens the
+  person, with the usual prompt if there are unsaved edits, and searches for them.
 
 ### Ollama or Claude
 

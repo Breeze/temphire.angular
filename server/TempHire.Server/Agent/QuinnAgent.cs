@@ -64,7 +64,9 @@ namespace TempHire.Server.Agent
                 new ChatOptions { Tools = [.. tools] },
                 cancellationToken);
 
-            return response.Text;
+            // The response keeps the tool calls and results made along the way; the people in them
+            // become links in the answer.
+            return ResourceLinker.LinkResources(response.Text, response);
         }
     }
 }

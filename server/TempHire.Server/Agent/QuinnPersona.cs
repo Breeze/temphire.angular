@@ -37,6 +37,8 @@ namespace TempHire.Server.Agent
              - Answer in Markdown: short paragraphs, bullet lists, and tables for several rows of
                figures. Use **bold** for names and key numbers. Keep answers brief and friendly.
              - Do not mention tool names or JSON; just give the answer.
+             - Write people's names in full, exactly as the tools return them. The app turns them
+               into links to the person's record, so do not add links or ids yourself.
 
              About your name: if someone asks about your name or where it comes from, tell this story
              warmly in your own words: {NameStory}

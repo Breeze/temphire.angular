@@ -1,4 +1,15 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
+import { Router } from '@angular/router';
 
 import { CanComponentDeactivate } from '../app.routes';
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
@@ -33,6 +44,9 @@ type EditMode = 'view' | 'edit';
  *
  * That is `IUnitOfWorkManager<IResourceMgtUnitOfWork>.Get(key)` from the WPF app, unchanged in
  * substance - see `UnitOfWorkManager`.
+ *
+ * `/resourcemgt?resource=<id>` opens that staffing resource and searches for them by last name;
+ * the people Quinn mentions link there.
  */
 @Component({
   selector: 'app-resource-mgt',
@@ -45,6 +59,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   private readonly unitOfWorkManager = inject(UnitOfWorkManager);
   private readonly dialogs = inject(AppDialogService);
   private readonly errorHandler = inject(AppErrorHandler);
+  private readonly router = inject(Router);
 
   protected readonly busy = inject(BusyService);
 
@@ -53,6 +68,14 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   readonly editMode = signal<EditMode>('view');
   readonly unitOfWork = signal<ResourceMgtUnitOfWork | null>(null);
   readonly selectedId = signal<string | null>(null);
+
+  /**
+   * The `resource` query parameter: a staffing resource to open, from a link in Quinn's answers.
+   * Bound by the router (`withComponentInputBinding`).
+   */
+  readonly resource = input<string | undefined>();
+
+  private readonly search = viewChild.required(ResourceSearchComponent);
 
   readonly isReadOnly = computed(() => this.editMode() === 'view');
   readonly hasResource = computed(() => !!this.staffingResource());
@@ -139,6 +162,16 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     // `registerToolbarGroup` does both, tying the group to this component's lifetime.
     registerToolbarGroup(this.toolbarGroup);
 
+    // Open the resource named in the URL: on arrival, and again whenever a link changes it while
+    // this workspace is already open.  An effect, because it starts a load and a navigation rather
+    // than deriving state.
+    effect(() => {
+      const id = this.resource();
+      if (id) {
+        untracked(() => void this.openFromLink(id));
+      }
+    });
+
     // Don't leave an empty sandbox behind in the root-scoped manager.
     inject(DestroyRef).onDestroy(() => {
       const id = this.staffingResourceId();
@@ -200,6 +233,39 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
 
     this.selectedId.set(item.id);
     await this.loadDetail(item.id, 'view');
+  }
+
+  /**
+   * Opens the staffing resource a link points to, and searches for them by last name so the grid
+   * shows them selected.  Unsaved edits get the usual save / discard / stay prompt first.
+   */
+  private async openFromLink(id: string): Promise<void> {
+    // Take the parameter off the URL, so that following the same link again later is a new
+    // navigation that sets it again.
+    void this.router.navigate([], {
+      queryParams: { resource: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+
+    if (this.staffingResourceId() !== id || !this.isReadOnly()) {
+      try {
+        await this.confirmDiscardPendingChanges();
+      } catch (error) {
+        if (!(error instanceof DialogCancelledError)) {
+          this.errorHandler.show(error);
+        }
+        return;
+      }
+
+      this.selectedId.set(id);
+      await this.loadDetail(id, 'view');
+    }
+
+    const resource = this.staffingResource();
+    if (resource?.id === id) {
+      this.search().searchFor(resource.lastName);
+    }
   }
 
   // ------------------------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 import { Component, ElementRef, afterRenderEffect, inject, signal, viewChild } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormField, FormRoot, disabled, form } from '@angular/forms/signals';
 import { ButtonDirective } from 'primeng/button';
 import { TextareaModule } from 'primeng/textarea';
@@ -13,6 +14,10 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
  *
  * The first time the pane opens, Quinn introduces themselves and offers example questions; a click
  * on one asks it.  Answers arrive as Markdown and are rendered with the `markdown` pipe.
+ *
+ * Links in an answer are handled here: a link into the app (Quinn links the people it mentions to
+ * `/resourcemgt?resource=<id>`) closes the pane and navigates there; any other link opens in a new
+ * tab, so the app is never left by accident.
  *
  * Rendered by the shell only while someone is signed in, and it provides its own `QuinnService`,
  * so the conversation is discarded on sign-out.
@@ -66,7 +71,7 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
         </button>
       </header>
 
-      <div class="quinn-pane__messages" #messageList aria-live="polite">
+      <div class="quinn-pane__messages" #messageList aria-live="polite" (click)="followLink($event)">
         @for (message of quinn.messages(); track message.id) {
           <div class="quinn-message" [class]="'quinn-message--' + message.role">
             @if (message.role !== 'user') {
@@ -128,6 +133,7 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
 export class QuinnComponent {
   protected readonly quinn = inject(QuinnService);
   protected readonly examples = EXAMPLE_QUESTIONS;
+  private readonly router = inject(Router);
 
   private readonly messageList = viewChild.required<ElementRef<HTMLElement>>('messageList');
 
@@ -159,6 +165,23 @@ export class QuinnComponent {
 
   protected canSend(): boolean {
     return !this.quinn.busy() && !!this.questionForm.question().value().trim();
+  }
+
+  /** A click on a link in a message: navigate within the app, or open other sites in a new tab. */
+  protected followLink(event: MouseEvent): void {
+    const link = (event.target as Element).closest('a');
+    if (!link?.href || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+
+    event.preventDefault();
+    const url = new URL(link.href);
+    if (url.origin === location.origin) {
+      this.quinn.close();
+      void this.router.navigateByUrl(url.pathname + url.search + url.hash);
+    } else {
+      window.open(url.href, '_blank', 'noopener');
+    }
   }
 
   /** Enter sends; Shift+Enter starts a new line. */

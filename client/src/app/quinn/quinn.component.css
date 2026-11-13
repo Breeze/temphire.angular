@@ -308,3 +308,18 @@
     animation: none;
   }
 }
+
+:host ::ng-deep .quinn-md a {
+  color: #1d4ed8;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+
+:host ::ng-deep .quinn-md a:hover {
+  border-bottom-style: solid;
+}
+
+/* A person Quinn mentions: opens them in Resource Management. */
+:host ::ng-deep .quinn-md a[href^='/resourcemgt'] {
+  font-weight: 600;
+}
