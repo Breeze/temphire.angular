@@ -194,6 +194,20 @@ export class QuinnComponent {
       }
       wasBusy = busy;
     });
+
+    // Opening the pane puts the cursor in the question box, so a question can be typed straight
+    // away.  After rendering, because the pane is inert while closed and inert elements cannot take
+    // focus.  `preventScroll`, because the pane is still sliding in from beyond the right edge.  If
+    // Quinn is still busy with an earlier question the box is disabled; the effect above focuses it
+    // once the answer is in.
+    let wasOpen = false;
+    afterRenderEffect(() => {
+      const open = this.quinn.isOpen();
+      if (open && !wasOpen) {
+        this.questionBox().nativeElement.focus({ preventScroll: true });
+      }
+      wasOpen = open;
+    });
   }
 
   protected canSend(): boolean {
