@@ -7,6 +7,27 @@ what such applications need beyond CRUD screens: a master/detail workspace, edit
 sandboxes with save and cancel, a cached lookup data set, client- and server-side validation from
 one model, authentication, and entity classes generated from the server's model.
 
+**Contents**
+
+- [Prerequisites](#prerequisites)
+- [Running it](#running-it)
+  - [Building for production](#building-for-production)
+- [Entity classes are generated](#entity-classes-are-generated)
+- [Quinn, the assistant](#quinn-the-assistant)
+  - [How it works](#how-it-works)
+  - [Ollama or Claude](#ollama-or-claude)
+  - [Setting up Ollama](#setting-up-ollama)
+  - [Setting up Claude](#setting-up-claude)
+- [Multi-tenancy](#multi-tenancy)
+- [The database schema](#the-database-schema)
+- [Layout](#layout)
+- [Why these libraries](#why-these-libraries)
+  - [Angular as of version 22](#angular-as-of-version-22)
+  - [Validation comes from the model](#validation-comes-from-the-model)
+- [Using a different database](#using-a-different-database)
+- [Configuration](#configuration)
+- [Known gaps](#known-gaps)
+
 > **Built on Breeze 3.** TempHire uses [**Breeze 3**](https://github.com/Breeze/breeze-client-v3),
 > the new major version of Breeze released in September 2026: `breeze-client` 3 on the client, an
 > ESM-only rewrite for modern TypeScript with typed entities, typed queries and an entity class
@@ -65,8 +86,9 @@ table and the notes describe WPF.
 - SQL Server **LocalDB** (ships with the Visual Studio "Data storage and processing" workload and
   with [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads)), or any
   SQL Server instance — see [Using a different database](#using-a-different-database)
-- For Quinn, one of: [Ollama](https://ollama.com) with the `qwen3:4b-instruct` model
-  (`ollama pull qwen3:4b-instruct`), the default; or an Anthropic API key for Claude.  The rest of
+- For Quinn, one of: [Ollama](https://ollama.com) with the `qwen3:4b-instruct` model, the default
+  (see [Setting up Ollama](#setting-up-ollama)); or an Anthropic API key for Claude (see
+  [Setting up Claude](#setting-up-claude)).  The rest of
   the app works without either; Quinn then explains that the model isn't available.
 
 ## Running it
@@ -219,20 +241,62 @@ The `Agent` section of `server/TempHire.Server/appsettings.json` picks the model
 model is a good demo but not a careful analyst; it sometimes misreads a tool's result, which is why
 the pane notes that Quinn can make mistakes.  **Claude** gives noticeably better answers.
 
-Claude needs an Anthropic API key, which belongs in the server's
-[user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets), never in
-`appsettings.json`.  `server/Set-ClaudeApiKey.ps1` stores it there without echoing it:
+### Setting up Ollama
+
+1. **Install Ollama** from <https://ollama.com/download>: the installer on Windows and macOS, or
+   `curl -fsSL https://ollama.com/install.sh | sh` on Linux.  It runs in the background and serves
+   its API at `http://127.0.0.1:11434`, the endpoint in `appsettings.json`.
+2. **Download the model** (about 2.5 GB):
+
+   ```
+   ollama pull qwen3:4b-instruct
+   ```
+
+3. **Check it** - the model is listed, and answers:
+
+   ```
+   ollama list
+   ollama run qwen3:4b-instruct "Say hello"
+   ```
+
+4. **Start the TempHire server** (or restart it) and open Quinn's pane.  Its header shows
+   *qwen3:4b-instruct via Ollama*.  If Ollama isn't running, Quinn replies that it can't reach
+   Ollama, with the endpoint and the `ollama pull` command to check.
+
+The first question after Ollama starts takes longer while the model loads into memory; Ollama
+unloads it again after a few idle minutes.
+
+**Another model.**  Quinn needs a model that supports tool calling: in the
+[Ollama library](https://ollama.com/library) those are tagged *tools*.  Pull it and set
+`Agent:Ollama:Model` to its name.  A larger model answers more reliably, if your machine has the
+memory for it.  To use Ollama on another machine, set `Agent:Ollama:Endpoint` to its address.
+
+### Setting up Claude
+
+Claude needs an Anthropic API key (from the [Claude Console](https://platform.claude.com)), which
+belongs in the server's [user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets),
+never in `appsettings.json`.  `server/Set-ClaudeApiKey.ps1` prompts for it and stores it there
+without echoing it.  Run it from **PowerShell**, in the `server` folder:
 
 ```powershell
-cd server
 .\Set-ClaudeApiKey.ps1 -UseClaude   # prompts for the key, stores it, and switches Quinn to Claude
 .\Set-ClaudeApiKey.ps1 -UseOllama   # back to Ollama; the key stays stored
 .\Set-ClaudeApiKey.ps1 -Remove      # deletes the key
 ```
 
+From Command Prompt, `.\Set-ClaudeApiKey.ps1` opens the script in Notepad instead of running it;
+run it through PowerShell there:
+
+```
+powershell -ExecutionPolicy Bypass -File .\Set-ClaudeApiKey.ps1 -UseClaude
+```
+
+(`-ExecutionPolicy Bypass` also helps in PowerShell if it reports that running scripts is disabled.)
+
 `-UseClaude` and `-UseOllama` set `Agent:Provider` in user secrets, which overrides
-`appsettings.json` on your machine only.  Restart the server after either.  User secrets are read
-in the Development environment; in production, set `Agent__Claude__ApiKey` from your secret store.
+`appsettings.json` on your machine only.  Restart the server after either; Quinn's header then
+shows the model in use.  User secrets are read in the Development environment; in production, set
+`Agent__Claude__ApiKey` from your secret store.
 
 ---
 
