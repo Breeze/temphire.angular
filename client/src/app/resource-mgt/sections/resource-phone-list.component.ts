@@ -14,7 +14,7 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
  * Port of `ViewModels/StaffingResource/StaffingResourcePhoneListViewModel.cs` +
  * `StaffingResourcePhoneItemViewModel.cs` + `Views/StaffingResource/StaffingResourcePhoneListView.xaml`.
  *
- * The same shape as the address list, one row per phone number: type, area code, number, and the
+ * The same shape as the address list, one card per phone number: type, area code, number, and the
  * primary / delete actions.  As with the addresses, the per-row
  * `StaffingResourcePhoneItemViewModel` has no counterpart here - it only carried `EditMode` next to
  * the entity and re-raised `CanDelete` / `CanSetPrimary` when `Primary` changed, both of which fall
@@ -38,59 +38,61 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
         Add
       </button>
 
-      @for (phoneNumber of phoneNumbers(); track phoneNumber.id) {
-        <div class="phone temphire-elevated">
-          <span class="phone__type">{{ phoneNumber.phoneNumberType?.name }}</span>
+      <div class="phones__cards">
+        @for (phoneNumber of phoneNumbers(); track phoneNumber.id) {
+          <div class="phone temphire-elevated">
+            <span class="phone__type">{{ phoneNumber.phoneNumberType?.name }}</span>
 
-          <input
-            pInputText
-            class="phone__area-code"
-            aria-label="Area code"
-            [readOnly]="readOnly()"
-            [(ngModel)]="phoneNumber.areaCode"
-            [breezeField]="phoneNumber"
-            breezeProperty="areaCode"
-            #areaCodeField="breezeField"
-            [invalid]="areaCodeField.invalid()"
-          />
-
-          <input
-            pInputText
-            class="phone__number"
-            aria-label="Number"
-            [readOnly]="readOnly()"
-            [(ngModel)]="phoneNumber.number"
-            [breezeField]="phoneNumber"
-            breezeProperty="number"
-            #numberField="breezeField"
-            [invalid]="numberField.invalid()"
-          />
-
-          <div class="phone__primary">
-            <p-radiobutton
-              name="primary-phone-number"
-              [inputId]="'primary-phone-' + phoneNumber.id"
-              [value]="phoneNumber.id"
-              [ngModel]="staffingResource().primaryPhoneNumber?.id"
-              [disabled]="!canSetPrimary(phoneNumber)"
-              (ngModelChange)="setPrimary(phoneNumber)"
+            <input
+              pInputText
+              class="phone__area-code"
+              aria-label="Area code"
+              [readOnly]="readOnly()"
+              [(ngModel)]="phoneNumber.areaCode"
+              [breezeField]="phoneNumber"
+              breezeProperty="areaCode"
+              #areaCodeField="breezeField"
+              [invalid]="areaCodeField.invalid()"
             />
-            <label [for]="'primary-phone-' + phoneNumber.id">Primary</label>
-          </div>
 
-          <button
-            pButton
-            type="button"
-            severity="danger"
-            size="small"
-            [outlined]="true"
-            [disabled]="!canDelete(phoneNumber)"
-            (click)="delete(phoneNumber)"
-          >
-            Delete
-          </button>
-        </div>
-      }
+            <input
+              pInputText
+              class="phone__number"
+              aria-label="Number"
+              [readOnly]="readOnly()"
+              [(ngModel)]="phoneNumber.number"
+              [breezeField]="phoneNumber"
+              breezeProperty="number"
+              #numberField="breezeField"
+              [invalid]="numberField.invalid()"
+            />
+
+            <div class="phone__primary">
+              <p-radiobutton
+                name="primary-phone-number"
+                [inputId]="'primary-phone-' + phoneNumber.id"
+                [value]="phoneNumber.id"
+                [ngModel]="staffingResource().primaryPhoneNumber?.id"
+                [disabled]="!canSetPrimary(phoneNumber)"
+                (ngModelChange)="setPrimary(phoneNumber)"
+              />
+              <label [for]="'primary-phone-' + phoneNumber.id">Primary</label>
+            </div>
+
+            <button
+              pButton
+              type="button"
+              severity="danger"
+              size="small"
+              [outlined]="true"
+              [disabled]="!canDelete(phoneNumber)"
+              (click)="delete(phoneNumber)"
+            >
+              Delete
+            </button>
+          </div>
+        }
+      </div>
     </div>
   `,
   styles: [
@@ -100,6 +102,13 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
+      }
+
+      /* Like the address cards: a row that wraps when it is full. */
+      .phones__cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 0.75rem;
       }
 
       .phone {

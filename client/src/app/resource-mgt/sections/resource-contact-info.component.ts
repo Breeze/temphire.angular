@@ -9,14 +9,16 @@ import { ResourcePhoneListComponent } from './resource-phone-list.component';
  * Port of `ViewModels/StaffingResource/StaffingResourceContactInfoViewModel.cs` +
  * `Views/StaffingResource/StaffingResourceContactInfoView.xaml`.
  *
- * The first detail section (`Index` 0).  It is pure layout: a two column grid with the addresses on
- * the left and the phone numbers on the right, each under its heading.  The original was a
+ * The first detail section (`Index` 0).  It is pure layout: the addresses, then the phone numbers,
+ * each under its heading.  The original was a
  * `Conductor<IScreen>.Collection.AllActive` that activated the two child view models and forwarded
  * `Start` / `Stop` to them; here the children are ordinary components and the resource, edit mode
  * and unit of work simply flow down as inputs, so there is no lifecycle to forward.
  *
- * The WPF grid used fixed `Auto` columns inside a horizontally scrolling `ScrollViewer`; the columns
- * stack on narrow screens instead of scrolling sideways.
+ * The WPF view put the two lists side by side, in fixed `Auto` columns inside a horizontally
+ * scrolling `ScrollViewer`.  Here they are stacked, and within each list the cards flow in a row
+ * that wraps (see the two list components): a wide window shows them side by side without a gap
+ * between the lists, and a narrow one wraps them instead of scrolling sideways.
  */
 @Component({
   selector: 'app-resource-contact-info',
@@ -46,14 +48,8 @@ import { ResourcePhoneListComponent } from './resource-phone-list.component';
     `
       .contact-info {
         display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        gap: 1.25rem 2rem;
-      }
-
-      .contact-info > section {
-        flex: 1 1 22rem;
-        min-width: 0;
+        flex-direction: column;
+        gap: 1.25rem;
       }
     `,
   ],
