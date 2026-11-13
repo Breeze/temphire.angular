@@ -1,0 +1,174 @@
+import { Component, ElementRef, afterRenderEffect, inject, signal, viewChild } from '@angular/core';
+import { FormField, FormRoot, disabled, form } from '@angular/forms/signals';
+import { ButtonDirective } from 'primeng/button';
+import { TextareaModule } from 'primeng/textarea';
+
+import { MarkdownPipe } from './markdown.pipe';
+import { QuinnLogoComponent } from './quinn-logo.component';
+import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
+
+/**
+ * Quinn, the TempHire assistant: a round launcher button in the bottom right corner, and a chat
+ * pane that slides in from the right.
+ *
+ * The first time the pane opens, Quinn introduces themselves and offers example questions; a click
+ * on one asks it.  Answers arrive as Markdown and are rendered with the `markdown` pipe.
+ *
+ * Rendered by the shell only while someone is signed in, and it provides its own `QuinnService`,
+ * so the conversation is discarded on sign-out.
+ */
+@Component({
+  selector: 'app-quinn',
+  imports: [FormField, FormRoot, ButtonDirective, TextareaModule, MarkdownPipe, QuinnLogoComponent],
+  providers: [QuinnService],
+  host: { '(document:keydown.escape)': 'quinn.close()' },
+  template: `
+    @if (!quinn.isOpen()) {
+      <button
+        type="button"
+        class="quinn-launcher"
+        aria-label="Chat with Quinn"
+        title="Chat with Quinn"
+        (click)="quinn.open()"
+      >
+        <app-quinn-logo class="quinn-launcher__logo" />
+      </button>
+    }
+
+    <aside
+      class="quinn-pane"
+      [class.quinn-pane--open]="quinn.isOpen()"
+      [inert]="!quinn.isOpen()"
+      role="dialog"
+      aria-label="Chat with Quinn"
+    >
+      <header class="quinn-pane__header">
+        <app-quinn-logo class="quinn-pane__logo" />
+        <div class="quinn-pane__title">
+          <strong>Quinn</strong>
+          <span>
+            {{ quinn.companyName() ?? 'TempHire' }}
+            @if (quinn.info.hasValue()) {
+              · {{ quinn.info.value().model }}
+            }
+          </span>
+        </div>
+        <button
+          pButton
+          type="button"
+          [text]="true"
+          severity="contrast"
+          class="quinn-pane__close"
+          aria-label="Close"
+          (click)="quinn.close()"
+        >
+          <i class="pi pi-times"></i>
+        </button>
+      </header>
+
+      <div class="quinn-pane__messages" #messageList aria-live="polite">
+        @for (message of quinn.messages(); track message.id) {
+          <div class="quinn-message" [class]="'quinn-message--' + message.role">
+            @if (message.role !== 'user') {
+              <app-quinn-logo class="quinn-message__avatar" />
+            }
+            <div
+              class="quinn-message__bubble quinn-md"
+              [innerHTML]="message.content | markdown"
+            ></div>
+          </div>
+
+          @if (message.intro) {
+            <div class="quinn-examples">
+              @for (example of examples; track example.label) {
+                <button
+                  type="button"
+                  class="quinn-examples__chip"
+                  [disabled]="quinn.busy()"
+                  (click)="quinn.ask(example.question)"
+                >
+                  {{ example.label }}
+                </button>
+              }
+            </div>
+          }
+        }
+
+        @if (quinn.busy()) {
+          <div class="quinn-message quinn-message--assistant" aria-label="Quinn is thinking">
+            <app-quinn-logo class="quinn-message__avatar" />
+            <div class="quinn-message__bubble quinn-typing">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <form class="quinn-pane__input" [formRoot]="questionForm">
+        <div class="quinn-pane__input-row">
+          <textarea
+            pTextarea
+            rows="2"
+            placeholder="Ask Quinn about your staffing data..."
+            aria-label="Your question"
+            [formField]="questionForm.question"
+            (keydown.enter)="sendOnEnter($event)"
+          ></textarea>
+          <button pButton type="submit" aria-label="Send" [disabled]="!canSend()">
+            <i class="pi pi-send"></i>
+          </button>
+        </div>
+        <!-- Also keeps Send clear of PrimeNG's license badge in the bottom right corner. -->
+        <p class="quinn-pane__note">Quinn can make mistakes.</p>
+      </form>
+    </aside>
+  `,
+  styleUrl: './quinn.component.css',
+})
+export class QuinnComponent {
+  protected readonly quinn = inject(QuinnService);
+  protected readonly examples = EXAMPLE_QUESTIONS;
+
+  private readonly messageList = viewChild.required<ElementRef<HTMLElement>>('messageList');
+
+  /** The question box: a Signal Form, disabled while Quinn is answering. */
+  protected readonly questionForm = form(
+    signal({ question: '' }),
+    (path) => disabled(path.question, () => this.quinn.busy()),
+    {
+      submission: {
+        action: async (field) => {
+          const question = field.question().value();
+          field.question().value.set('');
+          await this.quinn.ask(question);
+        },
+      },
+    },
+  );
+
+  constructor() {
+    // Keep the newest message in view.  An effect that runs after rendering, because the scroll
+    // height is only known once the new message is in the DOM.
+    afterRenderEffect(() => {
+      this.quinn.messages();
+      this.quinn.busy();
+      const list = this.messageList().nativeElement;
+      list.scrollTop = list.scrollHeight;
+    });
+  }
+
+  protected canSend(): boolean {
+    return !this.quinn.busy() && !!this.questionForm.question().value().trim();
+  }
+
+  /** Enter sends; Shift+Enter starts a new line. */
+  protected sendOnEnter(event: Event): void {
+    if ((event as KeyboardEvent).shiftKey) {
+      return;
+    }
+    event.preventDefault();
+    if (this.canSend()) {
+      (event.target as HTMLTextAreaElement).form?.requestSubmit();
+    }
+  }
+}

@@ -16,6 +16,12 @@ one model, authentication, and entity classes generated from the server's model.
 > typed queries and `createEntity` calls, and validation driven by the Breeze model (see
 > [Validation comes from the model](#validation-comes-from-the-model)).
 
+It goes beyond the original in two ways.  It is **multi-tenant**: each user belongs to a company,
+and every query and save is confined to that company's data (see
+[Multi-tenancy](#multi-tenancy)).  And it has **Quinn**, an AI assistant in a chat pane who answers
+questions about the company's staffing data in plain language, through an MCP server in the same
+.NET server, with a local Ollama model or Claude (see [Quinn, the assistant](#quinn-the-assistant)).
+
 It is also a **modernization example**.  TempHire began as a .NET **Silverlight** and **WPF**
 application built on IdeaBlade's **Punch** framework, which combines DevForce, Caliburn.Micro and
 Entity Framework.  (Punch was first called Cocktail, and its code still uses that name: the
@@ -59,6 +65,9 @@ table and the notes describe WPF.
 - SQL Server **LocalDB** (ships with the Visual Studio "Data storage and processing" workload and
   with [SQL Server Express](https://www.microsoft.com/sql-server/sql-server-downloads)), or any
   SQL Server instance — see [Using a different database](#using-a-different-database)
+- For Quinn, one of: [Ollama](https://ollama.com) with the `qwen3:4b-instruct` model
+  (`ollama pull qwen3:4b-instruct`), the default; or an Anthropic API key for Claude.  The rest of
+  the app works without either; Quinn then explains that the model isn't available.
 
 ## Running it
 
@@ -72,8 +81,11 @@ dotnet restore
 dotnet run
 ```
 
-On first run this creates two databases (`TempHire` and `TempHireSecurity`) and seeds them with the
-same eight staffing resources the original sample shipped with, plus the `Admin` user.
+On startup the server brings two databases (`TempHire` and `TempHireSecurity`) up to date with EF
+Core migrations, creating them on the first run, and seeds them: two companies, two users each, and
+25 staffing resources per company.  Harbor Staffing's include the nine people the original sample
+shipped with.  See [The database schema](#the-database-schema) for why migrating on startup is fine
+here but not in production.
 
 **2. Client** (`http://localhost:4200`)
 
@@ -83,8 +95,16 @@ npm install
 npm start
 ```
 
-Then open <http://localhost:4200> and sign in with **`Admin`** / **`password`** — the credentials
-from the original `SecuritySampleDataProvider`.
+Then open <http://localhost:4200> and sign in as one of the sample users.  The password is
+**`password`** for all of them:
+
+| User | Company |
+|---|---|
+| `anna@harbor.test`, `ben@harbor.test` | Harbor Staffing |
+| `carla@summit.test`, `david@summit.test` | Summit Talent |
+
+Sign in as one user from each company to see that each sees only their own company's people, and
+that Quinn only knows about them too.
 
 ### Building for production
 
@@ -131,24 +151,160 @@ keeping a hand-written property away from the generator.
 
 ---
 
+## Quinn, the assistant
+
+Once you are signed in, a round button in the bottom right corner opens a chat pane with **Quinn**,
+who answers questions about your company's staffing data: *Who knows SQL?*, *How many people do we
+have in each state?*, *Who has worked as a project manager?*  The first time the pane opens, Quinn
+introduces themselves and offers example questions to click.  Answers are Markdown, rendered in the
+pane, so figures arrive as lists and tables.
+
+Ask Quinn about their name, and they tell you where it comes from: *Punch*, the drink, is named
+after the Hindi *panch*, five, for its five ingredients, and TempHire began on IdeaBlade's Punch
+framework.  *Quinn* comes from the Latin *quinque*, five as well.
+
+### How it works
+
+Everything runs in the existing .NET server, behind the same login as the rest of the app:
+
+```
+client ──POST /api/agent/chat──► AgentController ──► QuinnAgent ──► IChatClient (Ollama or Claude)
+ (pane)    (JWT)                                        │                  │ tool calls
+                                                        └── MCP client ────┴──► /mcp (MCP server)
+                                                            (user's JWT)          StaffingTools ──► EF Core
+```
+
+- **The client** (`client/src/app/quinn/`) only shows the conversation.  It sends the conversation
+  so far to `POST /api/agent/chat` and appends the answer; the server keeps no chat state.  Quinn
+  exists only while someone is signed in, so signing out discards the conversation.
+- **The agent** (`server/TempHire.Server/Agent/`) uses
+  [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai):
+  `ChatClientFactory` builds an `IChatClient` for the configured provider, with automatic function
+  invocation, and `QuinnAgent` gives it Quinn's system prompt (`QuinnPersona`) and the MCP server's
+  tools.  `AgentController` (`api/agent/info`, `api/agent/chat`) is the HTTP entry point.
+- **The MCP server** (`server/TempHire.Server/Mcp/`) uses the
+  [MCP C# SDK](https://github.com/modelcontextprotocol/csharp-sdk) and is mapped at `/mcp` with
+  `RequireAuthorization()`.  Its tools in `StaffingTools` are read-only: search people by name,
+  skill or location, one person's details, skills, rate statistics, counts by location, and work
+  history.  They query with **EF Core LINQ, not SQL**, through the same `TempHireDbContext` as
+  Breeze, so the tenant filter applies to them as to everything else.
+- **The agent calls the MCP server as the user.**  `QuinnAgent` connects to `/mcp` over HTTP with
+  the signed-in user's own bearer token, so the tools run with that user's identity and company.
+  Nothing in the agent can reach another company's data, whatever the model asks for.  Any other
+  MCP client with a valid TempHire token can use `/mcp` too.
+
+### Ollama or Claude
+
+The `Agent` section of `server/TempHire.Server/appsettings.json` picks the model:
+
+```json
+"Agent": {
+  "Provider": "Ollama",            // or "Claude"
+  "MaxToolCalls": 8,
+  "Ollama": { "Endpoint": "http://127.0.0.1:11434", "Model": "qwen3:4b-instruct" },
+  "Claude": { "Model": "claude-sonnet-5-5", "MaxTokens": 4096 }
+}
+```
+
+**Ollama** is the default: free, local, and nothing leaves your machine.  A 4-billion-parameter
+model is a good demo but not a careful analyst; it sometimes misreads a tool's result, which is why
+the pane notes that Quinn can make mistakes.  **Claude** gives noticeably better answers.
+
+Claude needs an Anthropic API key, which belongs in the server's
+[user secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets), never in
+`appsettings.json`.  `server/Set-ClaudeApiKey.ps1` stores it there without echoing it:
+
+```powershell
+cd server
+.\Set-ClaudeApiKey.ps1 -UseClaude   # prompts for the key, stores it, and switches Quinn to Claude
+.\Set-ClaudeApiKey.ps1 -UseOllama   # back to Ollama; the key stays stored
+.\Set-ClaudeApiKey.ps1 -Remove      # deletes the key
+```
+
+`-UseClaude` and `-UseOllama` set `Agent:Provider` in user secrets, which overrides
+`appsettings.json` on your machine only.  Restart the server after either.  User secrets are read
+in the Development environment; in production, set `Agent__Claude__ApiKey` from your secret store.
+
+---
+
+## Multi-tenancy
+
+Each user belongs to a company, a **tenant**, and sees and changes only that company's data.
+
+- **Tenants come from the email domain.**  The `Tenants` table maps an email domain to a tenant:
+  `harbor.test` is Harbor Staffing, `summit.test` is Summit Talent.  At login,
+  `AccountController` looks up the tenant for the domain of the user name and refuses users whose
+  domain has none.  The tenant's id is a **GUID**, not the domain, and it travels in the JWT as the
+  `tenant_id` claim, so later requests need no lookup.  `HttpCurrentTenant` reads it back as
+  `ICurrentTenant`.
+- **Every query is filtered.**  Every entity that belongs to a tenant implements `ITenantOwned`
+  (through `AuditEntityBase`), and `TempHireDbContext` gives each of them an EF Core **global query
+  filter**, `e.TenantId == CurrentTenantId`.  Breeze queries, the search projection and Quinn's
+  tools all go through it; none of them mentions the tenant.  Lookup tables (states, address and
+  phone types, rate types) are shared.
+- **Every save is checked.**  `SaveChanges` stamps new entities with the current tenant, and
+  rejects a change to, or deletion of, a row that belongs to another tenant (`403 Forbidden`).
+  The filter alone would not stop that: a Breeze save names rows by key, without querying them.
+- **The client never sees the tenant.**  `TenantId` is a server-only column: it is left out of the
+  JSON and of the Breeze metadata (`TempHirePersistenceManager.BuildJsonMetadata`), so it is not in
+  the generated entity classes either.
+
+---
+
+## The database schema
+
+The schema is managed with **EF Core migrations**, in `server/TempHire.Model/Migrations/`
+(`TempHire/` and `Security/`, one set per database).  On startup, `DatabaseSetup.Prepare` applies
+any pending migrations to both databases and then seeds them.  A database created by an earlier
+version of this sample with `EnsureCreated()` has no migration history; it is **dropped and
+re-created**, losing its data.
+
+> **This is not how a production application does it.**  Migrating on startup means every instance
+> of the server races to change the schema, the application's database account needs the rights to
+> alter it, and a bad migration takes the site down with it.  A real deployment applies migrations
+> as a separate, reviewed step: a [migration bundle](https://learn.microsoft.com/ef/core/managing-schemas/migrations/applying#bundles)
+> or an idempotent SQL script run by the release pipeline.  And it never drops a database it cannot
+> migrate.  For a sample whose data is all seed data, both are fine.
+
+**After changing an entity**, add a migration.  `dotnet-ef` is a local tool of the repository
+(`dotnet-tools.json`), with the same version as the EF Core packages:
+
+```
+cd server
+dotnet tool restore
+dotnet ef migrations add <Name> --context TempHireDbContext --project TempHire.Model --startup-project TempHire.Server --output-dir Migrations/TempHire
+```
+
+The next server start applies it.  To start over with fresh sample data, drop the database
+(`dotnet ef database drop --context TempHireDbContext --project TempHire.Model --startup-project TempHire.Server`)
+and restart the server.
+
+---
+
 ## Layout
 
 ```
 TempHire.Angular/
 ├── TempHire.Angular.sln
 ├── server/
+│   ├── Set-ClaudeApiKey.ps1       # stores the Claude API key in user secrets
 │   ├── TempHire.Model/            # POCO entities, DbContexts, sample data
-│   │   ├── Entities/              # ← DomainModel/ + Security/User.cs
+│   │   ├── Entities/              # ← DomainModel/ + Security/User.cs, plus Tenant
+│   │   ├── Migrations/            # EF Core migrations, one folder per database
 │   │   ├── Projections/           # ← DomainModel/Projections/
-│   │   ├── SampleData/            # ← DomainServices/SampleData/
-│   │   └── TempHireDbContext.cs   # business + security contexts
+│   │   ├── SampleData/            # ← DomainServices/SampleData/, plus generated people
+│   │   ├── DatabaseSetup.cs       # migrates and seeds on startup
+│   │   └── TempHireDbContext.cs   # business + security contexts, tenant filters
 │   └── TempHire.Server/
 │       ├── Controllers/
 │       │   ├── BreezeController.cs   # metadata, queries, SaveChanges, lookups, search
-│       │   └── AccountController.cs  # login / logout / me
+│       │   ├── AccountController.cs  # login / logout / me
+│       │   └── AgentController.cs    # Quinn: info / chat
+│       ├── Agent/                 # Quinn: persona, chat client factory, agent
+│       ├── Mcp/                   # MCP server tools (StaffingTools)
 │       ├── Persistence/
 │       │   └── TempHirePersistenceManager.cs   # ← DomainModel/SaveInterceptor.cs
-│       ├── Auth/                  # JWT options + token service
+│       ├── Auth/                  # JWT options, token service, current tenant
 │       └── Program.cs
 └── client/
     ├── metadata.json              # Breeze metadata exported from the server (npm run model:metadata)
@@ -165,6 +321,7 @@ TempHire.Angular/
         ├── home/                  # ← ViewModels/HomeViewModel.cs
         ├── resource-mgt/          # ← ViewModels/StaffingResource/
         │   └── sections/          # the four detail tabs
+        ├── quinn/                 # Quinn's launcher button and chat pane
         ├── app.ts / app.html      # ← Views/ShellView.Wpf.xaml
         └── app.routes.ts          # ← Punch workspaces + INavigator
 ```
@@ -275,17 +432,8 @@ To move to another provider, swap the package in `TempHire.Model.csproj` and the
 `options.UseSqlServer(...)` calls in `Program.cs`. Nothing else in the model is SQL Server-specific
 apart from `[Column(TypeName = "decimal(18,2)")]` on `Rate.Amount`.
 
-Schema creation uses `Database.EnsureCreated()` (see `SampleDataProvider.Initialize`), which is
-right for a sample but not for a system that has to evolve. For real work, replace it with EF Core
-migrations:
-
-```
-dotnet tool install --global dotnet-ef --version 9.*
-dotnet ef migrations add Initial --project ../TempHire.Model --startup-project .
-dotnet ef database update
-```
-
-(The `dotnet-ef` tool's major version has to match the EF Core packages, hence the `9.*`.)
+The migrations in `TempHire.Model/Migrations/` are generated for SQL Server; after switching
+provider, delete them and add a new initial migration (see [The database schema](#the-database-schema)).
 
 ## Configuration
 
@@ -296,7 +444,11 @@ dotnet ef database update
 | `Jwt:SigningKey` | `appsettings.Development.json` | **Development placeholder.** Set a real one before deploying: `dotnet user-secrets set "Jwt:SigningKey" "<long random string>"` |
 | `Jwt:ExpiryMinutes` | `appsettings.json` | Defaults to 8 hours |
 | `AllowedClientOrigins` | `appsettings.json` | CORS allow-list for the dev server |
-| `breezeApiRoot` / `accountApiRoot` | `client/src/environments/` | `environment.ts` is the **production** file; `environment.development.ts` replaces it during `ng serve` |
+| `Agent:Provider` | `appsettings.json`, or user secrets via `Set-ClaudeApiKey.ps1` | `Ollama` (default) or `Claude` |
+| `Agent:Ollama:*`, `Agent:Claude:Model` | `appsettings.json` | Endpoint and model names |
+| `Agent:Claude:ApiKey` | user secrets, via `server/Set-ClaudeApiKey.ps1` | **Never in `appsettings.json`** |
+| `Agent:MaxToolCalls` | `appsettings.json` | Tool-calling rounds per question |
+| `breezeApiRoot` / `accountApiRoot` / `agentApiRoot` | `client/src/environments/` | `environment.ts` is the **production** file; `environment.development.ts` replaces it during `ng serve` |
 
 ---
 
@@ -316,15 +468,18 @@ dotnet ef database update
   `httpClientFetch(inject(HttpClient))` to `configureBreeze` directly.
 - **No automated tests beyond a shell smoke test and the workaround above.** The original had none
   either. `ng test` runs Vitest; the server has no test project.
-- **`Database.EnsureCreated()` instead of migrations**, as described above.
+- **Migrations run on startup**, and a database without migration history is dropped; see
+  [The database schema](#the-database-schema).
+- **Quinn's answers are not streamed.**  The pane shows a typing indicator until the whole answer
+  has arrived, which with a local model can take half a minute.
 - **Logout does not revoke the token.** A JWT is valid until it expires; `AccountController.Logout`
   is the hook where a revocation list would go.
 - **Search has no paging.** `StaffingResourceListItems` returns every match, exactly as
   `StaffingResourceSearchService.Simple` did. `[BreezeQueryFilter(MaxTake = ...)]` is the place to
   add a cap.
 - **The `.sdf` sample databases are not migrated.** The seed data is re-created from the ported
-  `SampleDataProvider`, so ids match the original, but any data you added to the old SQL Compact
-  files does not come across.
+  `SampleDataProvider`, so the original nine people keep their ids (in Harbor Staffing), but any
+  data you added to the old SQL Compact files does not come across.
 
 See `docs/CONVERSION-NOTES.md` for the full architecture mapping and the list of deliberate
 behavioural changes.

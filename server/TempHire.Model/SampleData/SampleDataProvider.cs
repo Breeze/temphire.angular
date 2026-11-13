@@ -9,12 +9,42 @@ namespace TempHire.Model.SampleData
     /// The original implemented Punch's <c>ISampleDataProvider&lt;TempHireEntities&gt;</c> and attached
     /// entities to an in-memory DevForce <c>EntityManager</c> backed by a "fake store".  Breeze has no
     /// such concept - the client always talks to a real server - so the same data is now written to the
-    /// database on first run.  The bodies of the entity-building helpers and the data itself are
-    /// unchanged, so the app still comes up with the same eight staffing resources.
+    /// database on first run.  The bodies of the entity-building helpers and the original data are
+    /// unchanged.
+    /// </para>
+    /// <para>
+    /// For multi-tenancy the data is spread over two companies.  Harbor Staffing gets the original
+    /// sample's resources plus generated ones, Summit Talent gets generated ones only (see
+    /// <c>SampleDataProvider.Generated.cs</c>); each has 25.  Each company has two users.
     /// </para>
     /// </summary>
-    public class SampleDataProvider
+    public partial class SampleDataProvider
     {
+        /// <summary>The tenant with the original sample's data.</summary>
+        public static readonly Tenant Harbor = new()
+        {
+            Id = new Guid("8f3b2c71-5d0a-4e9b-a1c6-2f7e4d905b13"),
+            Name = "Harbor Staffing",
+            EmailDomain = "harbor.test"
+        };
+
+        public static readonly Tenant Summit = new()
+        {
+            Id = new Guid("c4a19e52-7b3d-4f08-9e61-0d2b8a6f3c47"),
+            Name = "Summit Talent",
+            EmailDomain = "summit.test"
+        };
+
+        /// <summary>The test users.  All have the password <c>password</c>.</summary>
+        public static readonly string[] UserNames =
+        [
+            "anna@harbor.test", "ben@harbor.test", "carla@summit.test", "david@summit.test"
+        ];
+
+        public const string Password = "password";
+
+        private const int ResourcesPerTenant = 25;
+
         // Used for generating sequential Guids, exactly as the original did, so that
         // TempHireSampleDataProvider.CreateGuid(1) still identifies the first resource.
         private int _addressId = 1;
@@ -26,27 +56,55 @@ namespace TempHire.Model.SampleData
 
         private static readonly DateTime SeedTime = new DateTime(2012, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        /// <summary>Creates the databases if needed and seeds them when they are empty.</summary>
+        /// <summary>
+        /// Seeds the databases when they are empty.  Run it after the schema is up to date (see
+        /// <c>DatabaseSetup</c>).
+        /// </summary>
         public static void Initialize(TempHireDbContext context, SecurityDbContext securityContext)
         {
-            context.Database.EnsureCreated();
-            securityContext.Database.EnsureCreated();
+            if (!context.Tenants.Any())
+            {
+                context.Tenants.AddRange(Copy(Harbor), Copy(Summit));
+                context.SaveChanges();
+            }
 
             if (!securityContext.Users.Any())
             {
-                // Replaces SecuritySampleDataProvider.  Same credentials as the original: Admin/password.
-                securityContext.Users.Add(User.Create("Admin", "password"));
+                // Replaces SecuritySampleDataProvider.  The user name is an email address: its domain
+                // decides the tenant.
+                securityContext.Users.AddRange(UserNames.Select(name => User.Create(name, Password)));
                 securityContext.SaveChanges();
             }
 
-            if (context.StaffingResources.Any())
+            // Seeding runs without a signed-in user, so look past the tenant filter.
+            if (context.StaffingResources.IgnoreQueryFilters().Any())
             {
                 return;
             }
 
-            new SampleDataProvider().GenerateSampleData(context);
-            context.SaveChanges();
+            var provider = new SampleDataProvider();
+            try
+            {
+                // The context stamps every new tenant-owned row with its current tenant.
+                context.UseTenant(Harbor.Id);
+                provider.GenerateSampleData(context);
+                provider.GenerateResources(context, ResourcesPerTenant - provider.ResourceCount, new Random(1));
+                context.SaveChanges();
+
+                context.UseTenant(Summit.Id);
+                provider.GenerateResources(context, ResourcesPerTenant, new Random(2));
+                context.SaveChanges();
+            }
+            finally
+            {
+                context.UseTenant(null);
+            }
         }
+
+        private static Tenant Copy(Tenant t) => new() { Id = t.Id, Name = t.Name, EmailDomain = t.EmailDomain };
+
+        /// <summary>How many staffing resources this provider has created so far.</summary>
+        private int ResourceCount => _resId - 1;
 
         /// <summary>Reproduces the original <c>CreateGuid</c> so seeded ids are stable across runs.</summary>
         public static Guid CreateGuid(int a)
@@ -70,6 +128,7 @@ namespace TempHire.Model.SampleData
                                        new AddressType {Id = CreateGuid(3), Name = "Work", DisplayName = "Work Address"}
                                    };
             context.AddRange(addressTypes);
+            _addressTypes = addressTypes;
 
             var phoneTypes = new List<PhoneNumberType>
                                  {
@@ -78,6 +137,7 @@ namespace TempHire.Model.SampleData
                                      new PhoneNumberType {Id = CreateGuid(3), Name = "Mobile"}
                                  };
             context.AddRange(phoneTypes);
+            _phoneTypes = phoneTypes;
 
             var rateTypes = new List<RateType>
                                 {
@@ -96,6 +156,7 @@ namespace TempHire.Model.SampleData
                                         }
                                 };
             context.AddRange(rateTypes);
+            _rateTypes = rateTypes;
 
             var states = new List<State>
                              {
@@ -153,6 +214,7 @@ namespace TempHire.Model.SampleData
                                  new State {Id = CreateGuid(52), ShortName = "--", Name = "International"}
                              };
             context.AddRange(states);
+            _states = states;
 
             var r = NewResource("Nancy", "Lynn", "Davolio",
                                      "Education includes a BA in psychology from Colorado State University in 1970.  She also completed \"The Art of the Cold Call.\"  Nancy is a member of Toastmasters International.");

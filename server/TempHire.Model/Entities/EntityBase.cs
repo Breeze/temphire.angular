@@ -49,8 +49,16 @@ namespace TempHire.Model
     /// the Breeze equivalent lives in <c>TempHirePersistenceManager.BeforeSaveEntity</c>, which rejects
     /// any entity that is not an <see cref="AuditEntityBase"/>.
     /// </summary>
-    public abstract class AuditEntityBase : EntityBase
+    public abstract class AuditEntityBase : EntityBase, ITenantOwned
     {
+        /// <summary>
+        /// The tenant (company) the row belongs to.  The client never sees or sends it: it is left
+        /// out of the Breeze metadata and of every JSON payload (<c>[JsonIgnore]</c>).
+        /// <c>TempHireDbContext</c> filters every query on it and sets it on every insert.
+        /// </summary>
+        [Newtonsoft.Json.JsonIgnore]
+        public Guid TenantId { get; set; }
+
         public DateTime Created { get; set; }
 
         [MaxLength(100)]
@@ -60,6 +68,15 @@ namespace TempHire.Model
 
         [MaxLength(100)]
         public string ModifyUser { get; set; }
+    }
+
+    /// <summary>
+    /// An entity whose rows belong to one tenant.  Every audited entity is one; the lookup types
+    /// (states, address/phone/rate types) are shared reference data and are not.
+    /// </summary>
+    public interface ITenantOwned
+    {
+        Guid TenantId { get; set; }
     }
 
     /// <summary>

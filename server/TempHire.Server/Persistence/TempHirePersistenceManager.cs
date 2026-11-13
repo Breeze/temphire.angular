@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Breeze.Persistence;
 using Breeze.Persistence.EFCore;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using TempHire.Model;
 
 // Both Breeze and EF Core define an `EntityState`, and they are not the same enum: this file works
@@ -52,6 +53,47 @@ namespace TempHire.Server.Persistence
             ?? "Unknown";
 
         /// <summary>
+        /// Breeze's metadata, without multi-tenancy.  The tenant is the server's business: the client
+        /// never reads or writes a tenant id (it is also <c>[JsonIgnore]</c>), so the <c>TenantId</c>
+        /// columns and the <c>Tenant</c> type are left out.  Left in, the client would generate them
+        /// into its entity classes and require a value for every new entity.
+        /// </summary>
+        protected override string BuildJsonMetadata()
+        {
+            var metadata = JObject.Parse(base.BuildJsonMetadata());
+
+            if (metadata["structuralTypes"] is JArray types)
+            {
+                foreach (var tenantType in types.Where(t => (string)t["shortName"] == nameof(Tenant)).ToList())
+                {
+                    tenantType.Remove();
+                }
+
+                foreach (var properties in types.Select(t => t["dataProperties"]).OfType<JArray>())
+                {
+                    foreach (var tenantId in properties
+                                 .Where(p => (string)p["nameOnServer"] == nameof(ITenantOwned.TenantId))
+                                 .ToList())
+                    {
+                        tenantId.Remove();
+                    }
+                }
+            }
+
+            if (metadata["resourceEntityTypeMap"] is JObject resources)
+            {
+                foreach (var tenants in resources.Properties()
+                             .Where(p => ((string)p.Value)?.StartsWith(nameof(Tenant) + ":#") == true)
+                             .ToList())
+                {
+                    tenants.Remove();
+                }
+            }
+
+            return metadata.ToString(Newtonsoft.Json.Formatting.None);
+        }
+
+        /// <summary>
         /// Replaces <c>SaveInterceptor.DefaultAuthorization = false</c> plus <c>[ClientCanSave]</c>.
         /// Returning false tells Breeze to silently drop the entity from the save; throwing makes the
         /// rejection explicit, which is what the original did (it failed the whole save).
@@ -68,7 +110,7 @@ namespace TempHire.Server.Persistence
                         {
                             ErrorName = "NotAuthorized",
                             EntityTypeName = entityInfo.Entity.GetType().FullName,
-                            KeyValues = GetKeyValues(entityInfo),
+                            KeyValues = KeyValuesOf(entityInfo.Entity),
                             ErrorMessage = "This entity type is read-only."
                         }
                     })
@@ -186,7 +228,7 @@ namespace TempHire.Server.Persistence
                 {
                     ErrorName = "ValidationError",
                     EntityTypeName = entity.GetType().FullName,
-                    KeyValues = GetKeyValues(info),
+                    KeyValues = KeyValuesOf(entity),
                     PropertyName = r.MemberNames?.FirstOrDefault(),
                     ErrorMessage = r.ErrorMessage
                 }));
@@ -197,6 +239,20 @@ namespace TempHire.Server.Persistence
                 throw new EntityErrorsException(
                     string.Join("\n", errors.Select(e => e.ErrorMessage).Distinct()), errors);
             }
+        }
+
+        /// <summary>
+        /// The primary key values of an entity, for an <see cref="EntityError"/>.  Read from the EF
+        /// model here rather than with Breeze's <c>GetKeyValues</c>, which threw a
+        /// NullReferenceException for these entities.
+        /// </summary>
+        private object[] KeyValuesOf(object entity)
+        {
+            var entityType = Context.Model.FindEntityType(entity.GetType())
+                ?? throw new InvalidOperationException($"{entity.GetType().Name} is not an entity type of the model.");
+            return entityType.FindPrimaryKey()!.Properties
+                .Select(p => p.PropertyInfo?.GetValue(entity))
+                .ToArray();
         }
 
         private static List<(T Entity, EntityInfo Info)> EntitiesOfType<T>(

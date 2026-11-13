@@ -19,7 +19,12 @@
     }
 
     <span class="app-toolbar__spacer"></span>
-    <span class="app-toolbar__user">{{ username() }}</span>
+    <span class="app-toolbar__user"
+      >{{ username() }}
+      @if (tenantName()) {
+        <span class="app-toolbar__company"> · {{ tenantName() }}</span>
+      }
+    </span>
   </header>
 }
 
@@ -28,3 +33,8 @@
 </main>
 
 <p-toast position="top-right" />
+
+<!-- Quinn, the assistant: only while signed in, so the conversation ends with the session. -->
+@if (isLoggedIn()) {
+  <app-quinn />
+}

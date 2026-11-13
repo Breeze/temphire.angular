@@ -31,7 +31,7 @@ namespace TempHire.Server.Auth
             return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
         }
 
-        public (string Token, DateTime ExpiresUtc) CreateToken(User user)
+        public (string Token, DateTime ExpiresUtc) CreateToken(User user, Tenant tenant)
         {
             var expires = DateTime.UtcNow.AddMinutes(_options.ExpiryMinutes);
 
@@ -41,6 +41,10 @@ namespace TempHire.Server.Auth
                 // it is what the persistence manager stamps into the audit columns.
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                // The tenant, decided at sign-in from the email domain (see AccountController.Login).
+                // Signed into the token, so the client cannot change it.
+                new Claim(HttpCurrentTenant.TenantIdClaim, tenant.Id.ToString()),
+                new Claim(HttpCurrentTenant.TenantNameClaim, tenant.Name),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
