@@ -59,97 +59,99 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
         <div class="address temphire-elevated">
           <div class="address__header">{{ address.addressType?.displayName }}</div>
 
-          <div class="address__fields">
-            <label [for]="'address1-' + address.id">Address 1:</label>
-            <input
-              pInputText
-              [id]="'address1-' + address.id"
-              [readOnly]="readOnly()"
-              [(ngModel)]="address.address1"
-              [breezeField]="address"
-              breezeProperty="address1"
-              #address1Field="breezeField"
-              [invalid]="address1Field.invalid()"
-            />
-
-            <label [for]="'address2-' + address.id">Address 2:</label>
-            <input
-              pInputText
-              [id]="'address2-' + address.id"
-              [readOnly]="readOnly()"
-              [(ngModel)]="address.address2"
-              [breezeField]="address"
-              breezeProperty="address2"
-              #address2Field="breezeField"
-              [invalid]="address2Field.invalid()"
-            />
-
-            <label [for]="'city-' + address.id">City:</label>
-            <input
-              pInputText
-              [id]="'city-' + address.id"
-              [readOnly]="readOnly()"
-              [(ngModel)]="address.city"
-              [breezeField]="address"
-              breezeProperty="city"
-              #cityField="breezeField"
-              [invalid]="cityField.invalid()"
-            />
-
-            <label [for]="'state-' + address.id">State:</label>
-            <p-select
-              [inputId]="'state-' + address.id"
-              [options]="states()"
-              optionValue="id"
-              optionLabel="name"
-              [disabled]="readOnly()"
-              [(ngModel)]="address.stateId"
-              [breezeField]="address"
-              breezeProperty="stateId"
-              #stateIdField="breezeField"
-              [invalid]="stateIdField.invalid()"
-              appendTo="body"
-              styleClass="address__state"
-            />
-
-            <label [for]="'zipcode-' + address.id">Zipcode:</label>
-            <input
-              pInputText
-              class="address__zipcode"
-              [id]="'zipcode-' + address.id"
-              [readOnly]="readOnly()"
-              [(ngModel)]="address.zipcode"
-              [breezeField]="address"
-              breezeProperty="zipcode"
-              #zipcodeField="breezeField"
-              [invalid]="zipcodeField.invalid()"
-            />
-          </div>
-
-          <div class="address__actions">
-            <div class="address__primary">
-              <p-radiobutton
-                name="primary-address"
-                [inputId]="'primary-' + address.id"
-                [value]="address.id"
-                [ngModel]="staffingResource().primaryAddress?.id"
-                [disabled]="!canSetPrimary(address)"
-                (ngModelChange)="setPrimary(address)"
+          <div class="address__body">
+            <div class="address__fields">
+              <label [for]="'address1-' + address.id">Address 1:</label>
+              <input
+                pInputText
+                [id]="'address1-' + address.id"
+                [readOnly]="readOnly()"
+                [(ngModel)]="address.address1"
+                [breezeField]="address"
+                breezeProperty="address1"
+                #address1Field="breezeField"
+                [invalid]="address1Field.invalid()"
               />
-              <label [for]="'primary-' + address.id">Primary</label>
+  
+              <label [for]="'address2-' + address.id">Address 2:</label>
+              <input
+                pInputText
+                [id]="'address2-' + address.id"
+                [readOnly]="readOnly()"
+                [(ngModel)]="address.address2"
+                [breezeField]="address"
+                breezeProperty="address2"
+                #address2Field="breezeField"
+                [invalid]="address2Field.invalid()"
+              />
+  
+              <label [for]="'city-' + address.id">City:</label>
+              <input
+                pInputText
+                [id]="'city-' + address.id"
+                [readOnly]="readOnly()"
+                [(ngModel)]="address.city"
+                [breezeField]="address"
+                breezeProperty="city"
+                #cityField="breezeField"
+                [invalid]="cityField.invalid()"
+              />
+  
+              <label [for]="'state-' + address.id">State:</label>
+              <p-select
+                [inputId]="'state-' + address.id"
+                [options]="states()"
+                optionValue="id"
+                optionLabel="name"
+                [disabled]="readOnly()"
+                [(ngModel)]="address.stateId"
+                [breezeField]="address"
+                breezeProperty="stateId"
+                #stateIdField="breezeField"
+                [invalid]="stateIdField.invalid()"
+                appendTo="body"
+                styleClass="address__state"
+              />
+  
+              <label [for]="'zipcode-' + address.id">Zipcode:</label>
+              <input
+                pInputText
+                class="address__zipcode"
+                [id]="'zipcode-' + address.id"
+                [readOnly]="readOnly()"
+                [(ngModel)]="address.zipcode"
+                [breezeField]="address"
+                breezeProperty="zipcode"
+                #zipcodeField="breezeField"
+                [invalid]="zipcodeField.invalid()"
+              />
             </div>
-
-            <button
-              pButton
-              type="button"
-              severity="danger"
-              size="small"
-              [outlined]="true"
-              [disabled]="!canDelete(address)"
-              (click)="delete(address)"
-            >
-              Delete
-            </button>
+  
+            <div class="address__actions">
+              <div class="address__primary">
+                <p-radiobutton
+                  name="primary-address"
+                  [inputId]="'primary-' + address.id"
+                  [value]="address.id"
+                  [ngModel]="staffingResource().primaryAddress?.id"
+                  [disabled]="!canSetPrimary(address)"
+                  (ngModelChange)="setPrimary(address)"
+                />
+                <label [for]="'primary-' + address.id">Primary</label>
+              </div>
+  
+              <button
+                pButton
+                type="button"
+                severity="danger"
+                size="small"
+                [outlined]="true"
+                [disabled]="!canDelete(address)"
+                (click)="delete(address)"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       }
@@ -157,26 +159,36 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
   `,
   styles: [
     `
+      /* One column, as wide as the widest card, so every address card has the same width. */
       .addresses {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
+        display: grid;
+        grid-template-columns: fit-content(100%);
         gap: 0.75rem;
+      }
+
+      .addresses > button {
+        justify-self: start;
       }
 
       .address {
         display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem 1.5rem;
-        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.75rem;
         padding: 0.75rem;
         border: 1px solid var(--p-content-border-color, #e5e7eb);
         border-radius: 4px;
       }
 
       .address__header {
-        flex-basis: 100%;
         font-weight: 700;
+      }
+
+      /* The header is outside this wrapping row, so its length does not change the card's width. */
+      .address__body {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
+        align-items: flex-start;
       }
 
       .address__fields {

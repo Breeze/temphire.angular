@@ -116,6 +116,7 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
             rows="2"
             placeholder="Ask Quinn about your staffing data..."
             aria-label="Your question"
+            #questionBox
             [formField]="questionForm.question"
             (keydown.enter)="sendOnEnter($event)"
           ></textarea>
@@ -136,6 +137,7 @@ export class QuinnComponent {
   private readonly router = inject(Router);
 
   private readonly messageList = viewChild.required<ElementRef<HTMLElement>>('messageList');
+  private readonly questionBox = viewChild.required<ElementRef<HTMLTextAreaElement>>('questionBox');
 
   /** The question box: a Signal Form, disabled while Quinn is answering. */
   protected readonly questionForm = form(
@@ -160,6 +162,21 @@ export class QuinnComponent {
       this.quinn.busy();
       const list = this.messageList().nativeElement;
       list.scrollTop = list.scrollHeight;
+    });
+
+    // The question box is disabled while Quinn answers, and a disabled element loses focus.  Once
+    // the answer is in, put the cursor back so the next question can be typed straight away -
+    // unless the user has moved on to something else in the meantime.
+    let wasBusy = false;
+    afterRenderEffect(() => {
+      const busy = this.quinn.busy();
+      if (wasBusy && !busy && this.quinn.isOpen()) {
+        const focused = document.activeElement;
+        if (!focused || focused === document.body || this.messageList().nativeElement.contains(focused)) {
+          this.questionBox().nativeElement.focus();
+        }
+      }
+      wasBusy = busy;
     });
   }
 
