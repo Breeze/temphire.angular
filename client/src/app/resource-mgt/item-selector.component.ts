@@ -1,8 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonDirective } from 'primeng/button';
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { SelectModule } from 'primeng/select';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { DynamicDialogConfig, DynamicDialogRef } from '@openng/optimus-ui/dynamicdialog';
+import { SelectModule } from '@openng/optimus-ui/select';
 
 export interface ItemSelectorData<T = Record<string, unknown>> {
   /** Prompt shown above the list - the original passed "Select type:". */

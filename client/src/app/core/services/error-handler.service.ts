@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ErrorHandler, Injectable, inject } from '@angular/core';
-import { MessageService } from 'primeng/api';
+import { MessageService } from '@openng/optimus-ui/api';
 
 /** Shape of the payload Breeze's `GlobalExceptionFilter` sends for an `EntityErrorsException`. */
 interface BreezeEntityErrors {

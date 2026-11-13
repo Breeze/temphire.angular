@@ -1,5 +1,5 @@
 import { Injectable, Type, inject } from '@angular/core';
-import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogConfig } from '@openng/optimus-ui/dynamicdialog';
 import { firstValueFrom } from 'rxjs';
 
 import { MessageBoxComponent, MessageBoxData } from '../dialogs/message-box.component';
@@ -22,7 +22,7 @@ export class DialogCancelledError extends Error {
 }
 
 /**
- * Port of Punch's `IDialogManager`, on top of PrimeNG's DynamicDialog.
+ * Port of Punch's `IDialogManager`, on top of Optimus UI's DynamicDialog.
  */
 @Injectable({ providedIn: 'root' })
 export class AppDialogService {
@@ -45,7 +45,7 @@ export class AppDialogService {
       data: { message, buttons } satisfies MessageBoxData,
     });
 
-    // PrimeNG 22 returns null if the dialog could not be opened (for example when the app is
+    // Optimus UI returns null if the dialog could not be opened (for example when the app is
     // shutting down); treat that as a cancellation rather than crashing the caller.
     if (!ref) {
       throw new DialogCancelledError();

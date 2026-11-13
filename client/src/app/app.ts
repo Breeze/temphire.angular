@@ -1,8 +1,8 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { ButtonDirective } from 'primeng/button';
-import { DynamicDialogModule } from 'primeng/dynamicdialog';
-import { ToastModule } from 'primeng/toast';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { DynamicDialogModule } from '@openng/optimus-ui/dynamicdialog';
+import { ToastModule } from '@openng/optimus-ui/toast';
 
 import { WORKSPACES } from './app.routes';
 import { AuthService } from './core/services/auth.service';

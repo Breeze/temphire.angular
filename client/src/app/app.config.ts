@@ -9,12 +9,12 @@ import {
 import { provideSignalFormsConfig } from '@angular/forms/signals';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
-import Aura from '@primeuix/themes/aura';
+import Aura from '@openng/optimus-ui-themes/aura';
 import { configureBreeze } from 'breeze-client';
 import { httpClientFetch } from 'breeze-client/adapter-angular-httpclient';
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { providePrimeNG } from 'primeng/config';
-import { DialogService } from 'primeng/dynamicdialog';
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
+import { provideOptimus } from '@openng/optimus-ui/config';
+import { DialogService } from '@openng/optimus-ui/dynamicdialog';
 import { HttpClient } from '@angular/common/http';
 
 import { routes } from './app.routes';
@@ -28,14 +28,14 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
 
-    // PrimeNG replaces the WPF resource dictionary in `TempHire/Styles/Styles.xaml`.
-    providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } }),
+    // Optimus UI replaces the WPF resource dictionary in `TempHire/Styles/Styles.xaml`.
+    provideOptimus({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } }),
     MessageService,
     ConfirmationService,
     DialogService,
 
     // Signal Forms add no CSS classes by default.  `signal-form-untouched` lets `styles.css` hold
-    // back PrimeNG's invalid styling on Signal Forms fields until the user has left the field.  It
+    // back Optimus UI's invalid styling on Signal Forms fields until the user has left the field.  It
     // is deliberately not `ng-untouched`: `NgModel` sets that too, and an entity field must show a
     // Breeze error at once, even untouched - say, when a save finds it empty.
     provideSignalFormsConfig({

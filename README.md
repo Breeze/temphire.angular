@@ -56,7 +56,7 @@ onto the new one.
 
 | | Original (Silverlight / WPF) | This version |
 |---|---|---|
-| Client | Silverlight or WPF + Punch (Caliburn.Micro) | **Angular 22** (standalone, zoneless, signals) + **PrimeNG 22** |
+| Client | Silverlight or WPF + Punch (Caliburn.Micro) | **Angular 22** (standalone, zoneless, signals) + **Optimus UI 2** |
 | Data access (client) | DevForce `EntityManager` | **[breeze-client 3](https://github.com/Breeze/breeze-client-v3)** |
 | Server | DevForce EntityServer (WCF) | **ASP.NET Core 10** + **Breeze.AspNetCore 8** |
 | ORM | Entity Framework 6 (Code First) | **EF Core 10** |
@@ -406,12 +406,19 @@ side by side.
 
 ## Why these libraries
 
-**PrimeNG** for the UI. TempHire is a data-dense desktop-style app: its screens are grids, tabs,
-modal dialogs and inline editors. PrimeNG's `p-table`, `p-tabs`, `DynamicDialog`, `p-select`,
-`p-inputNumber` and `p-datePicker` map almost one-to-one onto the WPF `DataGrid`, `TabControl`,
-Punch dialogs, `ComboBox` and Xceed editors, which keeps the conversion honest. Angular Material
-would also work but its table is lower-level, so the address/phone/rates/skills grids would need
-noticeably more hand-written code.
+**[Optimus UI](https://optimus.openng.org/)** for the UI. TempHire is a data-dense desktop-style
+app: its screens are grids, tabs, modal dialogs and inline editors. Optimus UI's `p-table`,
+`p-tabs`, `DynamicDialog`, `p-select`, `p-inputNumber` and `p-datePicker` map almost one-to-one
+onto the WPF `DataGrid`, `TabControl`, Punch dialogs, `ComboBox` and Xceed editors, which keeps
+the conversion honest. Angular Material would also work but its table is lower-level, so the
+address/phone/rates/skills grids would need noticeably more hand-written code.
+
+Optimus UI is the MIT-licensed, community-maintained fork of PrimeNG 21; PrimeNG itself went
+closed source with a commercial license, and from version 22 shows a license notice in the
+corner of any app without a key. A sample app should not need a commercial license, so TempHire
+uses the fork. Its API is PrimeNG's: components keep their `p-` selectors and icons their `pi-`
+classes, and only the package names (`@openng/optimus-ui/...` for `primeng/...`) and a few
+identifiers (`provideOptimus` for `providePrimeNG`) differ. Optimus UI 2 targets Angular 22.
 
 The rest of the WPF-era dependencies did not need replacing so much as *deleting*:
 
@@ -453,8 +460,7 @@ The client is meant to show current Angular, not just to run on it:
   it through `DestroyRef`, in place of lifecycle hooks.
 - **The `@angular/build` builder** (esbuild, a Vite dev server, Vitest for `ng test`); there is no
   Webpack.
-- **No deprecated APIs.** Buttons use PrimeNG's `[pButton]` directive (the `<p-button>` component
-  is deprecated in PrimeNG 22), and new keys come from `crypto.randomUUID()` rather than Breeze's
+- **No deprecated APIs.** New keys come from `crypto.randomUUID()` rather than Breeze's
   deprecated `core.getUuid()`.  `crypto.randomUUID()` needs a secure context, which `localhost` and
   any HTTPS deployment are; serving the app over plain HTTP from another host would need a
   fallback.
@@ -469,7 +475,7 @@ Breeze's verdict:
 - **Entity editors** (`[(ngModel)]` on Breeze entities) carry the `BreezeFieldDirective`
   (`core/validation`), which registers the entity's errors for that property as an Angular
   validator - so the control and its form are invalid when Breeze says so - and exposes them as
-  signals for PrimeNG's `[invalid]` input and the field's tooltip.  It follows the entity's
+  signals for Optimus UI's `[invalid]` input and the field's tooltip.  It follows the entity's
   `validationErrorsChanged` event, so errors found on save, or on a new, empty entity, highlight
   their fields without the user touching them.
 
@@ -481,7 +487,7 @@ Breeze's verdict:
 
 - **The name editor**, a Signal Form over names for a `StaffingResource` that does not exist yet,
   applies `StaffingResource`'s Breeze validators to its fields with `validateWithBreeze`
-  (`core/validation`).  Signal Forms then hand the result to PrimeNG themselves.
+  (`core/validation`).  Signal Forms then hand the result to Optimus UI themselves.
 - **Login** keeps Signal Forms' `required`: credentials are not an entity, so there is no Breeze
   model to validate them against.
 

@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonDirective } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
+import { ButtonDirective } from '@openng/optimus-ui/button';
+import { InputTextModule } from '@openng/optimus-ui/inputtext';
 
 import { Skill, StaffingResource } from '../../core/model';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
