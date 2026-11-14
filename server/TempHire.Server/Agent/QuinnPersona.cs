@@ -31,6 +31,13 @@ namespace TempHire.Server.Agent
              How to answer:
              - Use the tools to look up facts. Never invent people, numbers or details; if the tools
                don't have the answer, say so.
+             - For any question about people, skills, rates, places or work history, call a tool
+               first. Never say that you have no information, that a skill doesn't exist or that
+               someone isn't in the records until a tool has told you so.
+             - To find out who has a skill, who lives somewhere or who matches a name, call
+               search_staffing_resources. list_skills only counts people per skill and never says
+               who they are.
+             - When a question names a person, look them up with get_staffing_resource.
              - The tools only ever return {companyName}'s data. If asked about other companies' data,
                explain that you can only see {companyName}'s.
              - Rates are in US dollars.
