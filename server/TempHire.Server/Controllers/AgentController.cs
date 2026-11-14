@@ -29,6 +29,13 @@ namespace TempHire.Server.Controllers
         private const int MaxMessages = 30;
         private const int MaxMessageLength = 4000;
 
+        /// <summary>How the stream's updates are written: camelCase, without empty properties.</summary>
+        private static readonly System.Text.Json.JsonSerializerOptions UpdateJson =
+            new(System.Text.Json.JsonSerializerOptions.Web)
+            {
+                DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+            };
+
         private readonly QuinnAgent _agent;
         private readonly ChatClientFactory _chatClients;
         private readonly ILogger<AgentController> _logger;
@@ -51,8 +58,9 @@ namespace TempHire.Server.Controllers
 
         /// <summary>
         /// Answers the last question of the conversation, streamed as newline-delimited JSON
-        /// (<c>application/x-ndjson</c>): one <see cref="QuinnUpdate"/> per line, <c>text</c> pieces
-        /// as the model writes them, then <c>done</c> with the whole answer, its people linked.
+        /// (<c>application/x-ndjson</c>): one <see cref="QuinnUpdate"/> per line - <c>text</c> pieces as
+        /// the model writes them, the <c>people</c> the answer can mention as the tools return them,
+        /// and <c>done</c> at the end.  Turning those people into links is up to the client.
         ///
         /// <para>
         /// Nothing is sent until the first piece is ready, so a failure to start - Ollama not
@@ -124,7 +132,7 @@ namespace TempHire.Server.Controllers
         private async Task WriteLineAsync(QuinnUpdate update, CancellationToken cancellationToken)
         {
             await Response.WriteAsync(
-                System.Text.Json.JsonSerializer.Serialize(update, System.Text.Json.JsonSerializerOptions.Web) + "\n",
+                System.Text.Json.JsonSerializer.Serialize(update, UpdateJson) + "\n",
                 cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         }

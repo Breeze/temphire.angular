@@ -227,12 +227,12 @@ client ──POST /api/agent/chat──► AgentController ──► QuinnAgent 
   so far to `POST /api/agent/chat` and appends the answer; the server keeps no chat state.  Quinn
   exists only while someone is signed in, so signing out discards the conversation.
 - **Answers stream.**  `api/agent/chat` answers with newline-delimited JSON: the text in pieces as
-  the model writes it, then the whole answer once more with its people linked (see below), which
-  replaces the streamed text.  The client reads the pieces from `HttpClient`'s download progress
-  events, so the request still goes through the usual interceptors.  While tools run, nothing
-  streams and the pane shows its typing indicator.  This matters most with a local model, which
-  writes slowly; Claude often thinks before answering on tool results and then delivers most of
-  the answer at once.
+  the model writes it, the people the answer can mention as the tools return them (see below), and
+  `done` at the end.  The client reads the pieces from `HttpClient`'s download progress events, so
+  the request still goes through the usual interceptors.  While tools run, nothing streams and the
+  pane shows its typing indicator.  This matters most with a local model, which writes slowly;
+  Claude often thinks before answering on tool results and then delivers most of the answer at
+  once.
 - **The agent** (`server/TempHire.Server/Agent/`) uses
   [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai):
   `ChatClientFactory` builds an `IChatClient` for the configured provider, with automatic function
@@ -248,17 +248,20 @@ client ──POST /api/agent/chat──► AgentController ──► QuinnAgent 
   the signed-in user's own bearer token, so the tools run with that user's identity and company.
   Nothing in the agent can reach another company's data, whatever the model asks for.  Any other
   MCP client with a valid TempHire token can use `/mcp` too.
-- **Links to people are added by the server, not written by the model.**  The tools return each
-  person's id along with their name.  After the model has answered, `ResourceLinker` takes the
-  people from the tool results of that answer and turns their names in the text into Markdown
-  links to `/resourcemgt?resource=<id>`.  So only people the tools really returned are linked, and
-  always to the right record; a name the model gets wrong, or invents, stays plain text.  The tools
+- **Links to people are made by the client, from people the server names.**  The model doesn't
+  write links, and neither does the server: what a link to a person looks like depends on the
+  client, and another client, a mobile app say, would link differently.  The tools return each
+  person's id along with their name.  `ToolResultPeople` picks those people out of the tool results
+  of the answer, and the stream sends them to the client as a list of names and ids.  The tools
   return full names, middle name included, and a full name beats someone else's short form, so
-  "Jane Doe" and "Jane M Doe" each link to their own record; a name that still fits two people
-  is not linked at all.  In the
-  client, the pane catches clicks on links into the app and routes them; `ResourceMgtComponent`
-  receives the id as its `resource` input (the router binds query parameters to inputs), opens the
-  person, with the usual prompt if there are unsaved edits, and searches for them.
+  "Jane Doe" and "Jane M Doe" each keep their own id; a name that still fits two people is left
+  out.  The client's `linkPeople` (in `client/src/app/quinn/`) turns those names in the answer into
+  links to `/resourcemgt?resource=<id>` as the answer is shown, even while it streams, so only
+  people the tools really returned are linked, and always to the right record; a name the model
+  gets wrong, or invents, stays plain text.  The pane catches clicks on links into the app and
+  routes them; `ResourceMgtComponent` receives the id as its `resource` input (the router binds
+  query parameters to inputs), opens the person, with the usual prompt if there are unsaved edits,
+  and searches for them.
 
 ### Ollama or Claude
 

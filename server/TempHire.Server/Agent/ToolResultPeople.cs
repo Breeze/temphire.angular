@@ -1,83 +1,36 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.AI;
 
 namespace TempHire.Server.Agent
 {
     /// <summary>
-    /// Turns the names of staffing resources in Quinn's answer into Markdown links that open them in
-    /// Resource Management: <c>[Nancy Davolio](/resourcemgt?resource=&lt;id&gt;)</c>.
+    /// The staffing resources an answer can mention: the people in the tool results of that answer,
+    /// each name with the id the tool returned.  Quinn's stream sends them to the client, which turns
+    /// the names in the answer into links to the people's records.
     ///
     /// <para>
     /// The model does not write the links.  Asking it to copy GUIDs into URLs invites typos and
-    /// invented ids, especially from a small local model.  Instead the people come from the tool
-    /// results of this very answer, each with the id the tool returned, and their names are linked
-    /// where they appear in the text.  So only people the tools actually returned are linked, and
-    /// always to the right record.
+    /// invented ids, especially from a small local model.  And the server does not write them either:
+    /// what a link to a person looks like is the client's business - its routes, or a mobile app's
+    /// screens - so the server only says which names stand for which people.  Only people the tools
+    /// actually returned are named, and always with the right id.
     /// </para>
     /// </summary>
-    public static class ResourceLinker
+    public static class ToolResultPeople
     {
-        /// <summary>The client route that opens a staffing resource.</summary>
-        public const string LinkPrefix = "/resourcemgt?resource=";
-
-        /// <summary>Links the people found in the tool results of <paramref name="response"/>.</summary>
-        public static string LinkResources(string markdown, ChatResponse response)
-        {
-            var people = PeopleIn(response);
-            return people.Count == 0 ? markdown : LinkNames(markdown, people);
-        }
-
         /// <summary>
-        /// Links each occurrence of the names in <paramref name="people"/> (name → id), leaving code
-        /// and existing links alone.  Longer names win, so "Nancy Lynn Davolio" is one link, not
-        /// "Nancy" plus something else.
+        /// The people in <paramref name="results"/>: every JSON object with a GUID <c>id</c> and a
+        /// <c>name</c>, or a <c>personId</c> and a <c>person</c>.  A tool result reaches the agent as
+        /// MCP's <c>CallToolResult</c>, whose text content is itself JSON, so strings that look like
+        /// JSON are parsed and searched as well.  A full name beats someone else's short form ("Jane
+        /// Doe" for "Jane M Doe"); a name that still fits more than one person is left out, so it is
+        /// never linked to the wrong one.
         /// </summary>
-        public static string LinkNames(string markdown, IReadOnlyDictionary<string, Guid> people)
-        {
-            if (string.IsNullOrEmpty(markdown) || people.Count == 0)
-            {
-                return markdown;
-            }
-
-            var names = people.Keys.OrderByDescending(n => n.Length).Select(Regex.Escape);
-            var namePattern = new Regex(
-                $@"(?<![\w\[])(?:{string.Join("|", names)})(?![\w\]])",
-                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-            // Split into protected pieces (code blocks, code spans, links, images) and plain text,
-            // and link names in the plain text only.
-            var protectedPattern = new Regex(@"```[\s\S]*?```|`[^`\n]*`|!?\[[^\]\n]*\]\([^)\n]*\)");
-            var result = new System.Text.StringBuilder();
-            var position = 0;
-
-            foreach (Match match in protectedPattern.Matches(markdown))
-            {
-                result.Append(Link(markdown[position..match.Index]));
-                result.Append(match.Value);
-                position = match.Index + match.Length;
-            }
-
-            result.Append(Link(markdown[position..]));
-            return result.ToString();
-
-            string Link(string text) =>
-                namePattern.Replace(text, m => people.TryGetValue(m.Value, out var id) ? $"[{m.Value}]({LinkPrefix}{id})" : m.Value);
-        }
-
-        /// <summary>
-        /// The people in the tool results: every JSON object with a GUID <c>id</c> and a <c>name</c>,
-        /// or a <c>personId</c> and a <c>person</c>.  A tool result reaches the agent as MCP's
-        /// <c>CallToolResult</c>, whose text content is itself JSON, so strings that look like JSON
-        /// are parsed and searched as well.  A full name beats someone else's short form ("Jane Doe"
-        /// for "Jane M Doe"); a name that still fits more than one person is left out, so it is never
-        /// linked to the wrong one.
-        /// </summary>
-        public static IReadOnlyDictionary<string, Guid> PeopleIn(ChatResponse response)
+        public static IReadOnlyDictionary<string, Guid> In(IEnumerable<FunctionResultContent> results)
         {
             var names = new Names();
 
-            foreach (var result in response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>())
+            foreach (var result in results)
             {
                 if (result.Result is null)
                 {
