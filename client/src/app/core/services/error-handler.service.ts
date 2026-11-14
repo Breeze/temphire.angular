@@ -28,6 +28,10 @@ export class AppErrorHandler implements ErrorHandler {
   private readonly messageService = inject(MessageService);
 
   handleError(error: unknown): void {
+    if (AppErrorHandler.isHarmless(error)) {
+      return;
+    }
+
     const { summary, detail } = AppErrorHandler.describe(error);
 
     this.messageService.add({
@@ -43,6 +47,24 @@ export class AppErrorHandler implements ErrorHandler {
   /** Shows an error without routing it through Angular's global handler. */
   show(error: unknown): void {
     this.handleError(error);
+  }
+
+  /**
+   * Browser notices that arrive as errors but mean nothing is wrong, so the user is not shown them.
+   *
+   * "ResizeObserver loop completed with undelivered notifications" is the one that occurs: a
+   * ResizeObserver callback (the tabs and other Optimus UI components use them) changed the layout,
+   * so the browser postponed the remaining notifications to the next frame.  Nothing is lost.
+   * `provideBrowserGlobalErrorListeners` passes such window `error` events on to this handler,
+   * wrapped in an `Error` whose `cause` is the `ErrorEvent`.
+   */
+  static isHarmless(error: unknown): boolean {
+    const harmless =
+      /^ResizeObserver loop (completed with undelivered notifications|limit exceeded)/;
+    const messages = [error, (error as { cause?: unknown })?.cause].map(
+      (e) => (e as { message?: unknown })?.message,
+    );
+    return messages.some((message) => typeof message === 'string' && harmless.test(message));
   }
 
   static describe(error: unknown): { summary: string; detail: string } {
