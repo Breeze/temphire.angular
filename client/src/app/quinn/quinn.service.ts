@@ -5,22 +5,29 @@ import { lastValueFrom, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/services/auth.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';
+import { MentionedPerson } from './link-people';
 
-/** One message in the conversation.  `content` is Markdown. */
+/** One message in the conversation.  `content` is Markdown, as Quinn wrote it. */
 export interface QuinnMessage {
   readonly id: number;
   readonly role: 'user' | 'assistant' | 'error';
   readonly content: string;
   /** Quinn's introduction: shown, but not sent to the server as part of the conversation. */
   readonly intro?: boolean;
-  /** An answer still streaming in: plain text so far, the linked version still to come. */
+  /** An answer still streaming in. */
   readonly streaming?: boolean;
+  /**
+   * The people an answer can mention, from the server.  Their names are linked to their records
+   * when the answer is shown (see `LinkPeoplePipe`); `content` itself stays as Quinn wrote it.
+   */
+  readonly people?: readonly MentionedPerson[];
 }
 
 /** One line of the streamed answer from `api/agent/chat`. */
 interface QuinnUpdate {
-  readonly type: 'text' | 'done' | 'error';
-  readonly content: string;
+  readonly type: 'text' | 'people' | 'done' | 'error';
+  readonly content?: string;
+  readonly people?: readonly MentionedPerson[];
 }
 
 /** An example question offered under the introduction. */
@@ -95,10 +102,11 @@ export class QuinnService {
    * Sends a question and adds Quinn's answer as it streams in, or an error message.
    *
    * The server answers with one JSON object per line (see `AgentController.Chat`): `text` pieces
-   * as the model writes them, then `done` with the whole answer, its people linked.  The pieces
-   * grow the answer as they arrive; `done` replaces it with the linked version.  `HttpClient`
-   * reports the response so far with each download progress event, so the lines are read from
-   * that, which keeps the request going through the interceptors like any other.
+   * as the model writes them, the `people` the answer can mention as the tools return them, and
+   * `done` at the end.  The pieces grow the answer as they arrive; the people go with it, so their
+   * names become links as soon as they appear.  `HttpClient` reports the response so far with each
+   * download progress event, so the lines are read from that, which keeps the request going
+   * through the interceptors like any other.
    */
   async ask(question: string): Promise<void> {
     const text = question.trim();
@@ -110,6 +118,8 @@ export class QuinnService {
     this.busy.set(true);
 
     let answerId: number | undefined;
+    // The people usually arrive before the first text, when there is no answer to attach them to yet.
+    let people: readonly MentionedPerson[] = [];
     let received = 0;
     let pending = '';
 
@@ -121,21 +131,25 @@ export class QuinnService {
 
       if (update.type === 'text') {
         if (answerId === undefined) {
-          answerId = this.add('assistant', update.content, { streaming: true });
+          answerId = this.add('assistant', update.content ?? '', { streaming: true, people });
         } else {
-          this.change(answerId, (m) => ({ ...m, content: m.content + update.content }));
+          this.change(answerId, (m) => ({ ...m, content: m.content + (update.content ?? '') }));
+        }
+      } else if (update.type === 'people') {
+        people = update.people ?? [];
+        if (answerId !== undefined) {
+          this.change(answerId, (m) => ({ ...m, people }));
         }
       } else if (update.type === 'done') {
-        const answer = update.content?.trim() || "Sorry, I don't have an answer for that.";
         if (answerId === undefined) {
-          answerId = this.add('assistant', answer);
+          answerId = this.add('assistant', "Sorry, I don't have an answer for that.");
         } else {
-          this.change(answerId, (m) => ({ ...m, content: answer, streaming: false }));
+          this.change(answerId, (m) => ({ ...m, content: m.content.trim(), streaming: false }));
         }
       } else if (update.type === 'error') {
         this.discard(answerId);
         answerId = undefined;
-        this.add('error', update.content);
+        this.add('error', update.content ?? 'Quinn ran into a problem answering that.');
       }
     };
 
@@ -186,7 +200,7 @@ export class QuinnService {
   private add(
     role: QuinnMessage['role'],
     content: string,
-    flags: { intro?: boolean; streaming?: boolean } = {},
+    flags: Pick<QuinnMessage, 'intro' | 'streaming' | 'people'> = {},
   ): number {
     const id = this.nextId++;
     this._messages.update((messages) => [...messages, { id, role, content, ...flags }]);

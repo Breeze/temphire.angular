@@ -32,15 +32,10 @@ namespace TempHire.Server.Agent
         }
 
         /// <summary>
-        /// Answers as a stream: the text as the model writes it, piece by piece, then the whole answer
-        /// once more with the people in it linked.
-        ///
-        /// <para>
-        /// The links can only be added at the end.  The people to link come from the tool results,
-        /// and a name can be split across two pieces ("Nancy Da" + "volio").  So the pieces are plain
-        /// text, and the client swaps in the linked answer when it arrives.  The tool calls run
-        /// before the model writes its answer, so nothing streams while they do.
-        /// </para>
+        /// Answers as a stream: the text as the model writes it, piece by piece, and the people the
+        /// answer can mention - see <see cref="ToolResultPeople"/> - each time a tool returns more of
+        /// them.  The tools run before the model writes its answer, so the people normally arrive
+        /// before the text that names them, and nothing streams while the tools run.
         /// </summary>
         public async IAsyncEnumerable<QuinnUpdate> AskStreamingAsync(
             IReadOnlyList<ChatMessage> conversation,
@@ -53,23 +48,28 @@ namespace TempHire.Server.Agent
             await using var mcp = await ConnectAsync(mcpEndpoint, accessToken, cancellationToken);
             var tools = await mcp.ListToolsAsync(cancellationToken: cancellationToken);
 
-            var updates = new List<ChatResponseUpdate>();
+            var results = new List<FunctionResultContent>();
             await foreach (var update in _chatClients.Client.GetStreamingResponseAsync(
                 Messages(conversation, companyName, userName),
                 new ChatOptions { Tools = [.. tools] },
                 cancellationToken))
             {
-                // Every update is kept, tool calls and results included, to put the response
-                // together at the end; only the text goes to the client now.
-                updates.Add(update);
+                // A tool result: work out the people again from all results so far, since a name
+                // that fit one person can fit two once another tool has answered.
+                var newResults = update.Contents.OfType<FunctionResultContent>().ToList();
+                if (newResults.Count > 0)
+                {
+                    results.AddRange(newResults);
+                    yield return QuinnUpdate.PeopleFound(ToolResultPeople.In(results));
+                }
+
                 if (update.Role != ChatRole.Tool && !string.IsNullOrEmpty(update.Text))
                 {
                     yield return QuinnUpdate.Text(update.Text);
                 }
             }
 
-            var response = updates.ToChatResponse();
-            yield return QuinnUpdate.Done(ResourceLinker.LinkResources(response.Text, response));
+            yield return QuinnUpdate.Done();
         }
 
         /// <summary>
@@ -104,16 +104,23 @@ namespace TempHire.Server.Agent
     }
 
     /// <summary>
-    /// One piece of a streamed answer: some <c>text</c> as the model writes it, or <c>done</c> with
-    /// the whole answer, its people linked, or an <c>error</c>.  Sent to the client as one JSON object
-    /// per line.
+    /// One piece of a streamed answer: some <c>text</c> as the model writes it, the <c>people</c> the
+    /// answer can mention, <c>done</c> at the end, or an <c>error</c>.  Sent to the client as one JSON
+    /// object per line; properties without a value are left out.
     /// </summary>
-    public record QuinnUpdate(string Type, string Content)
+    public record QuinnUpdate(string Type, string Content = null, IReadOnlyList<MentionedPerson> People = null)
     {
         public static QuinnUpdate Text(string text) => new("text", text);
 
-        public static QuinnUpdate Done(string answer) => new("done", answer);
+        /// <summary>All the people the answer can mention so far; replaces any earlier list.</summary>
+        public static QuinnUpdate PeopleFound(IReadOnlyDictionary<string, Guid> people) =>
+            new("people", People: [.. people.Select(p => new MentionedPerson(p.Key, p.Value))]);
+
+        public static QuinnUpdate Done() => new("done");
 
         public static QuinnUpdate Error(string message) => new("error", message);
     }
+
+    /// <summary>A name in the answer, and the staffing resource it stands for.</summary>
+    public record MentionedPerson(string Name, Guid Id);
 }

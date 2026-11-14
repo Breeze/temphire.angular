@@ -4,6 +4,7 @@ import { FormRoot, disabled, form } from '@angular/forms/signals';
 import { ButtonDirective } from '@openng/optimus-ui/button';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 
+import { LinkPeoplePipe } from './link-people.pipe';
 import { MarkdownPipe } from './markdown.pipe';
 import { QuinnLogoComponent } from './quinn-logo.component';
 import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
@@ -15,16 +16,24 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
  * The first time the pane opens, Quinn introduces themselves and offers example questions; a click
  * on one asks it.  Answers arrive as Markdown and are rendered with the `markdown` pipe.
  *
- * Links in an answer are handled here: a link into the app (Quinn links the people it mentions to
- * `/resourcemgt?resource=<id>`) closes the pane and navigates there; any other link opens in a new
- * tab, so the app is never left by accident.
+ * The people an answer mentions become links to their records (`LinkPeoplePipe`, from the people
+ * the server reports for that answer).  Clicks on links are handled here: a link into the app
+ * closes the pane and navigates there; any other link opens in a new tab, so the app is never
+ * left by accident.
  *
  * Rendered by the shell only while someone is signed in, and it provides its own `QuinnService`,
  * so the conversation is discarded on sign-out.
  */
 @Component({
   selector: 'app-quinn',
-  imports: [FormRoot, ButtonDirective, TextareaModule, MarkdownPipe, QuinnLogoComponent],
+  imports: [
+    FormRoot,
+    ButtonDirective,
+    TextareaModule,
+    LinkPeoplePipe,
+    MarkdownPipe,
+    QuinnLogoComponent,
+  ],
   providers: [QuinnService],
   host: { '(document:keydown.escape)': 'quinn.close()' },
   template: `
@@ -71,7 +80,12 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
         </button>
       </header>
 
-      <div class="quinn-pane__messages" #messageList aria-live="polite" (click)="followLink($event)">
+      <div
+        class="quinn-pane__messages"
+        #messageList
+        aria-live="polite"
+        (click)="followLink($event)"
+      >
         @for (message of quinn.messages(); track message.id) {
           <div class="quinn-message" [class]="'quinn-message--' + message.role">
             @if (message.role !== 'user') {
@@ -79,7 +93,7 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
             }
             <div
               class="quinn-message__bubble quinn-md"
-              [innerHTML]="message.content | markdown"
+              [innerHTML]="message.content | linkPeople: message.people | markdown"
             ></div>
           </div>
 
@@ -188,7 +202,11 @@ export class QuinnComponent {
       const busy = this.quinn.busy();
       if (wasBusy && !busy && this.quinn.isOpen()) {
         const focused = document.activeElement;
-        if (!focused || focused === document.body || this.messageList().nativeElement.contains(focused)) {
+        if (
+          !focused ||
+          focused === document.body ||
+          this.messageList().nativeElement.contains(focused)
+        ) {
           this.questionBox().nativeElement.focus();
         }
       }

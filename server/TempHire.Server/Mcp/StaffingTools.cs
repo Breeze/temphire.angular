@@ -18,8 +18,8 @@ namespace TempHire.Server.Mcp
     /// </para>
     /// <para>
     /// Every person in a result comes with their id (<c>id</c>, or <c>personId</c> next to
-    /// <c>person</c>).  The model has no use for it, but <c>ResourceLinker</c> turns the names in
-    /// Quinn's answer into links to those people.
+    /// <c>person</c>).  The model has no use for it, but <c>ToolResultPeople</c> picks the people out
+    /// of the results, and the client links their names in Quinn's answer to their records.
     /// </para>
     /// <para>
     /// A new instance is created per request, with that request's <see cref="TempHireDbContext"/>.
@@ -297,8 +297,8 @@ namespace TempHire.Server.Mcp
 
         /// <summary>
         /// A person's name as every tool returns it: first, middle (if any) and last.  The middle name
-        /// matters: "Jane Doe" and "Jane M Doe" are different people, and the model, and the links
-        /// <c>ResourceLinker</c> adds, can only tell them apart if the results do.  Called in the final
+        /// matters: "Jane Doe" and "Jane M Doe" are different people, and the model, and the people
+        /// <c>ToolResultPeople</c> finds, can only tell them apart if the results do.  Called in the final
         /// projection of each query, which EF Core runs on the client.
         /// </summary>
         private static string FullName(string firstName, string middleName, string lastName) =>
