@@ -6,4 +6,12 @@ export const environment = {
   breezeApiRoot: 'http://localhost:5000/api/breeze',
   accountApiRoot: 'http://localhost:5000/api/account',
   agentApiRoot: 'http://localhost:5000/api/agent',
+  /** The users the server seeds (see `DatabaseSetup`), offered as one-click sign-ins. */
+  sampleLogins: {
+    password: 'password',
+    companies: [
+      { name: 'Harbor Staffing', users: ['anna@harbor.test', 'ben@harbor.test'] },
+      { name: 'Summit Talent', users: ['carla@summit.test', 'david@summit.test'] },
+    ],
+  },
 };

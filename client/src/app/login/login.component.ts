@@ -6,6 +6,7 @@ import {
   ValidationError,
   form,
   required,
+  submit,
 } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { ButtonDirective } from '@openng/optimus-ui/button';
@@ -14,6 +15,7 @@ import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MessageModule } from '@openng/optimus-ui/message';
 import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
 
+import { environment } from '../../environments/environment';
 import { AuthService } from '../core/services/auth.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';
 
@@ -25,8 +27,10 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
  * that is preserved; the presentation changed from a Punch dialog to a route, and the form is a
  * Signal Form.
  *
- * The original pre-filled Admin/password under `#if DEBUG`.  The seeded users are now one per
- * company and sign in with an email address, so they are listed as a hint rather than typed in.
+ * The original pre-filled Admin/password under `#if DEBUG`.  The seeded users now belong to two
+ * companies and sign in with an email address, so they are listed under the form instead; a click
+ * on one fills in the form and signs in as that user.  Like the original, this is for development
+ * only: the users come from `environment.development.ts`, and production builds have none.
  */
 @Component({
   selector: 'app-login',
@@ -83,18 +87,27 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
             </button>
           </div>
 
-          <div class="login__hint">
-            Sample users, password <code>password</code>:
-            <ul>
-              <li>
-                <code>anna&#64;harbor.test</code>, <code>ben&#64;harbor.test</code>: Harbor Staffing
-              </li>
-              <li>
-                <code>carla&#64;summit.test</code>, <code>david&#64;summit.test</code>: Summit
-                Talent
-              </li>
-            </ul>
-          </div>
+          @if (sampleLogins; as samples) {
+            <div class="login__hint">
+              Sample users, password <code>{{ samples.password }}</code>. Click one to sign in:
+              <ul>
+                @for (company of samples.companies; track company.name) {
+                  <li>
+                    @for (user of company.users; track user; let last = $last) {
+                      <button
+                        type="button"
+                        class="login__sample"
+                        [title]="'Sign in as ' + user"
+                        [disabled]="loginForm().submitting()"
+                        (click)="signInAs(user, samples.password)"
+                      >{{ user }}</button>{{ last ? ':' : ',' }}
+                    }
+                    {{ company.name }}
+                  </li>
+                }
+              </ul>
+            </div>
+          }
         </form>
       </p-card>
     </div>
@@ -153,6 +166,25 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
         margin: 0.25rem 0 0;
         padding-left: 1.1rem;
       }
+
+      /* A sample user: looks like the code it replaced, and acts like a link. */
+      .login__sample {
+        padding: 0;
+        border: 0;
+        background: none;
+        font: inherit;
+        font-family: var(--p-font-family-mono, monospace);
+        color: var(--p-primary-color, #10b981);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        cursor: pointer;
+      }
+
+      .login__sample:disabled {
+        color: inherit;
+        text-decoration: none;
+        cursor: default;
+      }
     `,
   ],
 })
@@ -177,6 +209,18 @@ export class LoginComponent {
     },
     { submission: { action: (field) => this.login(field) } },
   );
+
+  /** The seeded users, offered as one-click sign-ins in development builds only. */
+  protected readonly sampleLogins = environment.sampleLogins;
+
+  /** A click on a sample user: fill in the form with their credentials and submit it. */
+  protected signInAs(username: string, password: string): void {
+    if (this.loginForm().submitting()) {
+      return;
+    }
+    this.loginForm().value.set({ username, password });
+    void submit(this.loginForm);
+  }
 
   private async login(
     field: FieldTree<{ username: string; password: string }>,

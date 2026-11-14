@@ -6,4 +6,11 @@ export const environment = {
   accountApiRoot: '/api/account',
   /** Root of the agent controller - Quinn, see `AgentController`. */
   agentApiRoot: '/api/agent',
+  /**
+   * Seeded users the login page offers as one-click sign-ins, a convenience for development only
+   * (see `environment.development.ts`).  None in production, so they are not even in the bundle.
+   */
+  sampleLogins: undefined as
+    | { password: string; companies: { name: string; users: string[] }[] }
+    | undefined,
 };

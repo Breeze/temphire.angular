@@ -125,6 +125,9 @@ Then open <http://localhost:4200> and sign in as one of the sample users.  The p
 | `anna@harbor.test`, `ben@harbor.test` | Harbor Staffing |
 | `carla@summit.test`, `david@summit.test` | Summit Talent |
 
+In a development build the login page lists them too, and a click on one signs in as that user.
+They come from `environment.development.ts`; a production build doesn't offer them.
+
 Sign in as one user from each company to see that each sees only their own company's people, and
 that Quinn only knows about them too.
 
