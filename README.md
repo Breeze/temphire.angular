@@ -203,6 +203,13 @@ client ──POST /api/agent/chat──► AgentController ──► QuinnAgent 
 - **The client** (`client/src/app/quinn/`) only shows the conversation.  It sends the conversation
   so far to `POST /api/agent/chat` and appends the answer; the server keeps no chat state.  Quinn
   exists only while someone is signed in, so signing out discards the conversation.
+- **Answers stream.**  `api/agent/chat` answers with newline-delimited JSON: the text in pieces as
+  the model writes it, then the whole answer once more with its people linked (see below), which
+  replaces the streamed text.  The client reads the pieces from `HttpClient`'s download progress
+  events, so the request still goes through the usual interceptors.  While tools run, nothing
+  streams and the pane shows its typing indicator.  This matters most with a local model, which
+  writes slowly; Claude often thinks before answering on tool results and then delivers most of
+  the answer at once.
 - **The agent** (`server/TempHire.Server/Agent/`) uses
   [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai):
   `ChatClientFactory` builds an `IChatClient` for the configured provider, with automatic function
@@ -552,8 +559,6 @@ provider, delete them and add a new initial migration (see [The database schema]
   either. `ng test` runs Vitest; the server has no test project.
 - **Migrations run on startup**, and a database without migration history is dropped; see
   [The database schema](#the-database-schema).
-- **Quinn's answers are not streamed.**  The pane shows a typing indicator until the whole answer
-  has arrived, which with a local model can take half a minute.
 - **Logout does not revoke the token.** A JWT is valid until it expires; `AccountController.Logout`
   is the hook where a revocation list would go.
 - **Search has no paging.** `StaffingResourceListItems` returns every match, exactly as
