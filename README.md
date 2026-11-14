@@ -280,6 +280,25 @@ The `Agent` section of `server/TempHire.Server/appsettings.json` picks the model
 model is a good demo but not a careful analyst; it sometimes misreads a tool's result, which is why
 the pane notes that Quinn can make mistakes.  **Claude** gives noticeably better answers.
 
+**Small local model or large hosted one: the same Quinn, different results.**  Both get the same
+system prompt, the same tools and the same data; only the model differs, and that shows mostly in
+how well it uses the tools.  Asked "Who has the Test skill?" (two people have it):
+
+- **qwen3:4b-instruct on a laptop GPU with 4 GB** found them in about three of four tries.  The
+  rest of the time it answered "I don't have information about a 'Test' skill" without looking, or
+  called `list_skills`, which only counts people per skill, and stopped there.  Even when it got
+  it right it tended to write "let me look that up" before calling a tool, and it often took two
+  rounds of tools where one would do.  The system prompt's rules - call a tool first, use
+  `search_staffing_resources` to find people - took it from none of three tries to most, and that
+  is about as far as wording gets a model this size.  Forcing a tool call isn't possible either:
+  Ollama's API has no setting for it.
+- **Claude**, asked the same question, called the search tool straight away and named both people,
+  with nothing like "let me look that up" in the answer.
+
+A larger local model narrows the gap, if the machine can hold it: `qwen3:8b` needs about 5 GB of
+GPU memory, so on a 4 GB card Ollama runs part of it on the processor, which is far slower.  Pick
+the model in `Agent:Ollama:Model`.
+
 ### Setting up Ollama
 
 1. **Install Ollama** from <https://ollama.com/download>: the installer on Windows and macOS, or
