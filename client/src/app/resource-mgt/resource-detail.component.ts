@@ -37,7 +37,7 @@ import { ResourceSummaryComponent } from './resource-summary.component';
     <div class="detail">
       <app-resource-summary [staffingResource]="staffingResource()" [readOnly]="readOnly()" />
 
-      <p-tabs [(value)]="activeTab" styleClass="temphire-elevated">
+      <p-tabs [(value)]="activeTab" class="detail__tabs temphire-card">
         <p-tablist>
           <p-tab value="contact">Contact Information</p-tab>
           <p-tab value="rates">Rates</p-tab>
@@ -96,7 +96,58 @@ import { ResourceSummaryComponent } from './resource-summary.component';
       .detail {
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 1.25rem;
+      }
+
+      /* The tabs as pills on a tinted strip, the active one raised; the panel below in the card. */
+      .detail__tabs {
+        display: block;
+        overflow: hidden;
+      }
+
+      :host ::ng-deep .detail__tabs .p-tablist {
+        padding: 0.6rem 0.75rem 0;
+        background: linear-gradient(180deg, #f1f6fb, #e8f0f8);
+        border-bottom: 1px solid var(--temphire-border);
+      }
+
+      :host ::ng-deep .detail__tabs .p-tablist-tab-list {
+        gap: 0.35rem;
+        background: transparent;
+        border: none;
+      }
+
+      :host ::ng-deep .detail__tabs .p-tablist-active-bar {
+        display: none;
+      }
+
+      :host ::ng-deep .detail__tabs .p-tab {
+        border: none;
+        border-radius: 10px 10px 0 0;
+        padding: 0.6rem 1.1rem;
+        color: var(--temphire-muted);
+        font-weight: 600;
+        background: transparent;
+        transition:
+          background-color 0.15s ease,
+          color 0.15s ease;
+      }
+
+      :host ::ng-deep .detail__tabs .p-tab:not(.p-tab-active):hover {
+        color: var(--temphire-accent);
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      :host ::ng-deep .detail__tabs .p-tab.p-tab-active {
+        color: var(--temphire-accent);
+        background: #ffffff;
+        box-shadow: 0 -2px 8px rgba(15, 47, 77, 0.08);
+      }
+
+      :host ::ng-deep .detail__tabs .p-tabpanels {
+        display: block;
+        padding: 1.25rem 1.4rem 1.5rem;
+        background: #ffffff;
       }
     `,
   ],

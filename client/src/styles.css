@@ -10,31 +10,134 @@ body {
   margin: 0;
 }
 
+/*
+ * The look: white cards floating on a soft blue-grey page, with rounded corners and layered shadows
+ * for depth, in the blue the original used for headings (and Quinn uses for its chat).
+ */
+:root {
+  --temphire-accent: #1d5380;
+  --temphire-accent-light: #73a9d8;
+  --temphire-accent-deep: #0f2f4d;
+
+  --temphire-ink: #1e2a38;
+  --temphire-muted: #64748b;
+  --temphire-page: #e8eff7;
+
+  --temphire-radius: 12px;
+  --temphire-radius-lg: 16px;
+  --temphire-border: rgba(29, 83, 128, 0.1);
+
+  /* Three layers: a crisp contact shadow, a mid shadow and a wide soft one. */
+  --temphire-shadow:
+    0 1px 2px rgba(15, 47, 77, 0.06), 0 4px 12px rgba(15, 47, 77, 0.06),
+    0 16px 40px rgba(15, 47, 77, 0.08);
+  --temphire-shadow-raised:
+    0 1px 2px rgba(15, 47, 77, 0.08), 0 6px 16px rgba(15, 47, 77, 0.1),
+    0 18px 36px rgba(15, 47, 77, 0.1);
+  /* A light edge along the top, as if lit from above. */
+  --temphire-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 14px;
-  color: #333333;
-  background: #ffffff;
+  color: var(--temphire-ink);
+  background:
+    radial-gradient(1100px 520px at 0% 0%, rgba(115, 169, 216, 0.28), transparent 65%),
+    radial-gradient(900px 480px at 100% 100%, rgba(29, 83, 128, 0.12), transparent 60%),
+    linear-gradient(180deg, #eef4fa 0%, var(--temphire-page) 100%);
+  background-attachment: fixed;
 }
 
-/* The blue the original used for headings and the tab border. */
-:root {
-  --temphire-accent: #1d5380;
-  --temphire-accent-light: #73a9d8;
-  --temphire-toolbar: #c6dbf1;
-}
-
+/* A section's heading, with a short accent bar in front. */
 .temphire-section-heading {
-  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05rem;
   font-weight: 700;
+  letter-spacing: 0.01em;
   color: var(--temphire-accent);
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.75rem;
 }
 
-/* Matches the DropShadowEffect the WPF views applied to grids, tabs and text boxes. */
+.temphire-section-heading::before {
+  content: '';
+  width: 4px;
+  height: 1.1em;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #4f8fca, var(--temphire-accent));
+}
+
+/* A page-level panel: white, rounded, floating on the page. */
+.temphire-card {
+  background: #ffffff;
+  border: 1px solid var(--temphire-border);
+  border-radius: var(--temphire-radius-lg);
+  box-shadow: var(--temphire-shadow), var(--temphire-highlight);
+}
+
+/*
+ * A card inside a panel - an address, a phone number - raised a little further, with a faint
+ * top-to-bottom shade, and lifting on hover.  Successor of the DropShadowEffect the WPF views used.
+ */
 .temphire-elevated {
-  box-shadow: 0 1px 3px rgba(51, 51, 51, 0.2);
+  background: linear-gradient(180deg, #ffffff 0%, #f6f9fd 100%);
+  border: 1px solid var(--temphire-border);
+  border-radius: var(--temphire-radius);
+  box-shadow:
+    0 1px 2px rgba(15, 47, 77, 0.06),
+    0 6px 16px rgba(15, 47, 77, 0.07),
+    var(--temphire-highlight);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.temphire-elevated:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--temphire-shadow-raised), var(--temphire-highlight);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .temphire-elevated,
+  .temphire-elevated:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* Dialogs float above a lightly blurred page, like the cards but higher. */
+.p-dialog {
+  border-radius: var(--temphire-radius-lg);
+  box-shadow:
+    0 2px 6px rgba(15, 47, 77, 0.12),
+    0 24px 60px rgba(15, 47, 77, 0.28),
+    var(--temphire-highlight);
+}
+
+.p-dialog-mask.p-overlay-mask {
+  backdrop-filter: blur(2px);
+}
+
+/* A round avatar with a 3D look, like Quinn's launcher: lit from the top left. */
+.temphire-orb {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-weight: 700;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55) 0, rgba(255, 255, 255, 0) 40%),
+    radial-gradient(circle at 50% 55%, #3a86c8 0, var(--temphire-accent) 70%, #12385a 100%);
+  box-shadow:
+    inset 0 -3px 6px rgba(0, 0, 0, 0.25),
+    0 2px 4px rgba(15, 47, 77, 0.25),
+    0 8px 18px rgba(15, 47, 77, 0.22);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /*

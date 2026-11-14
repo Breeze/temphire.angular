@@ -90,7 +90,7 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
         [selection]="selectedItem()"
         (selectionChange)="onSelect($event)"
         dataKey="id"
-        styleClass="p-datatable-sm temphire-elevated"
+        styleClass="p-datatable-sm search__table"
       >
         <ng-template #header>
           <tr>
@@ -143,6 +143,50 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
       .search__error {
         margin: 0;
         color: var(--p-red-600, #dc2626);
+      }
+
+      /* The grid: a tinted header, rounded, a soft hover and a clear selected row. */
+      :host ::ng-deep .search__table {
+        border: 1px solid var(--temphire-border);
+        border-radius: var(--temphire-radius);
+        overflow: hidden;
+      }
+
+      :host ::ng-deep .search__table .p-datatable-thead > tr > th {
+        background: linear-gradient(180deg, #f4f8fc, #e9f1f9);
+        color: var(--temphire-accent);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border-color: var(--temphire-border);
+      }
+
+      :host ::ng-deep .search__table .p-datatable-tbody > tr {
+        transition: background-color 0.15s ease;
+      }
+
+      :host ::ng-deep .search__table .p-datatable-tbody > tr > td {
+        border-color: rgba(29, 83, 128, 0.06);
+      }
+
+      :host ::ng-deep .search__table .p-datatable-tbody > tr:not(.p-datatable-row-selected):hover {
+        background: #f2f7fc;
+      }
+
+      :host ::ng-deep .search__table .p-datatable-tbody > tr.p-datatable-row-selected {
+        background: linear-gradient(90deg, #dcebf8, #eef5fb);
+        color: var(--temphire-accent-deep);
+        font-weight: 600;
+      }
+
+      :host
+        ::ng-deep
+        .search__table
+        .p-datatable-tbody
+        > tr.p-datatable-row-selected
+        > td:first-child {
+        box-shadow: inset 4px 0 0 var(--temphire-accent);
       }
 
       :host ::ng-deep .search__spinner {

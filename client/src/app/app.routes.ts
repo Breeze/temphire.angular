@@ -51,9 +51,17 @@ export interface Workspace {
   route: string;
   sequence: number;
   isDefault: boolean;
+  /** A PrimeIcons-style class for the toolbar button. */
+  icon?: string;
 }
 
 export const WORKSPACES: Workspace[] = [
-  { displayName: 'Home', route: '/home', sequence: 10, isDefault: true },
-  { displayName: 'Resource Management', route: '/resourcemgt', sequence: 20, isDefault: false },
+  { displayName: 'Home', route: '/home', sequence: 10, isDefault: true, icon: 'pi pi-home' },
+  {
+    displayName: 'Resource Management',
+    route: '/resourcemgt',
+    sequence: 20,
+    isDefault: false,
+    icon: 'pi pi-users',
+  },
 ];

@@ -1,29 +1,37 @@
 @if (isLoggedIn()) {
   <header class="app-toolbar">
-    <span class="app-toolbar__brand">TempHire</span>
+    <span class="app-toolbar__brand">
+      <span class="app-toolbar__badge temphire-orb" aria-hidden="true">T</span>
+      TempHire
+    </span>
 
-    @for (action of actions(); track action.label) {
-      <button
-        pButton
-        type="button"
-        [disabled]="action.canExecute ? !action.canExecute() : false"
-        [text]="true"
-        severity="contrast"
-        (click)="action.execute()"
-      >
-        @if (action.icon; as icon) {
-          <i [class]="icon"></i>
-        }
-        {{ action.label }}
-      </button>
-    }
+    <nav class="app-toolbar__actions">
+      @for (action of actions(); track action.label) {
+        <button
+          pButton
+          type="button"
+          class="app-toolbar__action"
+          [disabled]="action.canExecute ? !action.canExecute() : false"
+          [text]="true"
+          (click)="action.execute()"
+        >
+          @if (action.icon; as icon) {
+            <i [class]="icon"></i>
+          }
+          {{ action.label }}
+        </button>
+      }
+    </nav>
 
     <span class="app-toolbar__spacer"></span>
-    <span class="app-toolbar__user"
-      >{{ username() }}
-      @if (tenantName()) {
-        <span class="app-toolbar__company"> · {{ tenantName() }}</span>
-      }
+    <span class="app-toolbar__user">
+      <span class="app-toolbar__avatar" aria-hidden="true">{{ initial() }}</span>
+      <span class="app-toolbar__who">
+        <span class="app-toolbar__name">{{ username() }}</span>
+        @if (tenantName()) {
+          <span class="app-toolbar__company">{{ tenantName() }}</span>
+        }
+      </span>
     </span>
   </header>
 }
