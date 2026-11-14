@@ -1,4 +1,4 @@
-import { linkPeople, MentionedPerson } from './link-people';
+import { linkPeople, MentionedPerson, mergePeople } from './link-people';
 
 describe('linkPeople', () => {
   const link = (id: string) => `/people/${id}`;
@@ -50,5 +50,24 @@ describe('linkPeople', () => {
   it('returns the text unchanged without people', () => {
     expect(linkPeople('Jane Doe', [], link)).toBe('Jane Doe');
     expect(linkPeople('Jane Doe', undefined, link)).toBe('Jane Doe');
+  });
+});
+
+describe('mergePeople', () => {
+  it('keeps the earlier people and adds the newer ones', () => {
+    const merged = mergePeople(
+      [{ name: 'Mia I Gallagher', id: 'm1' }],
+      [{ name: 'Yasmin S Kowalski', id: 'y1' }],
+    );
+    expect(merged).toEqual([
+      { name: 'Mia I Gallagher', id: 'm1' },
+      { name: 'Yasmin S Kowalski', id: 'y1' },
+    ]);
+  });
+
+  it('lets a newer entry for the same name win, whatever its case', () => {
+    expect(
+      mergePeople([{ name: 'Jane Doe', id: 'old' }], [{ name: 'jane doe', id: 'new' }]),
+    ).toEqual([{ name: 'jane doe', id: 'new' }]);
   });
 });

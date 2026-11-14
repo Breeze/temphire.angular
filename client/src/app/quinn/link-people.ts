@@ -53,6 +53,21 @@ export function linkPeople(
   return result + link(markdown.slice(position));
 }
 
+/**
+ * The people from an earlier answer combined with newer ones.  Where both have the same name (in
+ * any case), the newer one wins: it comes from fresher tool results.
+ */
+export function mergePeople(
+  earlier: readonly MentionedPerson[],
+  newer: readonly MentionedPerson[],
+): readonly MentionedPerson[] {
+  const byName = new Map(earlier.map((person) => [person.name.toLowerCase(), person]));
+  for (const person of newer) {
+    byName.set(person.name.toLowerCase(), person);
+  }
+  return [...byName.values()];
+}
+
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
