@@ -69,11 +69,13 @@ namespace TempHire.Server.Agent
         /// The people in the tool results: every JSON object with a GUID <c>id</c> and a <c>name</c>,
         /// or a <c>personId</c> and a <c>person</c>.  A tool result reaches the agent as MCP's
         /// <c>CallToolResult</c>, whose text content is itself JSON, so strings that look like JSON
-        /// are parsed and searched as well.
+        /// are parsed and searched as well.  A full name beats someone else's short form ("Jane Doe"
+        /// for "Jane M Doe"); a name that still fits more than one person is left out, so it is never
+        /// linked to the wrong one.
         /// </summary>
         public static IReadOnlyDictionary<string, Guid> PeopleIn(ChatResponse response)
         {
-            var people = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+            var names = new Names();
 
             foreach (var result in response.Messages.SelectMany(m => m.Contents).OfType<FunctionResultContent>())
             {
@@ -85,7 +87,7 @@ namespace TempHire.Server.Agent
                 try
                 {
                     var json = result.Result is JsonElement element ? element : JsonSerializer.SerializeToElement(result.Result);
-                    Collect(json, people, depth: 0);
+                    Collect(json, names, depth: 0);
                 }
                 catch (Exception e) when (e is JsonException or NotSupportedException)
                 {
@@ -93,10 +95,33 @@ namespace TempHire.Server.Agent
                 }
             }
 
+            // A person's full name is linked to them, even when it is also the short form of someone
+            // else's: "Jane Doe" is Jane Doe, not Jane M Doe.  A short form is linked only when no one
+            // has it as their full name and it is short for one person only.  Anything that still
+            // fits more than one person stays plain text: a link would be a guess.
+            var people = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (name, ids) in names.Full.Where(n => n.Value.Count == 1))
+            {
+                people[name] = ids.Single();
+            }
+
+            foreach (var (name, ids) in names.Short.Where(n => n.Value.Count == 1 && !names.Full.ContainsKey(n.Key)))
+            {
+                people[name] = ids.Single();
+            }
+
             return people;
         }
 
-        private static void Collect(JsonElement json, Dictionary<string, Guid> people, int depth)
+        /// <summary>The names found, each with the people who go by it: full names, and short forms.</summary>
+        private sealed class Names
+        {
+            public Dictionary<string, HashSet<Guid>> Full { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+            public Dictionary<string, HashSet<Guid>> Short { get; } = new(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static void Collect(JsonElement json, Names people, int depth)
         {
             if (depth > 12)
             {
@@ -139,7 +164,7 @@ namespace TempHire.Server.Agent
             }
         }
 
-        private static void AddPerson(JsonElement json, string idProperty, string nameProperty, Dictionary<string, Guid> people)
+        private static void AddPerson(JsonElement json, string idProperty, string nameProperty, Names people)
         {
             if (!json.TryGetProperty(idProperty, out var idValue) || idValue.ValueKind != JsonValueKind.String ||
                 !Guid.TryParse(idValue.GetString(), out var id) ||
@@ -154,14 +179,24 @@ namespace TempHire.Server.Agent
                 return;
             }
 
-            people.TryAdd(name, id);
+            Add(people.Full, name, id);
 
             // "Nancy Lynn Davolio" is often written "Nancy Davolio".
             var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length > 2)
             {
-                people.TryAdd($"{parts[0]} {parts[^1]}", id);
+                Add(people.Short, $"{parts[0]} {parts[^1]}", id);
             }
+        }
+
+        private static void Add(Dictionary<string, HashSet<Guid>> people, string name, Guid id)
+        {
+            if (!people.TryGetValue(name, out var ids))
+            {
+                people[name] = ids = [];
+            }
+
+            ids.Add(id);
         }
     }
 }

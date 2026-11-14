@@ -78,7 +78,7 @@ namespace TempHire.Server.Mcp
                 .Select(r => new
                 {
                     id = r.Id,
-                    name = r.FirstName + " " + r.LastName,
+                    name = FullName(r.FirstName, r.MiddleName, r.LastName),
                     city = r.Addresses.Where(a => a.Primary).Select(a => a.City).FirstOrDefault(),
                     state = r.Addresses.Where(a => a.Primary).Select(a => a.State.ShortName).FirstOrDefault(),
                     phone = r.PhoneNumbers.Where(p => p.Primary)
@@ -102,12 +102,19 @@ namespace TempHire.Server.Mcp
             var matches = await _db.StaffingResources.AsNoTracking()
                 .Where(r => (r.FirstName + " " + r.MiddleName + " " + r.LastName).Contains(text)
                             || (r.FirstName + " " + r.LastName).Contains(text))
-                .Select(r => new { r.Id, Name = r.FirstName + " " + r.LastName })
+                .Select(r => new { r.Id, Name = FullName(r.FirstName, r.MiddleName, r.LastName) })
                 .ToListAsync(cancellationToken);
 
             if (matches.Count == 0)
             {
                 return new { found = false, message = $"Nobody named '{text}' was found." };
+            }
+
+            // "Jane Doe" also matches "Jane M Doe"; if one name is exactly what was asked for, that's the one.
+            var exact = matches.Where(m => string.Equals(m.Name, text, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (exact.Count == 1)
+            {
+                matches = exact;
             }
 
             if (matches.Count > 1)
@@ -122,7 +129,7 @@ namespace TempHire.Server.Mcp
                 {
                     found = true,
                     id = r.Id,
-                    name = r.FirstName + " " + (r.MiddleName == "" ? "" : r.MiddleName + " ") + r.LastName,
+                    name = FullName(r.FirstName, r.MiddleName, r.LastName),
                     summary = r.Summary,
                     addresses = r.Addresses.OrderByDescending(a => a.Primary).Select(a => new
                     {
@@ -213,10 +220,10 @@ namespace TempHire.Server.Mcp
             };
 
             var highest = await rates.OrderByDescending(x => x.Amount)
-                .Select(x => new { id = x.StaffingResourceId, name = x.StaffingResource.FirstName + " " + x.StaffingResource.LastName, amountUsd = x.Amount })
+                .Select(x => new { id = x.StaffingResourceId, name = FullName(x.StaffingResource.FirstName, x.StaffingResource.MiddleName, x.StaffingResource.LastName), amountUsd = x.Amount })
                 .FirstOrDefaultAsync(cancellationToken);
             var lowest = await rates.OrderBy(x => x.Amount)
-                .Select(x => new { id = x.StaffingResourceId, name = x.StaffingResource.FirstName + " " + x.StaffingResource.LastName, amountUsd = x.Amount })
+                .Select(x => new { id = x.StaffingResourceId, name = FullName(x.StaffingResource.FirstName, x.StaffingResource.MiddleName, x.StaffingResource.LastName), amountUsd = x.Amount })
                 .FirstOrDefaultAsync(cancellationToken);
 
             return new { rateType = type, currency = "USD", rows, highest, lowest };
@@ -276,7 +283,7 @@ namespace TempHire.Server.Mcp
                 .Select(w => new
                 {
                     personId = w.StaffingResourceId,
-                    person = w.StaffingResource.FirstName + " " + w.StaffingResource.LastName,
+                    person = FullName(w.StaffingResource.FirstName, w.StaffingResource.MiddleName, w.StaffingResource.LastName),
                     w.Company,
                     position = w.PositionTitle,
                     w.Location,
@@ -287,5 +294,14 @@ namespace TempHire.Server.Mcp
 
             return new { matched = total, returned = rows.Count, jobs = rows };
         }
+
+        /// <summary>
+        /// A person's name as every tool returns it: first, middle (if any) and last.  The middle name
+        /// matters: "Jane Doe" and "Jane M Doe" are different people, and the model, and the links
+        /// <c>ResourceLinker</c> adds, can only tell them apart if the results do.  Called in the final
+        /// projection of each query, which EF Core runs on the client.
+        /// </summary>
+        private static string FullName(string firstName, string middleName, string lastName) =>
+            string.Join(" ", new[] { firstName, middleName, lastName }.Where(part => !string.IsNullOrWhiteSpace(part)).Select(part => part.Trim()));
     }
 }
