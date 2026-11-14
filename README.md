@@ -7,8 +7,11 @@ what such applications need beyond CRUD screens: a master/detail workspace, edit
 sandboxes with save and cancel, a cached lookup data set, client- and server-side validation from
 one model, authentication, and entity classes generated from the server's model.
 
+![Resource Management: the search grid, the selected person's card and the contact information tabs](docs/images/resource-management.png)
+
 **Contents**
 
+- [Screenshots](#screenshots)
 - [Prerequisites](#prerequisites)
 - [Running it](#running-it)
   - [Building for production](#building-for-production)
@@ -73,6 +76,26 @@ table and the notes describe WPF.
 > 2028) with the 10.0.x package set. It stays on .NET 10 rather than .NET 11 because Breeze 8
 > supports .NET 8, 9 and 10, and `Breeze.Persistence.EFCore` 8 requires EF Core 10 (it pins
 > `Microsoft.EntityFrameworkCore.Relational` to `[10.0.0, 11.0.0)`).
+
+---
+
+## Screenshots
+
+**Quinn**, the assistant, answers in plain language and links the people it mentions to their
+records:
+
+![Quinn's chat pane next to Resource Management, answering who has the highest hourly rate](docs/images/quinn.png)
+
+**Home**, the default workspace:
+
+![The Home page: a welcome hero with a button into Resource Management, and three feature tiles](docs/images/home.png)
+
+**Sign in**; a development build lists the sample users, and a click on one signs in:
+
+![The login page: the TempHire badge above a sign-in card, with the sample users listed](docs/images/login.png)
+
+The look - cards with layered shadows on a soft gradient, in one blue - comes from
+`client/src/styles.css` and the theme preset in `client/src/app/core/theme/temphire-preset.ts`.
 
 ---
 
