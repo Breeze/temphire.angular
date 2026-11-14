@@ -36,6 +36,9 @@ export class App {
   readonly username = this.auth.username;
   readonly tenantName = this.auth.tenantName;
 
+  /** The first letter of the user's name, for the avatar in the toolbar. */
+  readonly initial = computed(() => (this.username() ?? '?').charAt(0).toUpperCase());
+
   /** Port of `ShellViewModel.StartAsync`: one toolbar group for the workspaces, one for Logout. */
   private readonly workspaceGroup: ToolbarGroup = {
     level: 0,
@@ -43,6 +46,7 @@ export class App {
       .sort((a, b) => a.sequence - b.sequence)
       .map((workspace) => ({
         label: workspace.displayName,
+        icon: workspace.icon,
         execute: () => void this.router.navigate([workspace.route]),
       })),
   };

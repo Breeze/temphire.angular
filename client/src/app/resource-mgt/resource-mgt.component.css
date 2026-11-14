@@ -2,12 +2,13 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
+  gap: 1.25rem;
+  padding: 1.5rem 1.75rem 2rem;
 }
 
 .resource-mgt__search {
   flex: 0 0 auto;
+  padding: 1rem 1.1rem 1.1rem;
 }
 
 .resource-mgt__detail {
@@ -16,9 +17,14 @@
 }
 
 .resource-mgt__empty {
-  color: #6b7280;
+  margin: 0;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--temphire-muted);
   font-style: italic;
-  padding: 2rem 0.5rem;
+  border: 2px dashed rgba(29, 83, 128, 0.18);
+  border-radius: var(--temphire-radius-lg);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .resource-mgt__spinner {
@@ -27,6 +33,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(232, 239, 247, 0.6);
+  backdrop-filter: blur(1px);
   z-index: 10;
 }

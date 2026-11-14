@@ -45,7 +45,13 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
   ],
   template: `
     <div class="login">
-      <p-card header="Sign in to TempHire" styleClass="login__card">
+      <div class="login__brand">
+        <span class="login__orb temphire-orb" aria-hidden="true">T</span>
+        <span class="login__name">TempHire</span>
+        <span class="login__tagline">Staffing data, made easy to work with</span>
+      </div>
+
+      <p-card header="Sign in" class="login__card">
         <form class="login__form" [formRoot]="loginForm">
           <fieldset class="login__fields" [disabled]="loginForm().submitting()">
             <div class="login__field">
@@ -100,7 +106,8 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
                         [title]="'Sign in as ' + user"
                         [disabled]="loginForm().submitting()"
                         (click)="signInAs(user, samples.password)"
-                      >{{ user }}</button>{{ last ? ':' : ',' }}
+                      >
+                        {{ user }}</button>{{ last ? ':' : ',' }}
                     }
                     {{ company.name }}
                   </li>
@@ -114,15 +121,73 @@ import { AppErrorHandler } from '../core/services/error-handler.service';
   `,
   styles: [
     `
+      /* A deep blue backdrop, lit from the top left, with the brand above a floating card. */
       .login {
+        min-height: 100vh;
+        box-sizing: border-box;
         display: flex;
+        flex-direction: column;
+        align-items: center;
         justify-content: center;
-        padding: 4rem 1rem;
+        gap: 1.5rem;
+        padding: 3rem 1rem;
+        background:
+          radial-gradient(800px 420px at 10% 0%, rgba(115, 169, 216, 0.5), transparent 70%),
+          radial-gradient(700px 420px at 100% 100%, rgba(12, 33, 51, 0.7), transparent 70%),
+          linear-gradient(
+            150deg,
+            #2c72b3 0%,
+            var(--temphire-accent) 45%,
+            var(--temphire-accent-deep) 100%
+          );
       }
 
-      :host ::ng-deep .login__card {
+      .login__brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.35rem;
+        color: #ffffff;
+        text-align: center;
+      }
+
+      .login__orb {
+        width: 4.5rem;
+        height: 4.5rem;
+        margin-bottom: 0.4rem;
+        font-family: Verdana, sans-serif;
+        font-size: 2rem;
+      }
+
+      .login__name {
+        font-size: 1.9rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+      }
+
+      .login__tagline {
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.78);
+      }
+
+      .login__card {
+        display: block;
         width: 24rem;
         max-width: 100%;
+      }
+
+      :host ::ng-deep .login__card.p-card {
+        border-radius: 18px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.9),
+          0 2px 6px rgba(0, 0, 0, 0.12),
+          0 24px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      :host ::ng-deep .login__card .p-card-title {
+        font-weight: 700;
+        color: var(--temphire-accent);
       }
 
       .login__form {

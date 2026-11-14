@@ -9,7 +9,6 @@ import {
 import { provideSignalFormsConfig } from '@angular/forms/signals';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
-import Aura from '@openng/optimus-ui-themes/aura';
 import { configureBreeze } from 'breeze-client';
 import { httpClientFetch } from 'breeze-client/adapter-angular-httpclient';
 import { ConfirmationService, MessageService } from '@openng/optimus-ui/api';
@@ -20,6 +19,7 @@ import { HttpClient } from '@angular/common/http';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/services/auth.interceptor';
 import { emptyBodyAsNull } from './core/services/breeze-fetch';
+import { TempHirePreset } from './core/theme/temphire-preset';
 import { AppErrorHandler } from './core/services/error-handler.service';
 
 export const appConfig: ApplicationConfig = {
@@ -28,8 +28,11 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptors([authInterceptor])),
 
-    // Optimus UI replaces the WPF resource dictionary in `TempHire/Styles/Styles.xaml`.
-    provideOptimus({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } }),
+    // Optimus UI replaces the WPF resource dictionary in `TempHire/Styles/Styles.xaml`, with
+    // TempHire's own blue as the primary colour (see TempHirePreset).
+    provideOptimus({
+      theme: { preset: TempHirePreset, options: { darkModeSelector: '.app-dark' } },
+    }),
     MessageService,
     ConfirmationService,
     DialogService,
