@@ -5,7 +5,7 @@ import { lastValueFrom, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/services/auth.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';
-import { MentionedPerson } from './link-people';
+import { MentionedPerson, mergePeople } from './link-people';
 
 /** One message in the conversation.  `content` is Markdown, as Quinn wrote it. */
 export interface QuinnMessage {
@@ -72,6 +72,13 @@ export class QuinnService {
   private nextId = 1;
   private readonly _messages = signal<readonly QuinnMessage[]>([]);
 
+  /**
+   * Everyone the answers so far could mention.  A follow-up answer often names people from an
+   * earlier one ("What other skills do they have?") without the tools returning them again, so
+   * each answer is linked with these as well as its own.
+   */
+  private knownPeople: readonly MentionedPerson[] = [];
+
   readonly messages = this._messages.asReadonly();
   readonly isOpen = signal(false);
   readonly busy = signal(false);
@@ -118,8 +125,9 @@ export class QuinnService {
     this.busy.set(true);
 
     let answerId: number | undefined;
-    // The people usually arrive before the first text, when there is no answer to attach them to yet.
-    let people: readonly MentionedPerson[] = [];
+    // The people this answer can mention: those from earlier answers, plus those the tools return
+    // now.  They usually arrive before the first text, when there is no answer to attach them to yet.
+    let people = this.knownPeople;
     let received = 0;
     let pending = '';
 
@@ -136,7 +144,7 @@ export class QuinnService {
           this.change(answerId, (m) => ({ ...m, content: m.content + (update.content ?? '') }));
         }
       } else if (update.type === 'people') {
-        people = update.people ?? [];
+        people = mergePeople(this.knownPeople, update.people ?? []);
         if (answerId !== undefined) {
           this.change(answerId, (m) => ({ ...m, people }));
         }
@@ -193,6 +201,7 @@ export class QuinnService {
       if (answerId !== undefined) {
         this.change(answerId, (m) => ({ ...m, streaming: false }));
       }
+      this.knownPeople = people;
       this.busy.set(false);
     }
   }

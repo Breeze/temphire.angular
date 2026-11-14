@@ -258,7 +258,9 @@ client ──POST /api/agent/chat──► AgentController ──► QuinnAgent 
   out.  The client's `linkPeople` (in `client/src/app/quinn/`) turns those names in the answer into
   links to `/resourcemgt?resource=<id>` as the answer is shown, even while it streams, so only
   people the tools really returned are linked, and always to the right record; a name the model
-  gets wrong, or invents, stays plain text.  The pane catches clicks on links into the app and
+  gets wrong, or invents, stays plain text.  The people from earlier answers in the conversation
+  count too, so a follow-up such as "What other skills do they have?", which names people without
+  looking them up again, is linked as well.  The pane catches clicks on links into the app and
   routes them; `ResourceMgtComponent` receives the id as its `resource` input (the router binds
   query parameters to inputs), opens the person, with the usual prompt if there are unsaved edits,
   and searches for them.
