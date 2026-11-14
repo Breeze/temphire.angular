@@ -229,7 +229,10 @@ client ──POST /api/agent/chat──► AgentController ──► QuinnAgent 
   person's id along with their name.  After the model has answered, `ResourceLinker` takes the
   people from the tool results of that answer and turns their names in the text into Markdown
   links to `/resourcemgt?resource=<id>`.  So only people the tools really returned are linked, and
-  always to the right record; a name the model gets wrong, or invents, stays plain text.  In the
+  always to the right record; a name the model gets wrong, or invents, stays plain text.  The tools
+  return full names, middle name included, and a full name beats someone else's short form, so
+  "Jane Doe" and "Jane M Doe" each link to their own record; a name that still fits two people
+  is not linked at all.  In the
   client, the pane catches clicks on links into the app and routes them; `ResourceMgtComponent`
   receives the id as its `resource` input (the router binds query parameters to inputs), opens the
   person, with the usual prompt if there are unsaved edits, and searches for them.
