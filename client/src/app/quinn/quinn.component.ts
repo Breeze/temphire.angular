@@ -99,7 +99,7 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
           }
         }
 
-        @if (quinn.busy()) {
+        @if (quinn.thinking()) {
           <div class="quinn-message quinn-message--assistant" aria-label="Quinn is thinking">
             <app-quinn-logo class="quinn-message__avatar" />
             <div class="quinn-message__bubble quinn-typing">

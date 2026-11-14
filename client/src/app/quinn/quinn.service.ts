@@ -1,6 +1,6 @@
-import { HttpClient, httpResource } from '@angular/common/http';
+import { HttpClient, HttpEventType, httpResource } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { lastValueFrom, tap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/services/auth.service';
@@ -13,6 +13,14 @@ export interface QuinnMessage {
   readonly content: string;
   /** Quinn's introduction: shown, but not sent to the server as part of the conversation. */
   readonly intro?: boolean;
+  /** An answer still streaming in: plain text so far, the linked version still to come. */
+  readonly streaming?: boolean;
+}
+
+/** One line of the streamed answer from `api/agent/chat`. */
+interface QuinnUpdate {
+  readonly type: 'text' | 'done' | 'error';
+  readonly content: string;
 }
 
 /** An example question offered under the introduction. */
@@ -61,6 +69,9 @@ export class QuinnService {
   readonly isOpen = signal(false);
   readonly busy = signal(false);
 
+  /** Busy, and no answer streaming in yet: the model is still thinking or running tools. */
+  readonly thinking = computed(() => this.busy() && !this._messages().some((m) => m.streaming));
+
   /** Quinn's name and model, loaded once from the server. */
   readonly info = httpResource<AgentInfo>(() => `${environment.agentApiRoot}/info`);
 
@@ -71,7 +82,7 @@ export class QuinnService {
   open(): void {
     // The first time the pane opens, Quinn introduces themselves.
     if (this._messages().length === 0) {
-      this.add('assistant', this.introduction(), true);
+      this.add('assistant', this.introduction(), { intro: true });
     }
     this.isOpen.set(true);
   }
@@ -80,7 +91,15 @@ export class QuinnService {
     this.isOpen.set(false);
   }
 
-  /** Sends a question and adds Quinn's answer, or an error message. */
+  /**
+   * Sends a question and adds Quinn's answer as it streams in, or an error message.
+   *
+   * The server answers with one JSON object per line (see `AgentController.Chat`): `text` pieces
+   * as the model writes them, then `done` with the whole answer, its people linked.  The pieces
+   * grow the answer as they arrive; `done` replaces it with the linked version.  `HttpClient`
+   * reports the response so far with each download progress event, so the lines are read from
+   * that, which keeps the request going through the interceptors like any other.
+   */
   async ask(question: string): Promise<void> {
     const text = question.trim();
     if (!text || this.busy()) {
@@ -90,26 +109,98 @@ export class QuinnService {
     this.add('user', text);
     this.busy.set(true);
 
+    let answerId: number | undefined;
+    let received = 0;
+    let pending = '';
+
+    const handle = (line: string) => {
+      if (!line.trim()) {
+        return;
+      }
+      const update = JSON.parse(line) as QuinnUpdate;
+
+      if (update.type === 'text') {
+        if (answerId === undefined) {
+          answerId = this.add('assistant', update.content, { streaming: true });
+        } else {
+          this.change(answerId, (m) => ({ ...m, content: m.content + update.content }));
+        }
+      } else if (update.type === 'done') {
+        const answer = update.content?.trim() || "Sorry, I don't have an answer for that.";
+        if (answerId === undefined) {
+          answerId = this.add('assistant', answer);
+        } else {
+          this.change(answerId, (m) => ({ ...m, content: answer, streaming: false }));
+        }
+      } else if (update.type === 'error') {
+        this.discard(answerId);
+        answerId = undefined;
+        this.add('error', update.content);
+      }
+    };
+
+    // The response so far, each time a little longer: handle the lines completed since last time.
+    const read = (responseSoFar: string) => {
+      pending += responseSoFar.slice(received);
+      received = responseSoFar.length;
+      const lines = pending.split('\n');
+      pending = lines.pop() ?? '';
+      lines.forEach(handle);
+    };
+
     try {
       const conversation = this._messages()
         .filter((m) => !m.intro && m.role !== 'error')
         .map(({ role, content }) => ({ role, content }));
 
-      const reply = await firstValueFrom(
-        this.http.post<{ content: string }>(`${environment.agentApiRoot}/chat`, {
-          messages: conversation,
-        }),
+      await lastValueFrom(
+        this.http
+          .post(
+            `${environment.agentApiRoot}/chat`,
+            { messages: conversation },
+            { observe: 'events', reportDownloadProgress: true, responseType: 'text' },
+          )
+          .pipe(
+            tap((event) => {
+              if (event.type === HttpEventType.DownloadProgress) {
+                read(event.partialText ?? '');
+              } else if (event.type === HttpEventType.Response) {
+                read(event.body ?? '');
+              }
+            }),
+          ),
       );
-      this.add('assistant', reply.content?.trim() || "Sorry, I don't have an answer for that.");
+      handle(pending);
     } catch (error) {
+      this.discard(answerId);
       this.add('error', AppErrorHandler.describe(error).detail);
     } finally {
+      // A stream cut off before `done` leaves the text so far; stop showing it as in progress.
+      if (answerId !== undefined) {
+        this.change(answerId, (m) => ({ ...m, streaming: false }));
+      }
       this.busy.set(false);
     }
   }
 
-  private add(role: QuinnMessage['role'], content: string, intro = false): void {
-    this._messages.update((messages) => [...messages, { id: this.nextId++, role, content, intro }]);
+  private add(
+    role: QuinnMessage['role'],
+    content: string,
+    flags: { intro?: boolean; streaming?: boolean } = {},
+  ): number {
+    const id = this.nextId++;
+    this._messages.update((messages) => [...messages, { id, role, content, ...flags }]);
+    return id;
+  }
+
+  private change(id: number, update: (message: QuinnMessage) => QuinnMessage): void {
+    this._messages.update((messages) => messages.map((m) => (m.id === id ? update(m) : m)));
+  }
+
+  private discard(id: number | undefined): void {
+    if (id !== undefined) {
+      this._messages.update((messages) => messages.filter((m) => m.id !== id));
+    }
   }
 
   private introduction(): string {

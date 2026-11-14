@@ -49,8 +49,19 @@ namespace TempHire.Server.Controllers
             CompanyName = CompanyName
         };
 
+        /// <summary>
+        /// Answers the last question of the conversation, streamed as newline-delimited JSON
+        /// (<c>application/x-ndjson</c>): one <see cref="QuinnUpdate"/> per line, <c>text</c> pieces
+        /// as the model writes them, then <c>done</c> with the whole answer, its people linked.
+        ///
+        /// <para>
+        /// Nothing is sent until the first piece is ready, so a failure to start - Ollama not
+        /// running, no API key - still answers with an error status.  A failure after that can only
+        /// be reported in the stream, as an <c>error</c> line.
+        /// </para>
+        /// </summary>
         [HttpPost]
-        public async Task<ActionResult<ChatReply>> Chat([FromBody] ChatRequest request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Chat([FromBody] ChatRequest request, CancellationToken cancellationToken)
         {
             var conversation = (request?.Messages ?? [])
                 .Where(m => !string.IsNullOrWhiteSpace(m?.Content))
@@ -65,33 +76,75 @@ namespace TempHire.Server.Controllers
                 return BadRequest(new ErrorResult { Message = "Ask Quinn a question." });
             }
 
-            try
-            {
-                var answer = await _agent.AskAsync(
+            var updates = _agent.AskStreamingAsync(
                     conversation,
                     new Uri($"{Request.Scheme}://{Request.Host}/mcp"),
                     AccessToken,
                     CompanyName,
                     User.Identity?.Name ?? "a TempHire user",
-                    cancellationToken);
+                    cancellationToken)
+                .GetAsyncEnumerator(cancellationToken);
 
-                return new ChatReply { Content = answer };
-            }
-            catch (AgentNotConfiguredException e)
+            try
             {
-                return Unavailable(e.Message);
+                bool more;
+                try
+                {
+                    more = await updates.MoveNextAsync();
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    return Unavailable(FailureMessage(e));
+                }
+
+                Response.ContentType = "application/x-ndjson; charset=utf-8";
+                Response.Headers.CacheControl = "no-cache";
+
+                try
+                {
+                    for (; more; more = await updates.MoveNextAsync())
+                    {
+                        await WriteLineAsync(updates.Current, cancellationToken);
+                    }
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    await WriteLineAsync(QuinnUpdate.Error(FailureMessage(e)), cancellationToken);
+                }
+
+                return new EmptyResult();
             }
-            catch (HttpRequestException e) when (!_chatClients.Options.UsesClaude)
+            finally
             {
-                _logger.LogWarning(e, "Quinn could not reach Ollama.");
-                return Unavailable(
-                    $"Quinn can't reach Ollama at {_chatClients.Options.Ollama.Endpoint}. Is it running, " +
-                    $"with the model downloaded (ollama pull {_chatClients.Options.Ollama.Model})?");
+                await updates.DisposeAsync();
             }
-            catch (Exception e) when (e is not OperationCanceledException)
+        }
+
+        /// <summary>Sends one update and flushes it, so the client sees it now.</summary>
+        private async Task WriteLineAsync(QuinnUpdate update, CancellationToken cancellationToken)
+        {
+            await Response.WriteAsync(
+                System.Text.Json.JsonSerializer.Serialize(update, System.Text.Json.JsonSerializerOptions.Web) + "\n",
+                cancellationToken);
+            await Response.Body.FlushAsync(cancellationToken);
+        }
+
+        /// <summary>What to tell the user when Quinn cannot answer; the details go to the log.</summary>
+        private string FailureMessage(Exception e)
+        {
+            switch (e)
             {
-                _logger.LogError(e, "Quinn failed to answer.");
-                return Unavailable("Quinn ran into a problem answering that. Please try again.");
+                case AgentNotConfiguredException:
+                    return e.Message;
+
+                case HttpRequestException when !_chatClients.Options.UsesClaude:
+                    _logger.LogWarning(e, "Quinn could not reach Ollama.");
+                    return $"Quinn can't reach Ollama at {_chatClients.Options.Ollama.Endpoint}. Is it running, " +
+                           $"with the model downloaded (ollama pull {_chatClients.Options.Ollama.Model})?";
+
+                default:
+                    _logger.LogError(e, "Quinn failed to answer.");
+                    return "Quinn ran into a problem answering that. Please try again.";
             }
         }
 
@@ -121,13 +174,6 @@ namespace TempHire.Server.Controllers
         /// <summary><c>user</c> or <c>assistant</c>.</summary>
         public string Role { get; set; }
 
-        public string Content { get; set; }
-    }
-
-    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class ChatReply
-    {
-        /// <summary>Quinn's answer, in Markdown.</summary>
         public string Content { get; set; }
     }
 
