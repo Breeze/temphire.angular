@@ -15,15 +15,15 @@
     <PackageReference Include="Breeze.Persistence.EFCore" Version="8.0.0" />
     <!-- Breeze serializes entities with Json.NET, so MVC has to as well. -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.15" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.15" />
     <PackageReference Include="Microsoft.Extensions.AI" Version="10.11.0" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.4.0" />
     <PackageReference Include="OllamaSharp" Version="5.5.2" />
+    <PackageReference Include="OpenIddict.AspNetCore" Version="7.9.0" />
+    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="7.9.0" />
     <!-- Referenced explicitly because TokenService.cs uses JwtSecurityToken /
          JwtSecurityTokenHandler directly.  The version must be >= the one
          Microsoft.AspNetCore.Authentication.JwtBearer pulls in transitively, or NuGet
          reports NU1605 (package downgrade). -->
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

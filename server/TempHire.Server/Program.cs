@@ -1,11 +1,17 @@
 using Breeze.AspNetCore;
 using Breeze.Core;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using ModelContextProtocol.AspNetCore.Authentication;
+using ModelContextProtocol.Authentication;
+using OpenIddict.Abstractions;
+using OpenIddict.Server;
+using OpenIddict.Validation.AspNetCore;
 using System.Net;
 using System.Security.Claims;
+using System.Threading.RateLimiting;
+using TempHire.Server.Controllers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -26,7 +32,8 @@ var builder = WebApplication.CreateBuilder(args);
 // settings Breeze needs.  Property names are left in PascalCase on the wire and converted by the
 // client's NamingConvention.camelCase - this is exactly how the Breeze samples are wired.
 // ---------------------------------------------------------------------------------------------
-builder.Services.AddControllers()
+// With views: the authorization server's sign-in and consent pages (Views/) are MVC views.
+builder.Services.AddControllersWithViews()
     .AddNewtonsoftJson(opt =>
     {
         var ss = JsonSerializationFns.UpdateWithDefaults(opt.SerializerSettings);
@@ -53,8 +60,11 @@ builder.Services.AddControllers()
 builder.Services.AddDbContext<TempHireDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TempHire")));
 
-builder.Services.AddDbContext<TempHireIdentityDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("TempHireIdentity")));
+// The identity database also holds OpenIddict's tables: the registered clients, the users' consents
+// and the tokens it has issued.
+builder.Services.AddDbContext<TempHireIdentityDbContext>(options => options
+    .UseSqlServer(builder.Configuration.GetConnectionString("TempHireIdentity"))
+    .UseOpenIddict<Guid>());
 
 // Multi-tenancy: TempHireDbContext asks this for the current tenant, which comes from the
 // tenant_id claim in the access token.  See HttpCurrentTenant and TempHireDbContext.
@@ -64,10 +74,10 @@ builder.Services.AddScoped<ICurrentTenant, HttpCurrentTenant>();
 // ---------------------------------------------------------------------------------------------
 // Users - ASP.NET Core Identity
 //
-// Identity keeps the users and checks their passwords (AccountController.Login); the API itself
-// accepts the JWT issued below, not Identity's cookie, so only Identity's core services are added.
-// A sign-in, by password or later through an external provider such as Microsoft Entra ID, ends
-// the same way: TenantResolver picks the company, TokenService issues the token.
+// Identity keeps the users and checks their passwords (SignInController); only Identity's core
+// services are added, because the sign-in cookie and the tokens are set up below.  A sign-in, by
+// password or later through an external provider such as Microsoft Entra ID, ends the same way:
+// TokenClaims picks the company and roles that go into the token.
 // ---------------------------------------------------------------------------------------------
 builder.Services
     .AddIdentityCore<TempHireUser>(options =>
@@ -81,46 +91,160 @@ builder.Services
     .AddSignInManager();
 
 builder.Services.AddScoped<TenantResolver>();
+builder.Services.AddScoped<TokenClaims>();
 
 // ---------------------------------------------------------------------------------------------
-// Authentication - the replacement for the DevForce login session
+// OAuth 2.1 - the replacement for the DevForce login session
+//
+// The server is its own authorization server, built with OpenIddict.  Every client signs the user
+// in the same way, with the Authorization Code flow and PKCE: the Angular app, Claude Code, any
+// MCP client.  The user enters the password on the server's sign-in page (SignInController), never
+// in a client; the client gets an access token and a refresh token.
+//
+//   connect/authorize   sign in, consent, code     AuthorizationController.Authorize
+//   connect/token       code or refresh -> tokens  AuthorizationController.Exchange
+//   connect/logout      sign out                   AuthorizationController.Logout
+//   connect/register    MCP clients register       ClientRegistrationController
+//   .well-known/...     metadata, keys             OpenIddict itself
+//
+// See OAuthSettings for the two resources (the API, the MCP endpoint) a token can be for.
 // ---------------------------------------------------------------------------------------------
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
-builder.Services.AddSingleton<TokenService>();
+var oauth = new OAuthSettings(builder.Configuration);
+builder.Services.AddSingleton(oauth);
 
-var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
-if (string.IsNullOrWhiteSpace(jwt.SigningKey))
-{
-    throw new InvalidOperationException(
-        "Jwt:SigningKey is not configured.  Set it in appsettings.Development.json, " +
-        "user-secrets, or the Jwt__SigningKey environment variable.");
-}
-
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddOpenIddict()
+    .AddCore(options => options
+        .UseEntityFrameworkCore()
+        .UseDbContext<TempHireIdentityDbContext>()
+        .ReplaceDefaultEntities<Guid>())
+    .AddServer(options =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        options
+            .SetAuthorizationEndpointUris("connect/authorize")
+            .SetTokenEndpointUris("connect/token")
+            .SetEndSessionEndpointUris("connect/logout");
+
+        options
+            .AllowAuthorizationCodeFlow()
+            .AllowRefreshTokenFlow()
+            .RequireProofKeyForCodeExchange();
+
+        // OAuth 2.1 allows only S256; OpenIddict would also accept the "plain" method.
+        options.Configure(server => server.CodeChallengeMethods.Remove(OpenIddictConstants.CodeChallengeMethods.Plain));
+
+        options.RegisterScopes(OAuthSettings.StaffingScope, OpenIddictConstants.Scopes.OfflineAccess);
+
+        // RFC 8707: the resources a client may name, and so the audiences a token can have.
+        options.RegisterResources([.. oauth.AllResources]);
+
+        // Short-lived access tokens, as the MCP specification asks; the clients renew them with the
+        // refresh token, which OpenIddict rotates at each use.
+        options.SetAccessTokenLifetime(TimeSpan.FromMinutes(30));
+
+        if (builder.Environment.IsDevelopment())
         {
-            ValidateIssuer = true,
-            ValidIssuer = jwt.Issuer,
-            ValidateAudience = true,
-            ValidAudience = jwt.Audience,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = TokenService.CreateSigningKey(jwt.SigningKey),
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromMinutes(1)
+            // Signing and encryption keys: development certificates, created in the current user's
+            // certificate store on first run.  Anywhere real, load proper certificates instead
+            // (AddSigningCertificate / AddEncryptionCertificate).
+            options
+                .AddDevelopmentEncryptionCertificate()
+                .AddDevelopmentSigningCertificate();
+        }
+
+        // Plain signed JWTs rather than encrypted ones, so a token can be read at jwt.io while
+        // learning how this works.  They carry nothing secret: the user's name, company and roles.
+        options.DisableAccessTokenEncryption();
+
+        var aspNetCore = options.UseAspNetCore()
+            .EnableAuthorizationEndpointPassthrough()
+            .EnableTokenEndpointPassthrough()
+            .EnableEndSessionEndpointPassthrough();
+
+        if (builder.Environment.IsDevelopment())
+        {
+            // OAuth requires HTTPS; the development profile also serves plain HTTP on localhost.
+            aspNetCore.DisableTransportSecurityRequirement();
+        }
+
+        // RFC 7591: tell clients where to register.  OpenIddict 7 has no registration endpoint of
+        // its own, so it doesn't advertise one; ClientRegistrationController is TempHire's.
+        options.AddEventHandler<OpenIddictServerEvents.HandleConfigurationRequestContext>(handler =>
+            handler.UseInlineHandler(context =>
+            {
+                context.Metadata["registration_endpoint"] = new Uri(context.BaseUri!, ClientRegistrationController.Path).AbsoluteUri;
+                return default;
+            }));
+    })
+    .AddValidation(options =>
+    {
+        // The API and the MCP endpoint check the tokens this same server issues.
+        options.UseLocalServer();
+        options.UseAspNetCore();
+    });
+
+// Three ways in: an access token (every API and MCP request), the sign-in cookie (the authorization
+// server's own pages only), and the MCP scheme, which only answers a request without a valid token
+// at /mcp, pointing the client at the resource metadata (RFC 9728) so it can find the authorization
+// server.  A policy scheme picks between them.
+const string DefaultScheme = "TempHire";
+builder.Services
+    .AddAuthentication(DefaultScheme)
+    .AddPolicyScheme(DefaultScheme, "Access token, or MCP discovery", options =>
+    {
+        options.ForwardAuthenticate = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+        options.ForwardForbid = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+        options.ForwardDefaultSelector = context => context.Request.Path.StartsWithSegments(OAuthSettings.McpPath)
+            ? McpAuthenticationDefaults.AuthenticationScheme
+            : OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+    })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+    {
+        options.LoginPath = "/account/login";
+        options.Cookie.Name = "TempHire.SignIn";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+    })
+    .AddMcp(options =>
+    {
+        // RFC 9728, served at /.well-known/oauth-protected-resource.  Built per request, because
+        // the resource is named by the origin the client used.
+        options.Events.OnResourceMetadataRequest = context =>
+        {
+            var origin = OAuthSettings.OriginOf(context.Request);
+            context.ResourceMetadata = new ProtectedResourceMetadata
+            {
+                Resource = OAuthSettings.McpResource(origin),
+                ResourceName = "TempHire",
+                // Exactly the issuer OpenIddict announces (with the trailing slash), which clients
+                // may compare with the one in the authorization server's metadata.
+                AuthorizationServers = [origin + "/"],
+                ScopesSupported = [OAuthSettings.StaffingScope, OpenIddictConstants.Scopes.OfflineAccess]
+            };
+            return Task.CompletedTask;
         };
     });
 
 builder.Services.AddAuthorization();
 
+// Dynamic client registration is open to anyone, so it is rate limited per IP address.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(ClientRegistrationController.RateLimitPolicy, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+});
+
 // ---------------------------------------------------------------------------------------------
 // MCP server - the staffing data as tools for an AI agent (Quinn, or any MCP client)
 //
-// Served at /mcp over the streamable HTTP transport, behind the same JWT authentication as the
-// rest of the API.  Stateless: each request carries everything, including the caller's token, and
-// gets a fresh StaffingTools with that request's tenant-filtered TempHireDbContext.
+// Served at /mcp over the streamable HTTP transport, as an OAuth-protected resource: it accepts
+// access tokens issued for it (AudienceCheck), and answers a request without one with a 401 that
+// points the client at the resource metadata, from where an MCP client such as Claude Code finds
+// the authorization server, registers, and signs the user in.  Stateless: each request carries
+// everything, including the caller's token, and gets a fresh StaffingTools with that request's
+// tenant-filtered TempHireDbContext.
 // ---------------------------------------------------------------------------------------------
 builder.Services
     .AddMcpServer(options =>
@@ -226,6 +350,9 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<TempHireDbContext>();
     var identityContext = scope.ServiceProvider.GetRequiredService<TempHireIdentityDbContext>();
     DatabaseSetup.Prepare(context, identityContext, app.Logger);
+
+    // The Angular app's client registration, kept in step with the configuration.
+    await OAuthClients.RegisterSpaAsync(scope.ServiceProvider);
 }
 
 if (app.Environment.IsDevelopment())
@@ -235,18 +362,29 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseCors(DevCorsPolicy);
+app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<AudienceCheck>();
 app.UseAuthorization();
 
 app.MapControllers();
 
-// The MCP endpoint.  RequireAuthorization: no valid access token, no tools (401).
+// The MCP endpoint.  RequireAuthorization: no valid access token for the MCP endpoint, no tools (401).
 app.MapMcp("/mcp").RequireAuthorization();
 
 // Serve the production Angular build when it has been copied into wwwroot
 // (see `npm run build` in the client project).  Harmless when wwwroot is empty.
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+// Anything else is the Angular app - except the server's own paths, which answer 404 when nothing
+// is there.  OAuth clients probe several metadata addresses in turn (RFC 8414, OpenID Connect,
+// RFC 9728) and move on at a 404; handed index.html instead, they would give up.
+foreach (var serverPath in new[] { "/.well-known", "/connect", "/api", "/mcp" })
+{
+    app.Map(serverPath + "/{**rest}", () => Results.NotFound());
+}
+
 app.MapFallbackToFile("index.html");
 
 app.Run();

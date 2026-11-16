@@ -3,64 +3,107 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { vi } from 'vitest';
 
 import { environment } from '../../../environments/environment';
 import { authInterceptor } from './auth.interceptor';
+import { AuthService } from './auth.service';
 
-/**
- * A 401 logs the user out only when it rejects a token the app sent.  Before this rule, a failed
- * login (a 401 with no token) called logout, whose own 401 called logout again, without end.
- */
 describe('authInterceptor', () => {
   const unauthorized = { status: 401, statusText: 'Unauthorized' };
-  const logoutUrl = `${environment.accountApiRoot}/logout`;
+  const resourcesUrl = `${environment.breezeApiRoot}/StaffingResources`;
+  const tokenUrl = `${environment.authority || window.location.origin}/connect/token`;
 
-  function setUp(token: string | null) {
+  /** Signs in with stored tokens whose access token expires in `expiresInMs`. */
+  function setUp(expiresInMs: number | null) {
     sessionStorage.clear();
-    if (token) {
-      sessionStorage.setItem('temphire.token', token);
+    if (expiresInMs !== null) {
+      sessionStorage.setItem(
+        'temphire.tokens',
+        JSON.stringify({ accessToken: 'access-1', refreshToken: 'refresh-1', expiresAt: Date.now() + expiresInMs }),
+      );
     }
 
     TestBed.configureTestingModule({
       providers: [
-        provideRouter([{ path: 'login', children: [] }]),
+        provideRouter([]),
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
       ],
     });
 
-    return { http: TestBed.inject(HttpClient), httpTesting: TestBed.inject(HttpTestingController) };
+    const auth = TestBed.inject(AuthService);
+    const signIn = vi.spyOn(auth, 'signIn').mockResolvedValue();
+    return { http: TestBed.inject(HttpClient), httpTesting: TestBed.inject(HttpTestingController), signIn };
   }
+
+  /** Lets the interceptor's token lookup (a promise) run before the request goes out. */
+  const settle = () => new Promise((resolve) => setTimeout(resolve));
 
   afterEach(() => sessionStorage.clear());
 
-  it('does not log out when a login is rejected', async () => {
-    const { http, httpTesting } = setUp(null);
+  it('attaches the access token', async () => {
+    const { http, httpTesting } = setUp(30 * 60_000);
 
-    const login = firstValueFrom(http.post(`${environment.accountApiRoot}/login`, {}));
-    httpTesting.expectOne(`${environment.accountApiRoot}/login`).flush(null, unauthorized);
-    await expect(login).rejects.toMatchObject({ status: 401 });
-
-    httpTesting.expectNone(logoutUrl);
+    const query = firstValueFrom(http.get(resourcesUrl));
+    await settle();
+    const request = httpTesting.expectOne(resourcesUrl);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer access-1');
+    request.flush([]);
+    await query;
     httpTesting.verify();
   });
 
-  it('logs out once when the token is rejected', async () => {
-    const { http, httpTesting } = setUp('expired-token');
+  it('renews an access token about to expire, once for requests made together', async () => {
+    const { http, httpTesting } = setUp(10_000);
 
-    const query = firstValueFrom(http.get(`${environment.breezeApiRoot}/StaffingResources`));
-    httpTesting
-      .expectOne(`${environment.breezeApiRoot}/StaffingResources`)
-      .flush(null, unauthorized);
+    const first = firstValueFrom(http.get(resourcesUrl));
+    const second = firstValueFrom(http.get(`${resourcesUrl}?second`));
+    await settle();
+
+    // One refresh, without a bearer token: it goes to the authorization server.
+    const refresh = httpTesting.expectOne(tokenUrl);
+    expect(refresh.request.headers.has('Authorization')).toBe(false);
+    expect(refresh.request.body.toString()).toContain('grant_type=refresh_token');
+    expect(refresh.request.body.toString()).toContain('refresh_token=refresh-1');
+    refresh.flush({ access_token: 'access-2', refresh_token: 'refresh-2', expires_in: 1800 });
+    await settle();
+
+    for (const request of httpTesting.match((r) => r.url.startsWith(resourcesUrl))) {
+      expect(request.request.headers.get('Authorization')).toBe('Bearer access-2');
+      request.flush([]);
+    }
+    await Promise.all([first, second]);
+
+    // The server rotated the refresh token; the next renewal must use the new one.
+    expect(JSON.parse(sessionStorage.getItem('temphire.tokens')!).refreshToken).toBe('refresh-2');
+    httpTesting.verify();
+  });
+
+  it('signs in again when the server rejects the token', async () => {
+    const { http, httpTesting, signIn } = setUp(30 * 60_000);
+
+    const query = firstValueFrom(http.get(resourcesUrl));
+    await settle();
+    httpTesting.expectOne(resourcesUrl).flush(null, unauthorized);
     await expect(query).rejects.toMatchObject({ status: 401 });
 
-    // The logout call is rejected too, because the token is no good; that must not start another.
-    const logout = httpTesting.expectOne(logoutUrl);
-    expect(logout.request.headers.get('Authorization')).toBe('Bearer expired-token');
-    logout.flush(null, unauthorized);
-    await new Promise((resolve) => setTimeout(resolve));
+    expect(signIn).toHaveBeenCalledTimes(1);
+    expect(sessionStorage.getItem('temphire.tokens')).toBeNull();
+    httpTesting.verify();
+  });
 
-    httpTesting.expectNone(logoutUrl);
+  it('does not start a sign-in for a 401 to a request that carried no token', async () => {
+    const { http, httpTesting, signIn } = setUp(null);
+
+    const query = firstValueFrom(http.get(resourcesUrl));
+    await settle();
+    const request = httpTesting.expectOne(resourcesUrl);
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    request.flush(null, unauthorized);
+    await expect(query).rejects.toMatchObject({ status: 401 });
+
+    expect(signIn).not.toHaveBeenCalled();
     httpTesting.verify();
   });
 });

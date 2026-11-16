@@ -1,0 +1,30 @@
+@model ConsentModel
+@{
+    ViewData["Title"] = "Allow access";
+}
+
+<h1>Allow access?</h1>
+
+<div class="consent">
+    <p><strong>@Model.ApplicationName</strong> wants to read <strong>@Model.CompanyName</strong>'s staffing data as you, <strong>@Model.UserName</strong>:</p>
+    <ul>
+        <li>staffing resources, with their addresses, phone numbers, rates, skills and work history;</li>
+        <li>read only, through TempHire's MCP tools, and only what your role lets you see.</li>
+    </ul>
+    <p>
+        The approval goes to <span class="host">@Model.RedirectHost</span>.
+        Allow only if you started this from an application you trust.
+    </p>
+</div>
+
+<form method="post" asp-controller="Authorization" asp-action="Authorize">
+    @foreach (var parameter in Model.Parameters)
+    {
+        <input type="hidden" name="@parameter.Key" value="@parameter.Value" />
+    }
+
+    <div class="actions">
+        <button type="submit" class="button secondary" name="submit.deny" value="deny">Deny</button>
+        <button type="submit" class="button" name="submit.accept" value="accept">Allow</button>
+    </div>
+</form>
