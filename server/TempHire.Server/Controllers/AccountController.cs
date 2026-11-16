@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -99,12 +100,14 @@ namespace TempHire.Server.Controllers
                     new ErrorResult { Message = "Your account is not linked to a company." });
             }
 
-            var (token, expiresUtc) = _tokenService.CreateToken(user, tenant);
+            var roles = await _users.GetRolesAsync(user);
+            var (token, expiresUtc) = _tokenService.CreateToken(user, roles, tenant);
 
             return new LoginResult
             {
                 Username = user.UserName,
                 TenantName = tenant.Name,
+                Roles = [.. roles],
                 Token = token,
                 ExpiresUtc = expiresUtc
             };
@@ -126,7 +129,8 @@ namespace TempHire.Server.Controllers
         public ActionResult<UserInfo> Me() => new UserInfo
         {
             Username = User.Identity?.Name,
-            TenantName = User.FindFirst(HttpCurrentTenant.TenantNameClaim)?.Value
+            TenantName = User.FindFirst(HttpCurrentTenant.TenantNameClaim)?.Value,
+            Roles = [.. User.FindAll(ClaimTypes.Role).Select(c => c.Value)]
         };
     }
 
@@ -166,6 +170,13 @@ namespace TempHire.Server.Controllers
     {
         public string Username { get; set; }
         public string TenantName { get; set; }
+
+        /// <summary>
+        /// The user's roles, so the client can show what the user may do.  The server decides from
+        /// the roles signed into the token, never from what the client says.
+        /// </summary>
+        public List<string> Roles { get; set; } = [];
+
         public string Token { get; set; }
         public DateTime ExpiresUtc { get; set; }
     }
@@ -175,6 +186,7 @@ namespace TempHire.Server.Controllers
     {
         public string Username { get; set; }
         public string TenantName { get; set; }
+        public List<string> Roles { get; set; } = [];
     }
 
     /// <summary>Serialises as <c>{ "message": "..." }</c>, which is what the client's

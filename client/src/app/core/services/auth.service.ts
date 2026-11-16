@@ -4,14 +4,24 @@ import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { EntityManagerProvider } from './entity-manager-provider';
+import { Roles } from './roles';
 import { UnitOfWorkManager } from './unit-of-work-manager';
 
 interface LoginResponse {
   username: string;
   /** The company the user works for: their tenant, from the email domain. */
   tenantName: string;
+  /** The user's roles: `Editor`, `Reader`, or none. */
+  roles: string[];
   token: string;
   expiresUtc: string;
+}
+
+/** `GET api/account/me`: who the stored token belongs to. */
+interface UserInfo {
+  username: string;
+  tenantName: string;
+  roles: string[];
 }
 
 const TOKEN_STORAGE_KEY = 'temphire.token';
@@ -34,6 +44,7 @@ export class AuthService {
   private readonly _token = signal<string | null>(sessionStorage.getItem(TOKEN_STORAGE_KEY));
   private readonly _username = signal<string | null>(null);
   private readonly _tenantName = signal<string | null>(null);
+  private readonly _roles = signal<readonly string[]>([]);
 
   /** Where to go once login succeeds - port of the shell's post-login navigation. */
   redirectUrl: string | null = null;
@@ -43,6 +54,22 @@ export class AuthService {
 
   /** The signed-in user's company (tenant), e.g. "Harbor Staffing". */
   readonly tenantName = this._tenantName.asReadonly();
+
+  /**
+   * The signed-in user's roles, from the server.  They decide what the client shows; the server
+   * enforces them on every request, from the roles signed into the token.
+   */
+  readonly roles = this._roles.asReadonly();
+
+  /** May see the company's staffing resources: an editor or a reader. */
+  readonly canReadStaffing = computed(() => this.hasAnyRole([Roles.Editor, Roles.Reader]));
+
+  /** May add, change and delete staffing resources: an editor. */
+  readonly canEditStaffing = computed(() => this.hasAnyRole([Roles.Editor]));
+
+  hasAnyRole(roles: readonly string[]): boolean {
+    return roles.some((role) => this._roles().includes(role));
+  }
 
   get token(): string | null {
     return this._token();
@@ -64,6 +91,7 @@ export class AuthService {
     this._token.set(response.token);
     this._username.set(response.username);
     this._tenantName.set(response.tenantName);
+    this._roles.set(response.roles ?? []);
 
     try {
       await this.emProvider.prepare();
@@ -98,11 +126,10 @@ export class AuthService {
     }
 
     try {
-      const me = await firstValueFrom(
-        this.http.get<{ username: string; tenantName: string }>(`${environment.accountApiRoot}/me`),
-      );
+      const me = await firstValueFrom(this.http.get<UserInfo>(`${environment.accountApiRoot}/me`));
       this._username.set(me.username);
       this._tenantName.set(me.tenantName);
+      this._roles.set(me.roles ?? []);
       await this.emProvider.prepare();
       return true;
     } catch {
@@ -116,6 +143,7 @@ export class AuthService {
     this._token.set(null);
     this._username.set(null);
     this._tenantName.set(null);
+    this._roles.set([]);
     this.unitOfWorkManager.clear();
     this.emProvider.reset();
   }

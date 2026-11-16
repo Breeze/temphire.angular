@@ -43,6 +43,7 @@ namespace TempHire.Server.Agent
             string accessToken,
             string companyName,
             string userName,
+            bool canReadStaffingData,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await using var mcp = await ConnectAsync(mcpEndpoint, accessToken, cancellationToken);
@@ -50,7 +51,7 @@ namespace TempHire.Server.Agent
 
             var results = new List<FunctionResultContent>();
             await foreach (var update in _chatClients.Client.GetStreamingResponseAsync(
-                Messages(conversation, companyName, userName),
+                Messages(conversation, companyName, userName, canReadStaffingData),
                 new ChatOptions { Tools = [.. tools] },
                 cancellationToken))
             {
@@ -92,11 +93,12 @@ namespace TempHire.Server.Agent
         }
 
         /// <summary>The system prompt, then the conversation so far.</summary>
-        private static List<ChatMessage> Messages(IReadOnlyList<ChatMessage> conversation, string companyName, string userName)
+        private static List<ChatMessage> Messages(
+            IReadOnlyList<ChatMessage> conversation, string companyName, string userName, bool canReadStaffingData)
         {
             var messages = new List<ChatMessage>
             {
-                new(ChatRole.System, QuinnPersona.SystemPrompt(companyName, userName, DateTime.Today))
+                new(ChatRole.System, QuinnPersona.SystemPrompt(companyName, userName, DateTime.Today, canReadStaffingData))
             };
             messages.AddRange(conversation);
             return messages;

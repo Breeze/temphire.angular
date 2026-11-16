@@ -23,6 +23,7 @@ one model, authentication, and entity classes generated from the server's model.
   - [Setting up Claude](#setting-up-claude)
 - [Multi-tenancy](#multi-tenancy)
 - [Users and sign-in](#users-and-sign-in)
+  - [Roles](#roles)
   - [Adding an external provider such as Microsoft Entra ID](#adding-an-external-provider-such-as-microsoft-entra-id)
 - [The database schema](#the-database-schema)
 - [Layout](#layout)
@@ -145,10 +146,15 @@ npm start
 Then open <http://localhost:4200> and sign in as one of the sample users.  The password is
 **`password`** for all of them:
 
-| User | Company |
-|---|---|
-| `anna@harbor.test`, `ben@harbor.test` | Harbor Staffing |
-| `carla@summit.test`, `david@summit.test` | Summit Talent |
+| User | Company | Role |
+|---|---|---|
+| `anna@harbor.test` | Harbor Staffing | Editor |
+| `ben@harbor.test` | Harbor Staffing | Reader |
+| `carla@summit.test` | Summit Talent | Editor |
+| `david@summit.test` | Summit Talent | Reader |
+
+An **Editor** can add, change and delete staffing resources; a **Reader** can only look at them
+(see [Roles](#roles)).
 
 In a development build the login page lists them too, and a click on one signs in as that user.
 They come from `environment.development.ts`; a production build doesn't offer them.
@@ -397,11 +403,41 @@ Users are kept by **ASP.NET Core Identity**, in their own database, `TempHireIde
 - **The company comes from the email domain**, at every sign-in: `TenantResolver` finds the tenant
   whose `EmailDomain` matches (see [Multi-tenancy](#multi-tenancy)).  Nothing on the user record
   names a company.
-- **The API accepts our own JWT.**  `TokenService` issues it for an Identity user and a tenant, with
-  the user's name and id and the `tenant_id` claim.  The Angular client, Breeze, the MCP endpoint
-  and Quinn all present that token, so none of them depends on how the user signed in.
-- **No sign-up or user management.**  The sample users are seeded (`SampleDataProvider`, through
-  Identity's own password hasher); there are no screens to register or manage users.
+- **The API accepts our own JWT.**  `TokenService` issues it for an Identity user, their roles and a
+  tenant, with the user's name and id, a role claim per role and the `tenant_id` claim.  The Angular
+  client, Breeze, the MCP endpoint and Quinn all present that token, so none of them depends on how
+  the user signed in.
+- **No sign-up or user management.**  The sample users and their roles are seeded
+  (`SampleDataProvider`, through Identity's own password hasher); there are no screens to register
+  or manage users.
+
+### Roles
+
+Two Identity roles, `TempHireRoles` on the server and `Roles` in the client:
+
+| | Home | Resource Management | Add, edit, delete | Quinn's answers about the data |
+|---|---|---|---|---|
+| **Editor** | yes | yes | yes | yes |
+| **Reader** | yes | yes, read-only | no | yes |
+| no role | yes | no | no | no |
+
+- **The server enforces them.**  The roles are signed into the token.  The Breeze queries for the
+  company's data (`StaffingResources`, `StaffingResourceListItems` and the child collections) need
+  Editor or Reader; the metadata and the shared lookups only need a signed-in user, because the
+  client loads them at sign-in.  Saving needs Editor, checked in the save interceptor
+  (`TempHirePersistenceManager.EnsureMaySave`) for every save through Breeze, and answered with
+  `403 Forbidden` otherwise.
+- **The client follows them.**  `AuthService` gets the roles at sign-in (and from `/me` after a
+  reload).  `roleGuard` keeps the Resource Management route to editors and readers, sending anyone
+  else to Home with a message, and the toolbar lists only the workspaces the user may open.  A
+  reader's Resource Management toolbar has only Refresh: Add, Delete, Edit, Save and Cancel are left
+  out.  None of this is security; it only keeps the client from offering what the server refuses.
+- **Quinn follows them too.**  Its tools only read, so an editor and a reader get the same answers.
+  A user with neither role can still chat with Quinn, about its name for instance, but every tool
+  call answers "Access denied" (a call-tool filter on the MCP server, in `Program.cs`), and Quinn's
+  system prompt says the user has no access, so it tells them so rather than guessing.  The filter
+  applies to any MCP client, not only Quinn.
+- **A role change takes effect at the next sign-in**, when a new token is issued.
 
 ### Adding an external provider such as Microsoft Entra ID
 

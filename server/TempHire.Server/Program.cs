@@ -37,10 +37,11 @@ builder.Services.AddControllers()
     })
     // Turns server-side exceptions - including the EntityErrorsException our persistence manager
     // throws for validation failures - into the error shape the Breeze client understands.  A save
-    // that touches another tenant's row (TenantAccessException) answers 403.
+    // the user may not make answers 403: one by a user who is not an editor, or one that touches
+    // another tenant's row (TenantAccessException).  Both are UnauthorizedAccessExceptions.
     .AddMvcOptions(o => o.Filters.Add(new GlobalExceptionFilter
     {
-        StatusCodeForException = e => e.GetBaseException() is TenantAccessException ? HttpStatusCode.Forbidden : null
+        StatusCodeForException = e => e.GetBaseException() is UnauthorizedAccessException ? HttpStatusCode.Forbidden : null
     }));
 
 // ---------------------------------------------------------------------------------------------
@@ -75,6 +76,7 @@ builder.Services
         options.Lockout.MaxFailedAccessAttempts = 5;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     })
+    .AddRoles<IdentityRole<Guid>>()
     .AddEntityFrameworkStores<TempHireIdentityDbContext>()
     .AddSignInManager();
 
@@ -135,7 +137,28 @@ builder.Services
     .WithTools<StaffingTools>(new System.Text.Json.JsonSerializerOptions(ModelContextProtocol.McpJsonUtilities.DefaultOptions)
     {
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    });
+    })
+    // Roles: the tools read the company's staffing data, so they need the Editor or Reader role, as
+    // the Breeze queries do.  A signed-in user with neither may still connect and list the tools -
+    // Quinn connects before every answer, and can still answer questions that need no data, such as
+    // the one about its name - but every tool call answers that the user has no access.  The model
+    // gets that as the tool's result and passes it on, rather than being left to guess.
+    .WithRequestFilters(filters => filters.AddCallToolFilter(next => async (context, cancellationToken) =>
+        context.User?.IsInRole(TempHireRoles.Editor) == true || context.User?.IsInRole(TempHireRoles.Reader) == true
+            ? await next(context, cancellationToken)
+            : new ModelContextProtocol.Protocol.CallToolResult
+            {
+                IsError = true,
+                Content =
+                [
+                    new ModelContextProtocol.Protocol.TextContentBlock
+                    {
+                        Text = "Access denied: this user's account has no access to the company's staffing data " +
+                               "(it needs the Editor or Reader role). Tell the user they don't have access to " +
+                               "that data. Do not answer the question from other knowledge."
+                    }
+                ]
+            }));
 
 // ---------------------------------------------------------------------------------------------
 // Quinn, the agent - see AgentController.  Ollama or Claude, per the Agent section of appsettings.

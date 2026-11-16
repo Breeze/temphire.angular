@@ -5,6 +5,7 @@ using Breeze.Persistence.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using TempHire.Model;
+using TempHire.Model.Identity;
 
 // Both Breeze and EF Core define an `EntityState`, and they are not the same enum: this file works
 // with Breeze's, which describes what the *client* sent in the save bundle.
@@ -95,12 +96,30 @@ namespace TempHire.Server.Persistence
         }
 
         /// <summary>
+        /// Only an editor may save.  Enforced here, in the save interceptor, rather than only on the
+        /// controller action, so every save that goes through Breeze is checked, whatever calls it.
+        /// Readers can still query; the client hides its editing commands from them, so this is the
+        /// guard against a hand-made request.  Answers 403 (see the exception filter in Program.cs).
+        /// </summary>
+        private void EnsureMaySave()
+        {
+            if (_principal?.IsInRole(TempHireRoles.Editor) != true)
+            {
+                throw new UnauthorizedAccessException("Only editors can save changes. You have read-only access.");
+            }
+        }
+
+        /// <summary>
         /// Replaces <c>SaveInterceptor.DefaultAuthorization = false</c> plus <c>[ClientCanSave]</c>.
         /// Returning false tells Breeze to silently drop the entity from the save; throwing makes the
         /// rejection explicit, which is what the original did (it failed the whole save).
         /// </summary>
         protected override bool BeforeSaveEntity(EntityInfo entityInfo)
         {
+            // Breeze calls this for each entity before BeforeSaveEntities, so the role is checked here
+            // first: a reader's save is refused before anything else looks at it.
+            EnsureMaySave();
+
             if (entityInfo.Entity is not AuditEntityBase)
             {
                 throw new EntityErrorsException(
@@ -126,6 +145,7 @@ namespace TempHire.Server.Persistence
         protected override Dictionary<Type, List<EntityInfo>> BeforeSaveEntities(
             Dictionary<Type, List<EntityInfo>> saveMap)
         {
+            EnsureMaySave();
             StampAuditColumns(saveMap);
             ValidateSave(saveMap);
 

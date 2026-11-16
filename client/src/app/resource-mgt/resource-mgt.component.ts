@@ -15,6 +15,7 @@ import { CanComponentDeactivate } from '../app.routes';
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
 import { StaffingResource } from '../core/model';
 import { BusyService } from '../core/services/busy.service';
+import { AuthService } from '../core/services/auth.service';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
@@ -61,6 +62,9 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   private readonly errorHandler = inject(AppErrorHandler);
   private readonly router = inject(Router);
 
+  /** Only editors may add, change or delete; readers see the same screens read-only. */
+  readonly mayEdit = inject(AuthService).canEditStaffing;
+
   protected readonly busy = inject(BusyService);
 
   readonly staffingResource = signal<StaffingResource | null>(null);
@@ -84,9 +88,9 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   // Command availability - one-for-one with the `CanXxx` properties on ResourceMgtViewModel.
   // ------------------------------------------------------------------------------------------
 
-  readonly canAdd = computed(() => !this.hasResource() || this.isReadOnly());
-  readonly canDelete = computed(() => this.hasResource() && this.isReadOnly());
-  readonly canEdit = computed(() => this.hasResource() && this.isReadOnly());
+  readonly canAdd = computed(() => this.mayEdit() && (!this.hasResource() || this.isReadOnly()));
+  readonly canDelete = computed(() => this.mayEdit() && this.hasResource() && this.isReadOnly());
+  readonly canEdit = computed(() => this.mayEdit() && this.hasResource() && this.isReadOnly());
   readonly canCancel = computed(() => this.hasResource() && !this.isReadOnly());
 
   // `hasChanges`, `hasValidationErrors` and `changes` are signals on the unit of work (see
@@ -114,10 +118,27 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     return !!resource && !resource.entityAspect.entityState.isAdded();
   });
 
-  /** Port of the `ToolbarGroup(10)` built in `ResourceMgtViewModel.OnActivate`. */
+  /**
+   * Port of the `ToolbarGroup(10)` built in `ResourceMgtViewModel.OnActivate`.  A reader gets only
+   * Refresh: the editing commands are left out rather than shown disabled, since a reader can never
+   * use them.  The roles cannot change while the workspace is open (they come with the sign-in), so
+   * the group is built once.
+   */
   private readonly toolbarGroup: ToolbarGroup = {
     level: 10,
     actions: [
+      ...(this.mayEdit() ? this.editActions() : []),
+      {
+        label: 'Refresh',
+        icon: 'pi pi-refresh',
+        execute: () => void this.refresh(),
+        canExecute: () => this.canRefresh(),
+      },
+    ],
+  };
+
+  private editActions(): ToolbarGroup['actions'] {
+    return [
       {
         label: 'Add',
         icon: 'pi pi-plus',
@@ -148,14 +169,8 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
         execute: () => void this.cancel(),
         canExecute: () => this.canCancel(),
       },
-      {
-        label: 'Refresh',
-        icon: 'pi pi-refresh',
-        execute: () => void this.refresh(),
-        canExecute: () => this.canRefresh(),
-      },
-    ],
-  };
+    ];
+  }
 
   constructor() {
     // `ResourceMgtViewModel.OnActivate` added its toolbar group and `OnDeactivate` removed it;

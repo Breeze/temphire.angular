@@ -38,7 +38,7 @@ namespace TempHire.Server.Auth
             return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
         }
 
-        public (string Token, DateTime ExpiresUtc) CreateToken(TempHireUser user, Tenant tenant)
+        public (string Token, DateTime ExpiresUtc) CreateToken(TempHireUser user, IEnumerable<string> roles, Tenant tenant)
         {
             var expires = DateTime.UtcNow.AddMinutes(_options.ExpiryMinutes);
 
@@ -54,6 +54,11 @@ namespace TempHire.Server.Auth
                 new Claim(HttpCurrentTenant.TenantNameClaim, tenant.Name),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            // The user's Identity roles (Editor, Reader).  ClaimTypes.Role is what [Authorize(Roles)]
+            // and ClaimsPrincipal.IsInRole read.  A role changed in the identity database takes effect
+            // at the next sign-in, when a new token is issued.
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var credentials = new SigningCredentials(
                 CreateSigningKey(_options.SigningKey), SecurityAlgorithms.HmacSha256);
