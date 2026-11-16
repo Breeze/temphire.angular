@@ -58,7 +58,9 @@ original Silverlight and WPF versions are in the
 [Punch repository](https://github.com/IdeaBlade/Punch/tree/master/Samples/TempHire)
 (`TempHire.Silverlight.sln` and `TempHire.Wpf.sln`), so the two can be read side by side: every
 ported file names the file it came from, and `docs/CONVERSION-NOTES.md` maps the old architecture
-onto the new one.
+onto the new one.  [**The modernization story**](docs/MODERNIZATION.md) tells the whole journey:
+the conversion to a modern stack, and then what was built on it - Quinn, multi-tenancy, a fresh UI,
+and OAuth 2.1.
 
 | | Original (Silverlight / WPF) | This version |
 |---|---|---|
