@@ -18,8 +18,8 @@ import { QuinnComponent } from './quinn/quinn.component';
  * buttons across the top, the active workspace underneath.
  *
  * The original disabled the whole toolbar until `IsLoggedIn` was true and popped a modal login
- * dialog on load.  A route guard plus a dedicated `/login` route is the web idiom, so the toolbar is
- * simply hidden when logged out.
+ * dialog on load.  Here a route guard sends the user to the server's sign-in page (OAuth), so the
+ * toolbar is simply hidden when logged out.
  */
 @Component({
   selector: 'app-root',
@@ -72,9 +72,15 @@ export class App {
       : [],
   );
 
-  /** Port of `ShellViewModel.Logout`, which returned to the default workspace before logging out. */
+  /**
+   * Port of `ShellViewModel.Logout`, which returned to the default workspace before logging out.
+   * Doing the same here gives the active screen its say first: Resource Management asks what to do
+   * with unsaved edits, and the user can stay.  Signing out then leaves the app for the server's
+   * end-session endpoint, which comes back to the sign-in page.
+   */
   async logout(): Promise<void> {
-    await this.auth.logout();
-    await this.router.navigate(['/login']);
+    if (await this.router.navigate(['/home'])) {
+      this.auth.logout();
+    }
   }
 }

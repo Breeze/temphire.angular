@@ -30,8 +30,10 @@ export const pendingChangesGuard: CanDeactivateFn<CanComponentDeactivate> = (com
  */
 export const routes: Routes = [
   {
-    path: 'login',
-    loadComponent: () => import('./login/login.component').then((m) => m.LoginComponent),
+    // Where the server's sign-in page sends the browser back to; see AuthService.signIn.
+    path: 'auth/callback',
+    loadComponent: () =>
+      import('./auth-callback/auth-callback.component').then((m) => m.AuthCallbackComponent),
   },
   {
     path: 'home',

@@ -8,21 +8,20 @@ import { AuthService } from './auth.service';
  * Keeps unauthenticated users out of the workspaces.
  *
  * The WPF shell did this by popping a modal login dialog from `ShellViewModel.OnViewLoaded` and
- * disabling the toolbar until `IsLoggedIn` was true; a router guard is the web equivalent.  It also
- * covers the browser-refresh case, where a token survives in session storage but the Breeze caches
- * do not - `restoreSession()` rebuilds them before the route activates.
+ * disabling the toolbar until `IsLoggedIn` was true; a router guard is the web equivalent.  A user
+ * who isn't signed in is sent to the server's sign-in page, and comes back to the page they asked
+ * for.  It also covers the browser-refresh case, where the tokens survive in session storage but
+ * the Breeze caches do not - `restoreSession()` rebuilds them before the route activates.
  */
 export const authGuard: CanActivateFn = async (_route, state) => {
   const auth = inject(AuthService);
-  const router = inject(Router);
 
   if (await auth.restoreSession()) {
     return true;
   }
 
-  auth.redirectUrl = state.url;
-
-  return router.createUrlTree(['/login']);
+  await auth.signIn(state.url);
+  return false;
 };
 
 /**
@@ -40,8 +39,8 @@ export function roleGuard(...roles: string[]): CanActivateFn {
     const messages = inject(MessageService);
 
     if (!(await auth.restoreSession())) {
-      auth.redirectUrl = state.url;
-      return router.createUrlTree(['/login']);
+      await auth.signIn(state.url);
+      return false;
     }
 
     if (auth.hasAnyRole(roles)) {

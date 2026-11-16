@@ -17,16 +17,16 @@ describe('roleGuard', () => {
   const signedIn = { value: true };
   const roles = { value: [] as string[] };
   const auth = {
-    redirectUrl: null as string | null,
     restoreSession: async () => signedIn.value,
     hasAnyRole: (wanted: readonly string[]) => wanted.some((role) => roles.value.includes(role)),
+    signIn: vi.fn(async (_returnUrl?: string) => undefined),
   };
   const messages = { add: vi.fn() };
 
   beforeEach(() => {
     signedIn.value = true;
     roles.value = [];
-    auth.redirectUrl = null;
+    auth.signIn.mockClear();
     messages.add.mockClear();
     TestBed.configureTestingModule({
       providers: [
@@ -63,10 +63,10 @@ describe('roleGuard', () => {
     expect(messages.add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'warn' }));
   });
 
-  it('sends a user who is not signed in to the login page, remembering where they were going', async () => {
+  it('sends a user who is not signed in to sign in, coming back to where they were going', async () => {
     signedIn.value = false;
 
-    expect(url(await run(Roles.Editor))).toBe('/login');
-    expect(auth.redirectUrl).toBe('/resourcemgt');
+    expect(await run(Roles.Editor)).toBe(false);
+    expect(auth.signIn).toHaveBeenCalledWith('/resourcemgt');
   });
 });

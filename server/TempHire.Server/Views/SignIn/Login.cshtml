@@ -1,0 +1,54 @@
+@model SignInModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<h1>Sign in</h1>
+
+<form method="post" asp-action="Login">
+    <input type="hidden" asp-for="ReturnUrl" />
+
+    <div class="field">
+        <label asp-for="UserName">Email</label>
+        <input type="email" asp-for="UserName" autocomplete="username" autofocus />
+    </div>
+
+    <div class="field">
+        <label asp-for="Password">Password</label>
+        <input type="password" asp-for="Password" autocomplete="current-password" />
+    </div>
+
+    @if (Model.Error != null)
+    {
+        <p class="error" role="alert">@Model.Error</p>
+    }
+
+    <div class="actions">
+        <button type="submit" class="button">Sign in</button>
+    </div>
+
+    @if (Model.SampleUsers.Count > 0)
+    {
+        <div class="hint">
+            Sample users, development only. Click one to sign in:
+            <ul>
+                @foreach (var company in Model.SampleUsers.GroupBy(u => u.CompanyName))
+                {
+                    <li>
+                        @company.Key
+                        <ul>
+                            @foreach (var user in company)
+                            {
+                                <li>
+                                    <button type="submit" class="sample" name="SampleUser" value="@user.UserName"
+                                            title="Sign in as @user.UserName">@user.UserName</button>
+                                    (@user.Role)
+                                </li>
+                            }
+                        </ul>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</form>

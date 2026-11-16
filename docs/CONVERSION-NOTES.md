@@ -57,7 +57,7 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 | `DomainModel/TempHireEntities.cs` (`EntityManager` subclass) | *gone* — the EntityManager is a client concept now |
 | `DomainModel/TempHireEntities.ibmmx` (IdeaBlade model file) | *gone* — metadata is generated from the EF Core model at `GET /api/breeze/Metadata`, and exported to `client/metadata.json`, from which `breeze-gen-entities` (`npm run model`) writes the client classes |
 | `DomainModel/SaveInterceptor.cs` | `server/TempHire.Server/Persistence/TempHirePersistenceManager.cs` |
-| `Security/User.cs`, `LoginManager.cs`, `CryptoHelper.cs` | ASP.NET Core Identity: `…/Identity/TempHireUser.cs` + `Controllers/AccountController.cs` (sign-in) + `Auth/TenantResolver.cs` + `Auth/TokenService.cs` |
+| `Security/User.cs`, `LoginManager.cs`, `CryptoHelper.cs` | ASP.NET Core Identity: `…/Identity/TempHireUser.cs` + OAuth 2.1 with OpenIddict: `Controllers/SignInController.cs` (sign-in page), `Controllers/AuthorizationController.cs` + `Auth/TokenClaims.cs` (tokens) + `Auth/TenantResolver.cs` |
 | `Security/SecurityDbContext.cs` | `…/Identity/TempHireIdentityDbContext.cs` (the `TempHireIdentity` database) |
 | `DomainServices/SampleData/*.cs` | `…/SampleData/SampleDataProvider.cs` |
 
@@ -100,7 +100,7 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 | Original view model + view | Converted |
 |---|---|
 | `ShellViewModel` + `ShellView.Wpf.xaml` | `app.ts` / `app.html` |
-| `LoginViewModel` + `LoginView.Wpf.xaml` | `login/login.component.ts` |
+| `LoginViewModel` + `LoginView.Wpf.xaml` | The server's sign-in page, `Views/SignIn/Login.cshtml` (OAuth: the client never sees the password); the client keeps `auth-callback/auth-callback.component.ts` |
 | `HomeViewModel` + `HomeView.xaml` | `home/home.component.ts` |
 | `ResourceMgtViewModel` + `ResourceMgtView.xaml` | `resource-mgt/resource-mgt.component.*` |
 | `StaffingResourceSearchViewModel` + view | `resource-mgt/resource-search.component.ts` |
@@ -165,16 +165,20 @@ Everything below is a conscious departure from the original.
   README), and the seeded users share the password `password`. Identity also keeps external logins,
   so a provider such as Microsoft Entra ID can be added later (see "Users and sign-in" in the
   README).
-- *Session.* A stateless JWT replaces the DevForce server session. The token lives in
-  `sessionStorage` and is attached by `auth.interceptor.ts`. It cannot be revoked before it expires.
+- *Session.* OAuth 2.1 replaces the DevForce server session: the server is its own authorization
+  server (OpenIddict), and the app signs in with the Authorization Code flow and PKCE.  The access
+  token (30 minutes) and refresh token live in `sessionStorage`; `auth.interceptor.ts` attaches the
+  access token and `AuthService` renews it.  An access token cannot be revoked before it expires.
+  See "Users and sign-in" in the README.
 - *Metadata requires authentication*, matching `[RequiresAuthentication]` on the DevForce
-  `EntityBase`. This is why `AuthService.login` calls `EntityManagerProvider.prepare()` immediately
-  after the token arrives — the same place `LoginViewModel` called `IGlobalCache.LoadAsync()`.
+  `EntityBase`. This is why `AuthService.completeSignIn` calls `EntityManagerProvider.prepare()`
+  as soon as it has the tokens — the same place `LoginViewModel` called `IGlobalCache.LoadAsync()`.
 
 **UI**
 
-- *Login is a route, not a modal.* The WPF shell popped a modal on load and after logout; a
-  `/login` route plus `authGuard` is the web idiom, and it makes browser refresh work.
+- *Login is a page on the server, not a modal.* The WPF shell popped a modal on load and after
+  logout; here `authGuard` sends the browser to the server's sign-in page and back, and a browser
+  refresh keeps the session.
 - *Selection debounce removed.* `ResourceMgtViewModel` debounced grid selection with a 200 ms
   `DispatcherTimer` because the WPF `DataGrid` fires `SelectionChanged` during keyboard navigation.
   Optimus UI raises it once per click, so the timer is gone.

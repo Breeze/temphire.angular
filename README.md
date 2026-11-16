@@ -67,7 +67,7 @@ onto the new one.
 | Server | DevForce EntityServer (WCF) | **ASP.NET Core 10** + **Breeze.AspNetCore 8** |
 | ORM | Entity Framework 6 (Code First) | **EF Core 10** |
 | Database | SQL Server Compact (`.sdf`) | **SQL Server LocalDB / Express** |
-| Auth | DevForce `IEntityLoginManager` + server session | **ASP.NET Core Identity** + **JWT bearer** |
+| Auth | DevForce `IEntityLoginManager` + server session | **ASP.NET Core Identity** + **OAuth 2.1** ([OpenIddict](https://documentation.openiddict.com/)) |
 
 The application behaves the same as the original: log in, search staffing resources, view one,
 edit it in an isolated sandbox, and save or cancel. `docs/CONVERSION-NOTES.md` maps every piece of
@@ -93,9 +93,10 @@ records:
 
 ![The Home page: a welcome hero with a button into Resource Management, and three feature tiles](docs/images/home.png)
 
-**Sign in**; a development build lists the sample users, and a click on one signs in:
+**Sign in**, on the server's own sign-in page (see [Users and sign-in](#users-and-sign-in)); in
+development it lists the sample users, and a click on one signs in:
 
-![The login page: the TempHire badge above a sign-in card, with the sample users listed](docs/images/login.png)
+![The sign-in page: the TempHire badge above a sign-in card, with the sample users listed by company](docs/images/login.png)
 
 The look - cards with layered shadows on a soft gradient, in one blue - comes from
 `client/src/styles.css` and the theme preset in `client/src/app/core/theme/temphire-preset.ts`.
@@ -156,8 +157,9 @@ Then open <http://localhost:4200> and sign in as one of the sample users.  The p
 An **Editor** can add, change and delete staffing resources; a **Reader** can only look at them
 (see [Roles](#roles)).
 
-In a development build the login page lists them too, and a click on one signs in as that user.
-They come from `environment.development.ts`; a production build doesn't offer them.
+The app sends you to the server's sign-in page.  When the server runs in the Development
+environment, the page lists the sample users too, and a click on one signs in as that user;
+anywhere else it doesn't offer them.
 
 Sign in as one user from each company to see that each sees only their own company's people, and
 that Quinn only knows about them too.
@@ -226,9 +228,9 @@ Everything runs in the existing .NET server, behind the same login as the rest o
 
 ```
 client ──POST /api/agent/chat──► AgentController ──► QuinnAgent ──► IChatClient (Ollama or Claude)
- (pane)    (JWT)                                        │                  │ tool calls
+ (pane)  (access token)                                 │                  │ tool calls
                                                         └── MCP client ────┴──► /mcp (MCP server)
-                                                            (user's JWT)          StaffingTools ──► EF Core
+                                                          (user's token)          StaffingTools ──► EF Core
 ```
 
 - **The client** (`client/src/app/quinn/`) only shows the conversation.  It sends the conversation
@@ -253,9 +255,11 @@ client ──POST /api/agent/chat──► AgentController ──► QuinnAgent 
   history.  They query with **EF Core LINQ, not SQL**, through the same `TempHireDbContext` as
   Breeze, so the tenant filter applies to them as to everything else.
 - **The agent calls the MCP server as the user.**  `QuinnAgent` connects to `/mcp` over HTTP with
-  the signed-in user's own bearer token, so the tools run with that user's identity and company.
-  Nothing in the agent can reach another company's data, whatever the model asks for.  Any other
-  MCP client with a valid TempHire token can use `/mcp` too.
+  the signed-in user's own access token, so the tools run with that user's identity and company.
+  Nothing in the agent can reach another company's data, whatever the model asks for.  The app's
+  tokens are issued for both the API and the MCP endpoint for this reason.  Other MCP clients,
+  such as Claude Code, sign in to `/mcp` themselves; see
+  [Using TempHire's MCP server from Claude Code](#using-temphires-mcp-server-from-claude-code).
 - **Links to people are made by the client, from people the server names.**  The model doesn't
   write links, and neither does the server: what a link to a person looks like depends on the
   client, and another client, a mobile app say, would link differently.  The tools return each
@@ -373,11 +377,11 @@ shows the model in use.  User secrets are read in the Development environment; i
 Each user belongs to a company, a **tenant**, and sees and changes only that company's data.
 
 - **Tenants come from the email domain.**  The `Tenants` table maps an email domain to a tenant:
-  `harbor.test` is Harbor Staffing, `summit.test` is Summit Talent.  At login, `AccountController`
-  asks `TenantResolver` for the tenant of the user's email domain and refuses users whose
-  domain has none.  The tenant's id is a **GUID**, not the domain, and it travels in the JWT as the
-  `tenant_id` claim, so later requests need no lookup.  `HttpCurrentTenant` reads it back as
-  `ICurrentTenant`.
+  `harbor.test` is Harbor Staffing, `summit.test` is Summit Talent.  Whenever a token is issued or
+  refreshed, `TokenClaims` asks `TenantResolver` for the tenant of the user's email domain and
+  refuses users whose domain has none.  The tenant's id is a **GUID**, not the domain, and it
+  travels in the access token as the `tenant_id` claim, so requests need no lookup.
+  `HttpCurrentTenant` reads it back as `ICurrentTenant`.
 - **Every query is filtered.**  Every entity that belongs to a tenant implements `ITenantOwned`
   (through `AuditEntityBase`), and `TempHireDbContext` gives each of them an EF Core **global query
   filter**, `e.TenantId == CurrentTenantId`.  Breeze queries, the search projection and Quinn's
@@ -397,19 +401,82 @@ Each user belongs to a company, a **tenant**, and sees and changes only that com
 Users are kept by **ASP.NET Core Identity**, in their own database, `TempHireIdentity`
 (`TempHireIdentityDbContext`, users of type `TempHireUser`).  A user's name is their email address.
 
-- **Signing in.**  `POST /api/account/login` finds the user through Identity's `UserManager`, and
-  `SignInManager` checks the password against Identity's salted hash.  Five failed attempts lock
-  the account for five minutes.  Identity's sign-in cookie is not used.
-- **The company comes from the email domain**, at every sign-in: `TenantResolver` finds the tenant
-  whose `EmailDomain` matches (see [Multi-tenancy](#multi-tenancy)).  Nothing on the user record
-  names a company.
-- **The API accepts our own JWT.**  `TokenService` issues it for an Identity user, their roles and a
-  tenant, with the user's name and id, a role claim per role and the `tenant_id` claim.  The Angular
-  client, Breeze, the MCP endpoint and Quinn all present that token, so none of them depends on how
-  the user signed in.
+The server is its own **OAuth 2.1 authorization server**, built with
+[OpenIddict](https://documentation.openiddict.com/) on top of Identity.  Every client signs the
+user in the same way, with the **Authorization Code flow and PKCE**: the Angular app, Quinn's MCP
+connection (with the app's token), and outside MCP clients such as Claude Code.  No client ever
+sees a password.
+
+```
+Angular app ──(1) redirect──► /connect/authorize ──(2)──► /account/login   sign-in page, cookie
+     ▲                               │
+     └──(3) /auth/callback?code=... ◄┘
+     └──(4) POST /connect/token (code + PKCE verifier) ──► access token (30 min) + refresh token
+     └──(5) Authorization: Bearer <access token> ──► /api/breeze, /api/agent, /mcp (via Quinn)
+```
+
+- **Signing in.**  `AuthService.signIn` sends the browser to `connect/authorize`, which sends it on
+  to the server's sign-in page (`SignInController`, a Razor view in the app's look) if the user
+  isn't signed in there yet.  `SignInManager` checks the password against Identity's salted hash;
+  five failed attempts lock the account for five minutes.  The page sets a cookie for the server
+  only, and the browser goes back to `connect/authorize`, which returns a code to the app's
+  `/auth/callback`.  The app redeems it at `connect/token` with the PKCE verifier, which never left
+  the browser tab.
+- **Staying signed in.**  Access tokens last 30 minutes.  `AuthService.accessToken()` renews one
+  shortly before it expires with the refresh token, which the server replaces at each use.  The
+  tokens are kept in session storage, so each tab signs in on its own, but the server's cookie
+  makes that a quick round trip without the sign-in page.
+- **Signing out** forgets the tokens and goes through `connect/logout`, which ends the server's
+  cookie and returns to the app, and so to the sign-in page.
+- **What the token says.**  `TokenClaims` decides what goes into the access token, whenever one is
+  issued or refreshed: the user's name and id, a `role` claim per Identity role, and the company
+  (`tenant_id`, `tenant_name`) from the email domain (see [Multi-tenancy](#multi-tenancy)).  So a
+  role change, or a lockout, takes effect at the next refresh.  The tokens are signed JWTs, left
+  unencrypted so you can read one at [jwt.io](https://jwt.io); `api/account/me` tells the app who
+  signed in.
+- **Each token is for named resources** (RFC 8707).  The API (`<server>/api`) and the MCP endpoint
+  (`<server>/mcp`) each accept only tokens whose audience names them (`AudienceCheck`).  The app's
+  tokens name both, because Quinn passes the user's token on to `/mcp`; an MCP client's tokens
+  name only `/mcp`, so they can't be used to call the Breeze API.
 - **No sign-up or user management.**  The sample users and their roles are seeded
   (`SampleDataProvider`, through Identity's own password hasher); there are no screens to register
   or manage users.
+
+| Endpoint | What it does | Where |
+|---|---|---|
+| `GET /account/login` | The sign-in page | `SignInController` |
+| `/connect/authorize` | Sign-in check, consent, code | `AuthorizationController.Authorize` |
+| `POST /connect/token` | Code or refresh token for tokens | `AuthorizationController.Exchange` |
+| `/connect/logout` | Sign out | `AuthorizationController.Logout` |
+| `POST /connect/register` | Dynamic client registration (RFC 7591), for MCP clients | `ClientRegistrationController` |
+| `/.well-known/oauth-authorization-server`, `/.well-known/openid-configuration` | Authorization server metadata | OpenIddict |
+| `/.well-known/oauth-protected-resource` | The MCP endpoint's resource metadata (RFC 9728) | MCP SDK, `Program.cs` |
+
+### Using TempHire's MCP server from Claude Code
+
+`/mcp` follows the [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization),
+so an MCP client needs nothing but the URL:
+
+```
+claude mcp add --transport http temphire http://localhost:5000/mcp
+```
+
+Then run `/mcp` in Claude Code and choose to authenticate TempHire.  What happens:
+
+1. Claude Code calls `/mcp` without a token and gets `401` with a `WWW-Authenticate` header that
+   points to the resource metadata, which names TempHire's server as the authorization server.
+2. It reads the authorization server's metadata and **registers itself** at `connect/register`
+   (dynamic client registration; OpenIddict 7 has no registration endpoint of its own, so
+   `ClientRegistrationController` creates the client through OpenIddict's application manager).
+3. Your browser opens the sign-in page, and then a **consent screen** that names the client and
+   the host the approval goes to.  The answer is remembered for that client.
+4. Claude Code gets an access token for `/mcp` only, plus a refresh token, and can call the tools
+   with your identity, company and role.
+
+A registered client gains nothing by itself: anyone may register, as MCP intends, but only for
+`/mcp`, only with HTTPS or local redirect URIs, rate-limited per address, and every user still
+signs in and consents.  Clients that run in a browser, such as the MCP Inspector, also need their
+origin in `AllowedClientOrigins` for CORS.
 
 ### Roles
 
@@ -427,8 +494,8 @@ Two Identity roles, `TempHireRoles` on the server and `Roles` in the client:
   client loads them at sign-in.  Saving needs Editor, checked in the save interceptor
   (`TempHirePersistenceManager.EnsureMaySave`) for every save through Breeze, and answered with
   `403 Forbidden` otherwise.
-- **The client follows them.**  `AuthService` gets the roles at sign-in (and from `/me` after a
-  reload).  `roleGuard` keeps the Resource Management route to editors and readers, sending anyone
+- **The client follows them.**  `AuthService` gets the roles from `api/account/me` after signing in
+  or reloading.  `roleGuard` keeps the Resource Management route to editors and readers, sending anyone
   else to Home with a message, and the toolbar lists only the workspaces the user may open.  A
   reader's Resource Management toolbar has only Refresh: Add, Delete, Edit, Save and Cancel are left
   out.  None of this is security; it only keeps the client from offering what the server refuses.
@@ -437,32 +504,30 @@ Two Identity roles, `TempHireRoles` on the server and `Roles` in the client:
   call answers "Access denied" (a call-tool filter on the MCP server, in `Program.cs`), and Quinn's
   system prompt says the user has no access, so it tells them so rather than guessing.  The filter
   applies to any MCP client, not only Quinn.
-- **A role change takes effect at the next sign-in**, when a new token is issued.
+- **A role change takes effect at the next token refresh**, within 30 minutes, when `TokenClaims`
+  reads the roles again.
 
 ### Adding an external provider such as Microsoft Entra ID
 
-The parts a provider plugs into are in place: Identity keeps external logins (provider and key) in
-`AspNetUserLogins`, `TenantResolver` picks the company from the email domain, which for Entra ID is
-one the company has verified, and `TokenService` issues the same JWT whatever the sign-in.  What a
-provider adds is the sign-in round trip:
+With TempHire's server as the authorization server, an external provider is just another way to
+get past its sign-in page; the clients don't change at all.  Identity keeps external logins
+(provider and key) in `AspNetUserLogins`, `TenantResolver` picks the company from the email domain,
+which for Entra ID is one the company has verified, and `TokenClaims` builds the same token
+whatever the sign-in.  What a provider adds:
 
 1. **Register an application** with the provider (for Entra ID, an app registration, multi-tenant
    if several companies' directories sign in), with a redirect URI on the server such as
    `https://<server>/signin-oidc`.
 2. **Add the provider's authentication scheme** in `Program.cs`, for example
    `AddOpenIdConnect("EntraId", ...)` with the authority, client id and secret, signing in to an
-   external cookie (`IdentityConstants.ExternalScheme`).  The JWT bearer scheme stays the default
-   for the API.
-3. **Add two endpoints to `AccountController`**: one that starts the sign-in
-   (`Challenge` with the scheme and a return URL), and a callback that reads the external sign-in
+   external cookie (`IdentityConstants.ExternalScheme`).
+3. **Add a "Sign in with Microsoft" button to the sign-in page** and two actions to
+   `SignInController`: one that starts the sign-in (`Challenge` with the scheme, returning to the
+   same `ReturnUrl`), and a callback that reads the external sign-in
    (`SignInManager.GetExternalLoginInfoAsync`), finds the Identity user linked to it
-   (`FindByLoginAsync`), or links one by email (`AddLoginAsync`) or creates it, asks
-   `TenantResolver` for the company, and calls `TokenService.CreateToken`.  The token goes back to
-   the client in the redirect to the SPA, ideally as a short-lived one-time code it exchanges for
-   the token, not the token itself in the URL.
-4. **In the client**, show a "Sign in with Microsoft" button on the login page that navigates to
-   the start endpoint, and a route that picks up the token on return and signs the user in as
-   `AuthService.login` does today.
+   (`FindByLoginAsync`), or links one by email (`AddLoginAsync`) or creates it, and then sets the
+   sign-in cookie exactly as a password sign-in does.  The browser carries on to
+   `connect/authorize`, and the client gets its code as usual.
 
 ---
 
@@ -520,13 +585,17 @@ TempHire.Angular/
 │   └── TempHire.Server/
 │       ├── Controllers/
 │       │   ├── BreezeController.cs   # metadata, queries, SaveChanges, lookups, search
-│       │   ├── AccountController.cs  # login / logout / me
+│       │   ├── AccountController.cs  # me: who the token belongs to
+│       │   ├── AuthorizationController.cs  # OAuth: authorize, token, logout
+│       │   ├── ClientRegistrationController.cs  # OAuth: MCP clients register
+│       │   ├── SignInController.cs   # the sign-in page
 │       │   └── AgentController.cs    # Quinn: info / chat
 │       ├── Agent/                 # Quinn: persona, chat client factory, agent
 │       ├── Mcp/                   # MCP server tools (StaffingTools)
 │       ├── Persistence/
 │       │   └── TempHirePersistenceManager.cs   # ← DomainModel/SaveInterceptor.cs
-│       ├── Auth/                  # JWT options, token service, current tenant
+│       ├── Auth/                  # OAuth settings and clients, token claims, audience check, current tenant
+│       ├── Views/                 # the sign-in and consent pages
 │       └── Program.cs
 └── client/
     ├── metadata.json              # Breeze metadata exported from the server (npm run model:metadata)
@@ -539,7 +608,7 @@ TempHire.Angular/
         │   ├── services/          # ← Punch: EntityManagerProvider, UnitOfWork,
         │   │                      #   Repository, UnitOfWorkManager, toolbar, dialogs, auth
         │   └── dialogs/
-        ├── login/                 # ← ViewModels/Login/
+        ├── auth-callback/         # where the sign-in page returns to (code → tokens)
         ├── home/                  # ← ViewModels/HomeViewModel.cs
         ├── resource-mgt/          # ← ViewModels/StaffingResource/
         │   └── sections/          # the four detail tabs
@@ -669,14 +738,14 @@ provider, delete them and add a new initial migration (see [The database schema]
 |---|---|---|
 | `ConnectionStrings:TempHire` | `appsettings.json` | Business data |
 | `ConnectionStrings:TempHireIdentity` | `appsettings.json` | Users (ASP.NET Core Identity) — a separate database, as in the original |
-| `Jwt:SigningKey` | `appsettings.Development.json` | **Development placeholder.** Set a real one before deploying: `dotnet user-secrets set "Jwt:SigningKey" "<long random string>"` |
-| `Jwt:ExpiryMinutes` | `appsettings.json` | Defaults to 8 hours |
-| `AllowedClientOrigins` | `appsettings.json` | CORS allow-list for the dev server |
+| Token signing and encryption keys | `Program.cs` | **Development certificates**, which OpenIddict creates in the current user's certificate store; outside Development the server starts only once you load real ones (`AddSigningCertificate`, `AddEncryptionCertificate`) |
+| `OAuth:Origins` | `appsettings.json` (optional) | The server's public origins, which name the token audiences; defaults to the URLs it listens on.  Set it behind a proxy |
+| `AllowedClientOrigins` | `appsettings.json` | CORS allow-list for the dev server, and where the app's OAuth redirect URIs may point |
 | `Agent:Provider` | `appsettings.json`, or user secrets via `Set-ClaudeApiKey.ps1` | `Ollama` (default) or `Claude` |
 | `Agent:Ollama:*`, `Agent:Claude:Model` | `appsettings.json` | Endpoint and model names |
 | `Agent:Claude:ApiKey` | user secrets, via `server/Set-ClaudeApiKey.ps1` | **Never in `appsettings.json`** |
 | `Agent:MaxToolCalls` | `appsettings.json` | Tool-calling rounds per question |
-| `breezeApiRoot` / `accountApiRoot` / `agentApiRoot` | `client/src/environments/` | `environment.ts` is the **production** file; `environment.development.ts` replaces it during `ng serve` |
+| `breezeApiRoot` / `accountApiRoot` / `agentApiRoot` / `authority` | `client/src/environments/` | `environment.ts` is the **production** file; `environment.development.ts` replaces it during `ng serve` |
 
 ---
 
@@ -698,8 +767,14 @@ provider, delete them and add a new initial migration (see [The database schema]
   either. `ng test` runs Vitest; the server has no test project.
 - **Migrations run on startup**, and a database without migration history is dropped; see
   [The database schema](#the-database-schema).
-- **Logout does not revoke the token.** A JWT is valid until it expires; `AccountController.Logout`
-  is the hook where a revocation list would go.
+- **An access token is valid until it expires**, up to 30 minutes, even after signing out: the API
+  checks its signature, not the token store.  Signing out ends the server's sign-in cookie, and a
+  refresh token stops working once its consent (authorization) is revoked.  OpenIddict's
+  `EnableTokenEntryValidation` would check every request against the store instead.
+- **Registered MCP clients are never cleaned up.**  Each dynamic registration adds a row to
+  `OpenIddictApplications`; there is no expiry or admin screen yet.
+- **No Client ID Metadata Documents.**  The newest MCP specification prefers them to dynamic
+  registration.  OpenIddict 8 plans both; this server offers dynamic registration only.
 - **Search has no paging.** `StaffingResourceListItems` returns every match, exactly as
   `StaffingResourceSearchService.Simple` did. `[BreezeQueryFilter(MaxTake = ...)]` is the place to
   add a cap.
