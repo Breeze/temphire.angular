@@ -192,10 +192,14 @@ Everything below is a conscious departure from the original.
   translate the former and not the latter.
 - *Validation runs against the save bundle, not a sandbox EntityManager.* `SaveInterceptor.ValidateSave`
   restored the cache state into a throwaway `EntityManager` so that cross-entity rules could see the
-  whole graph. Breeze hands the whole change set to `BeforeSaveEntities` at once, so
-  `TempHirePersistenceManager` stitches the graph together from the save map plus the stored rows
-  (read with `AsNoTracking`, which is required — a tracking query here would collide with the
-  entities Breeze is about to attach).
+  whole graph. Neither Breeze nor EF Core validates on save, so `TempHirePersistenceManager` does it
+  in `BeforeSaveEntities`, where it gets the whole change set at once: each entity's data
+  annotations and own rules, and the one cross-entity rule (a resource keeps at least one address
+  and one phone number) by counting ids: the rows stored now, minus what the save deletes or moves
+  away, plus what it adds or moves in. Nothing is hung on the entities' navigation properties;
+  Breeze attaches a modified entity with `DbContext.Add`, which would take any rows found there
+  for new ones. Counting also catches deleting a resource's last address without the resource
+  itself being in the save.
 
 **Not carried over**
 
