@@ -48,25 +48,9 @@ namespace TempHire.Model
                 ? $"{FirstName?.Trim()} {MiddleName.Trim()} {LastName?.Trim()}"
                 : $"{FirstName?.Trim()} {LastName?.Trim()}";
 
-        /// <summary>
-        /// Same rule as the original: a resource must always have at least one address and one phone
-        /// number.  The original ran this inside <c>SaveInterceptor.ValidateSave</c> against a sandbox
-        /// EntityManager; here it runs inside
-        /// <c>TempHirePersistenceManager.BeforeSaveEntities</c> against the save bundle.
-        /// </summary>
-        public override void Validate(ICollection<ValidationResult> validationErrors)
-        {
-            if (Addresses == null || Addresses.Count == 0)
-            {
-                validationErrors.Add(new ValidationResult(
-                    "StaffingResource must have at least one address", new[] { nameof(Addresses) }));
-            }
-
-            if (PhoneNumbers == null || PhoneNumbers.Count == 0)
-            {
-                validationErrors.Add(new ValidationResult(
-                    "StaffingResource must have at least one phone number", new[] { nameof(PhoneNumbers) }));
-            }
-        }
+        // The original's rule that a resource always has at least one address and one phone number is
+        // not checked here: an entity in a Breeze save sees only what the client sent, not its
+        // existing children.  TempHirePersistenceManager checks it against what the database will
+        // hold after the save.
     }
 }

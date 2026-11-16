@@ -26,9 +26,10 @@ namespace TempHire.Server.Persistence
     ///   <item>
     ///     <b>Validation.</b>  <c>ValidateSave</c> spun up a sandbox EntityManager, restored the cache
     ///     state into it and called <c>Validate</c> on every entity so that cross-entity rules
-    ///     ("a resource must have an address") could see the whole graph.  Breeze hands us the whole
-    ///     change set at once in <see cref="BeforeSaveEntities"/>, so the sandbox is unnecessary: we
-    ///     stitch the graph together from the save map and validate that.
+    ///     ("a resource must have an address") could see the whole graph.  Neither Breeze nor EF Core
+    ///     validates on save, so <see cref="ValidateSave"/> does it here: each entity's data annotations
+    ///     and own rules, and the cross-entity rule by counting what the database will hold after the
+    ///     save, without rebuilding the graph.
     ///   </item>
     ///   <item>
     ///     <b>Audit columns.</b>  <c>ExecuteSave</c> stamped Created/Modified and the user name.
@@ -166,47 +167,13 @@ namespace TempHire.Server.Persistence
             }
         }
 
-        /// <summary>Port of <c>SaveInterceptor.ValidateSave</c>.</summary>
+        /// <summary>
+        /// Port of <c>SaveInterceptor.ValidateSave</c>.  Neither Breeze nor EF Core validates on save,
+        /// so this is the server's check behind the client's own validation.
+        /// </summary>
         private void ValidateSave(Dictionary<Type, List<EntityInfo>> saveMap)
         {
             var errors = new List<EntityError>();
-
-            // The cross-entity rules on StaffingResource need to see the children that are being saved
-            // alongside it.  Breeze sends parent and children in the same bundle but does not wire up the
-            // navigation properties, so we do it here - this is the Breeze analogue of the original's
-            // "sandbox" EntityManager.
-            var resources = EntitiesOfType<StaffingResource>(saveMap);
-            if (resources.Count > 0)
-            {
-                var addresses = EntitiesOfType<Address>(saveMap);
-                var phoneNumbers = EntitiesOfType<PhoneNumber>(saveMap);
-
-                foreach (var (resource, info) in resources)
-                {
-                    if (info.EntityState == EntityState.Deleted)
-                    {
-                        continue;
-                    }
-
-                    // Start from what is already in the database, then apply the pending change set.
-                    //
-                    // AsNoTracking is essential here, not an optimisation.  This runs *before*
-                    // Breeze attaches the client's entities to the DbContext, so a tracking query
-                    // would put the database's copy of each Address/PhoneNumber into the change
-                    // tracker; Breeze would then call Add on the client's instance with the same
-                    // key and EF Core would throw "another instance with the key value ... is
-                    // already being tracked".
-                    resource.Addresses = MergeChildren(
-                        Context.Addresses.AsNoTracking()
-                            .Where(a => a.StaffingResourceId == resource.Id).ToList(),
-                        addresses, a => a.StaffingResourceId == resource.Id, a => a.Id);
-
-                    resource.PhoneNumbers = MergeChildren(
-                        Context.PhoneNumbers.AsNoTracking()
-                            .Where(p => p.StaffingResourceId == resource.Id).ToList(),
-                        phoneNumbers, p => p.StaffingResourceId == resource.Id, p => p.Id);
-                }
-            }
 
             foreach (var (entity, info) in EntitiesOfType<EntityBase>(saveMap))
             {
@@ -234,11 +201,122 @@ namespace TempHire.Server.Persistence
                 }));
             }
 
+            // The original's cross-entity rule: every staffing resource keeps at least one address and
+            // one phone number.
+            CheckEveryResourceKeeps<Address>(saveMap, errors, nameof(StaffingResource.Addresses),
+                "StaffingResource must have at least one address",
+                ids => Context.Addresses.Where(a => ids.Contains(a.StaffingResourceId))
+                    .Select(a => new Child(a.Id, a.StaffingResourceId)).ToList(),
+                a => new Child(a.Id, a.StaffingResourceId));
+
+            CheckEveryResourceKeeps<PhoneNumber>(saveMap, errors, nameof(StaffingResource.PhoneNumbers),
+                "StaffingResource must have at least one phone number",
+                ids => Context.PhoneNumbers.Where(p => ids.Contains(p.StaffingResourceId))
+                    .Select(p => new Child(p.Id, p.StaffingResourceId)).ToList(),
+                p => new Child(p.Id, p.StaffingResourceId));
+
             if (errors.Count > 0)
             {
                 throw new EntityErrorsException(
                     string.Join("\n", errors.Select(e => e.ErrorMessage).Distinct()), errors);
             }
+        }
+
+        /// <summary>A child row (an address, a phone number) and the staffing resource it belongs to.</summary>
+        private sealed record Child(Guid Id, Guid ResourceId);
+
+        /// <summary>
+        /// Checks that every staffing resource this save touches - itself, or through one of its
+        /// <typeparamref name="TChild"/> rows - still has at least one such row afterwards.
+        ///
+        /// <para>
+        /// It works on ids only: the rows stored now (<paramref name="stored"/>, one query for all the
+        /// resources concerned), minus the ones this save deletes or moves away, plus the ones it adds
+        /// or moves in.  Nothing is attached to the entities.  (An earlier version hung the stored rows
+        /// on the resource's navigation properties to call a rule on the entity; Breeze attaches a
+        /// modified entity with <c>DbContext.Add</c>, which then took those rows for new ones.)
+        /// </para>
+        /// <para>
+        /// Unlike that version, this also catches a save that deletes a resource's last address
+        /// without the resource itself being in the save.
+        /// </para>
+        /// </summary>
+        private void CheckEveryResourceKeeps<TChild>(
+            Dictionary<Type, List<EntityInfo>> saveMap,
+            List<EntityError> errors,
+            string propertyName,
+            string message,
+            Func<List<Guid>, List<Child>> stored,
+            Func<TChild, Child> asChild) where TChild : class
+        {
+            var resources = EntitiesOfType<StaffingResource>(saveMap);
+            var deletedResources = resources
+                .Where(r => r.Info.EntityState == EntityState.Deleted)
+                .Select(r => r.Entity.Id)
+                .ToHashSet();
+
+            var pending = EntitiesOfType<TChild>(saveMap)
+                .Select(c => (Child: asChild(c.Entity), c.Info))
+                .ToList();
+
+            // The resources concerned: those in the save, and those a pending child belongs to now or
+            // belonged to before (a child moved to another resource leaves its old one).  A resource
+            // being deleted takes its children with it, so the rule does not apply to it.
+            var resourceIds = resources.Select(r => r.Entity.Id)
+                .Concat(pending.Select(p => p.Child.ResourceId))
+                .Concat(pending.Select(p => OriginalResourceId(p.Info)).OfType<Guid>())
+                .Where(id => !deletedResources.Contains(id))
+                .Distinct()
+                .ToList();
+
+            if (resourceIds.Count == 0)
+            {
+                return;
+            }
+
+            var storedChildren = stored(resourceIds);
+
+            foreach (var resourceId in resourceIds)
+            {
+                var remaining = storedChildren
+                    .Where(c => c.ResourceId == resourceId)
+                    .Select(c => c.Id)
+                    .ToHashSet();
+
+                foreach (var (child, info) in pending)
+                {
+                    remaining.Remove(child.Id);
+                    if (info.EntityState != EntityState.Deleted && child.ResourceId == resourceId)
+                    {
+                        remaining.Add(child.Id);
+                    }
+                }
+
+                if (remaining.Count > 0)
+                {
+                    continue;
+                }
+
+                var resource = resources.FirstOrDefault(r => r.Entity.Id == resourceId).Entity;
+                errors.Add(new EntityError
+                {
+                    ErrorName = "ValidationError",
+                    EntityTypeName = typeof(StaffingResource).FullName,
+                    KeyValues = resource != null ? KeyValuesOf(resource) : [resourceId],
+                    PropertyName = propertyName,
+                    ErrorMessage = message
+                });
+            }
+        }
+
+        /// <summary>The resource a modified child belonged to before this save, if it was moved.</summary>
+        private static Guid? OriginalResourceId(EntityInfo info)
+        {
+            return info.OriginalValuesMap != null
+                   && info.OriginalValuesMap.TryGetValue("StaffingResourceId", out var value)
+                   && Guid.TryParse(value?.ToString(), out var id)
+                ? id
+                : null;
         }
 
         /// <summary>
@@ -263,40 +341,6 @@ namespace TempHire.Server.Persistence
                 .Where(info => info.Entity is T)
                 .Select(info => ((T)info.Entity, info))
                 .ToList();
-        }
-
-        /// <summary>
-        /// Applies the pending adds/deletes from the save bundle on top of the rows already stored, so
-        /// that a rule like "must have at least one address" sees the post-save state.
-        /// </summary>
-        private static ICollection<T> MergeChildren<T>(
-            List<T> stored,
-            List<(T Entity, EntityInfo Info)> pending,
-            Func<T, bool> belongsToParent,
-            Func<T, Guid> keySelector) where T : class
-        {
-            var result = stored.ToDictionary(keySelector);
-
-            foreach (var (entity, info) in pending)
-            {
-                var key = keySelector(entity);
-
-                if (info.EntityState == EntityState.Deleted)
-                {
-                    result.Remove(key);
-                }
-                else if (belongsToParent(entity))
-                {
-                    result[key] = entity;
-                }
-                else
-                {
-                    // Re-parented away from this resource.
-                    result.Remove(key);
-                }
-            }
-
-            return result.Values.ToList();
         }
     }
 }
