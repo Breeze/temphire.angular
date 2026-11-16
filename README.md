@@ -62,6 +62,9 @@ onto the new one.  [**The modernization story**](docs/MODERNIZATION.md) tells th
 the conversion to a modern stack, and then what was built on it - Quinn, multi-tenancy, a fresh UI,
 and OAuth 2.1.
 
+Have a Silverlight, WPF or DevForce application of your own to take forward?  That is what
+[IdeaBlade](https://www.ideablade.com/modernization/), the team behind Breeze and DevForce, does.
+
 | | Original (Silverlight / WPF) | This version |
 |---|---|---|
 | Client | Silverlight or WPF + Punch (Caliburn.Micro) | **Angular 22** (standalone, zoneless, signals) + **Optimus UI 2** |
