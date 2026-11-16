@@ -1,6 +1,7 @@
 using Breeze.AspNetCore;
 using Breeze.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Net;
@@ -9,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using TempHire.Model;
+using TempHire.Model.Identity;
 using TempHire.Server.Agent;
 using TempHire.Server.Auth;
 using TempHire.Server.Mcp;
@@ -35,28 +37,50 @@ builder.Services.AddControllers()
     })
     // Turns server-side exceptions - including the EntityErrorsException our persistence manager
     // throws for validation failures - into the error shape the Breeze client understands.  A save
-    // that touches another tenant's row (TenantAccessException) answers 403.
+    // the user may not make answers 403: one by a user who is not an editor, or one that touches
+    // another tenant's row (TenantAccessException).  Both are UnauthorizedAccessExceptions.
     .AddMvcOptions(o => o.Filters.Add(new GlobalExceptionFilter
     {
-        StatusCodeForException = e => e.GetBaseException() is TenantAccessException ? HttpStatusCode.Forbidden : null
+        StatusCodeForException = e => e.GetBaseException() is UnauthorizedAccessException ? HttpStatusCode.Forbidden : null
     }));
 
 // ---------------------------------------------------------------------------------------------
 // Data stores
 //
-// Two contexts, matching the two SQL Compact files the original shipped with
-// (TempHire.sdf and TempHire.Security.sdf).
+// Two databases, as the original had two SQL Compact files (TempHire.sdf and
+// TempHire.Security.sdf): the staffing data, and the users, now kept by ASP.NET Core Identity.
 // ---------------------------------------------------------------------------------------------
 builder.Services.AddDbContext<TempHireDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TempHire")));
 
-builder.Services.AddDbContext<SecurityDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("TempHireSecurity")));
+builder.Services.AddDbContext<TempHireIdentityDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("TempHireIdentity")));
 
 // Multi-tenancy: TempHireDbContext asks this for the current tenant, which comes from the
 // tenant_id claim in the access token.  See HttpCurrentTenant and TempHireDbContext.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentTenant, HttpCurrentTenant>();
+
+// ---------------------------------------------------------------------------------------------
+// Users - ASP.NET Core Identity
+//
+// Identity keeps the users and checks their passwords (AccountController.Login); the API itself
+// accepts the JWT issued below, not Identity's cookie, so only Identity's core services are added.
+// A sign-in, by password or later through an external provider such as Microsoft Entra ID, ends
+// the same way: TenantResolver picks the company, TokenService issues the token.
+// ---------------------------------------------------------------------------------------------
+builder.Services
+    .AddIdentityCore<TempHireUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    })
+    .AddRoles<IdentityRole<Guid>>()
+    .AddEntityFrameworkStores<TempHireIdentityDbContext>()
+    .AddSignInManager();
+
+builder.Services.AddScoped<TenantResolver>();
 
 // ---------------------------------------------------------------------------------------------
 // Authentication - the replacement for the DevForce login session
@@ -113,7 +137,28 @@ builder.Services
     .WithTools<StaffingTools>(new System.Text.Json.JsonSerializerOptions(ModelContextProtocol.McpJsonUtilities.DefaultOptions)
     {
         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-    });
+    })
+    // Roles: the tools read the company's staffing data, so they need the Editor or Reader role, as
+    // the Breeze queries do.  A signed-in user with neither may still connect and list the tools -
+    // Quinn connects before every answer, and can still answer questions that need no data, such as
+    // the one about its name - but every tool call answers that the user has no access.  The model
+    // gets that as the tool's result and passes it on, rather than being left to guess.
+    .WithRequestFilters(filters => filters.AddCallToolFilter(next => async (context, cancellationToken) =>
+        context.User?.IsInRole(TempHireRoles.Editor) == true || context.User?.IsInRole(TempHireRoles.Reader) == true
+            ? await next(context, cancellationToken)
+            : new ModelContextProtocol.Protocol.CallToolResult
+            {
+                IsError = true,
+                Content =
+                [
+                    new ModelContextProtocol.Protocol.TextContentBlock
+                    {
+                        Text = "Access denied: this user's account has no access to the company's staffing data " +
+                               "(it needs the Editor or Reader role). Tell the user they don't have access to " +
+                               "that data. Do not answer the question from other knowledge."
+                    }
+                ]
+            }));
 
 // ---------------------------------------------------------------------------------------------
 // Quinn, the agent - see AgentController.  Ollama or Claude, per the Agent section of appsettings.
@@ -179,8 +224,8 @@ if (exportIndex >= 0)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TempHireDbContext>();
-    var securityContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
-    DatabaseSetup.Prepare(context, securityContext, app.Logger);
+    var identityContext = scope.ServiceProvider.GetRequiredService<TempHireIdentityDbContext>();
+    DatabaseSetup.Prepare(context, identityContext, app.Logger);
 }
 
 if (app.Environment.IsDevelopment())

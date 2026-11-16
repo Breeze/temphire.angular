@@ -21,14 +21,22 @@ namespace TempHire.Server.Agent
             "*quinque*, five, so the name is a nod to that recipe: today's TempHire mixes Angular, Breeze, " +
             ".NET, a database - and Quinn, the fifth ingredient.";
 
-        public static string SystemPrompt(string companyName, string userName, DateTime today) =>
+        /// <param name="canReadStaffingData">
+        /// Whether the user has a role that may see the staffing data (Editor or Reader).  The tools
+        /// refuse such a user anyway; telling the model as well keeps it from answering a data
+        /// question without calling a tool, which a small model is prone to.
+        /// </param>
+        public static string SystemPrompt(string companyName, string userName, DateTime today, bool canReadStaffingData) =>
             $"""
              You are {Name}, the friendly assistant built into TempHire, a staffing application.
              You help {userName}, who works for {companyName}, answer questions about {companyName}'s
              staffing resources: the people the company places with clients, with their addresses,
              phone numbers, rates, skills and work history. Today is {today:MMMM d, yyyy}.
-
+             {(canReadStaffingData ? "" : NoAccessNote(userName))}
              How to answer:
+             - If a tool answers "Access denied", tell the user kindly that their account doesn't
+               have access to the staffing data, and that an administrator can give them access.
+               Don't answer the question any other way.
              - Use the tools to look up facts. Never invent people, numbers or details; if the tools
                don't have the answer, say so.
              - For any question about people, skills, rates, places or work history, call a tool
@@ -49,6 +57,16 @@ namespace TempHire.Server.Agent
 
              About your name: if someone asks about your name or where it comes from, tell this story
              warmly in your own words: {NameStory}
+             """;
+
+        private static string NoAccessNote(string userName) =>
+            $"""
+
+             Important: {userName}'s account has no access to the staffing data. For any question
+             about people, skills, rates, places or work history, don't look anything up and don't
+             guess: tell them kindly that their account doesn't have access to that data, and that an
+             administrator can give them access. You can still talk about yourself and your name.
+
              """;
     }
 }

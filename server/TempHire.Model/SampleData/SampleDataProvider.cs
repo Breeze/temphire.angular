@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TempHire.Model.Identity;
 
 namespace TempHire.Model.SampleData
 {
@@ -35,10 +37,16 @@ namespace TempHire.Model.SampleData
             EmailDomain = "summit.test"
         };
 
-        /// <summary>The test users.  All have the password <c>password</c>.</summary>
-        public static readonly string[] UserNames =
+        /// <summary>
+        /// The test users and their roles: in each company, one editor and one reader.  All have the
+        /// password <c>password</c>.
+        /// </summary>
+        public static readonly (string UserName, string Role)[] Users =
         [
-            "anna@harbor.test", "ben@harbor.test", "carla@summit.test", "david@summit.test"
+            ("anna@harbor.test", TempHireRoles.Editor),
+            ("ben@harbor.test", TempHireRoles.Reader),
+            ("carla@summit.test", TempHireRoles.Editor),
+            ("david@summit.test", TempHireRoles.Reader)
         ];
 
         public const string Password = "password";
@@ -60,7 +68,7 @@ namespace TempHire.Model.SampleData
         /// Seeds the databases when they are empty.  Run it after the schema is up to date (see
         /// <c>DatabaseSetup</c>).
         /// </summary>
-        public static void Initialize(TempHireDbContext context, SecurityDbContext securityContext)
+        public static void Initialize(TempHireDbContext context, TempHireIdentityDbContext identityContext)
         {
             if (!context.Tenants.Any())
             {
@@ -68,13 +76,15 @@ namespace TempHire.Model.SampleData
                 context.SaveChanges();
             }
 
-            if (!securityContext.Users.Any())
+            if (!identityContext.Users.Any())
             {
                 // Replaces SecuritySampleDataProvider.  The user name is an email address: its domain
                 // decides the tenant.
-                securityContext.Users.AddRange(UserNames.Select(name => User.Create(name, Password)));
-                securityContext.SaveChanges();
+                identityContext.Users.AddRange(Users.Select(u => CreateUser(u.UserName)));
+                identityContext.SaveChanges();
             }
+
+            SeedRoles(identityContext);
 
             // Seeding runs without a signed-in user, so look past the tenant filter.
             if (context.StaffingResources.IgnoreQueryFilters().Any())
@@ -102,6 +112,62 @@ namespace TempHire.Model.SampleData
         }
 
         private static Tenant Copy(Tenant t) => new() { Id = t.Id, Name = t.Name, EmailDomain = t.EmailDomain };
+
+        /// <summary>
+        /// Creates the roles that are missing, and gives each sample user without a role the one in
+        /// <see cref="Users"/>.  Runs on every start, so a database seeded before roles existed gets
+        /// them too, and a role assigned by other means is left alone.
+        /// </summary>
+        private static void SeedRoles(TempHireIdentityDbContext identityContext)
+        {
+            var existing = identityContext.Roles.Select(r => r.Name).ToHashSet();
+            foreach (var name in TempHireRoles.All.Where(name => !existing.Contains(name)))
+            {
+                identityContext.Roles.Add(new IdentityRole<Guid>(name)
+                {
+                    Id = Guid.NewGuid(),
+                    NormalizedName = name.ToUpperInvariant(),
+                    ConcurrencyStamp = Guid.NewGuid().ToString()
+                });
+            }
+
+            identityContext.SaveChanges();
+
+            var roleIds = identityContext.Roles.ToDictionary(r => r.Name, r => r.Id);
+            var usersWithRoles = identityContext.UserRoles.Select(ur => ur.UserId).ToHashSet();
+
+            foreach (var (userName, role) in Users)
+            {
+                var normalized = userName.ToUpperInvariant();
+                var user = identityContext.Users.SingleOrDefault(u => u.NormalizedUserName == normalized);
+                if (user != null && !usersWithRoles.Contains(user.Id))
+                {
+                    identityContext.UserRoles.Add(new IdentityUserRole<Guid> { UserId = user.Id, RoleId = roleIds[role] });
+                }
+            }
+
+            identityContext.SaveChanges();
+        }
+
+        /// <summary>
+        /// A sample user, filled in as Identity's <c>UserManager.CreateAsync</c> would: the password
+        /// hashed by Identity's own hasher, the name and email normalized (upper case, the default
+        /// lookup normalizer), and a security stamp.  Seeding runs before the web host exists, so it
+        /// writes the user directly rather than through <c>UserManager</c>.
+        /// </summary>
+        private static TempHireUser CreateUser(string email)
+        {
+            var user = new TempHireUser(email)
+            {
+                NormalizedUserName = email.ToUpperInvariant(),
+                NormalizedEmail = email.ToUpperInvariant(),
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString("N"),
+                LockoutEnabled = true
+            };
+            user.PasswordHash = new PasswordHasher<TempHireUser>().HashPassword(user, Password);
+            return user;
+        }
 
         /// <summary>How many staffing resources this provider has created so far.</summary>
         private int ResourceCount => _resId - 1;

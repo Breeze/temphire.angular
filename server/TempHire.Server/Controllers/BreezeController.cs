@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using TempHire.Model;
+using TempHire.Model.Identity;
 using TempHire.Model.Projections;
 using TempHire.Server.Persistence;
 
@@ -26,6 +27,12 @@ namespace TempHire.Server.Controllers
     /// <c>[Authorize]</c> is the replacement for <c>[RequiresAuthentication]</c> on the DevForce
     /// <c>EntityBase</c>, and it covers <see cref="Metadata"/> too - DevForce would not hand out the
     /// model to an anonymous caller either.
+    /// </para>
+    /// <para>
+    /// Roles: the company's staffing data needs the Editor or Reader role (the actions marked
+    /// <c>TempHireRoles.ReadStaffingData</c>).  The metadata and the shared lookups only need a
+    /// signed-in user, because the client loads them at sign-in whatever the user's role.  Saving
+    /// needs the Editor role, which <see cref="TempHirePersistenceManager"/> checks for every save.
     /// </para>
     /// </summary>
     [Route("api/breeze/[action]")]
@@ -77,6 +84,7 @@ namespace TempHire.Server.Controllers
         /// second trip.  Breeze lets the client add its own <c>.expand(...)</c> on top of this.
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = TempHireRoles.ReadStaffingData)]
         public IQueryable<StaffingResource> StaffingResources()
         {
             return Context.StaffingResources
@@ -85,18 +93,23 @@ namespace TempHire.Server.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = TempHireRoles.ReadStaffingData)]
         public IQueryable<Address> Addresses() => Context.Addresses;
 
         [HttpGet]
+        [Authorize(Roles = TempHireRoles.ReadStaffingData)]
         public IQueryable<PhoneNumber> PhoneNumbers() => Context.PhoneNumbers;
 
         [HttpGet]
+        [Authorize(Roles = TempHireRoles.ReadStaffingData)]
         public IQueryable<Rate> Rates() => Context.Rates;
 
         [HttpGet]
+        [Authorize(Roles = TempHireRoles.ReadStaffingData)]
         public IQueryable<Skill> Skills() => Context.Skills;
 
         [HttpGet]
+        [Authorize(Roles = TempHireRoles.ReadStaffingData)]
         public IQueryable<WorkExperienceItem> WorkExperienceItems() => Context.WorkExperienceItems;
 
         [HttpGet]
@@ -153,6 +166,7 @@ namespace TempHire.Server.Controllers
         /// </para>
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = TempHireRoles.ReadStaffingData)]
         public IQueryable<StaffingResourceListItem> StaffingResourceListItems(string searchText = null)
         {
             var query = Context.StaffingResources.AsQueryable();

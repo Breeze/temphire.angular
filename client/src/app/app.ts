@@ -39,17 +39,21 @@ export class App {
   /** The first letter of the user's name, for the avatar in the toolbar. */
   readonly initial = computed(() => (this.username() ?? '?').charAt(0).toUpperCase());
 
-  /** Port of `ShellViewModel.StartAsync`: one toolbar group for the workspaces, one for Logout. */
-  private readonly workspaceGroup: ToolbarGroup = {
+  /**
+   * Port of `ShellViewModel.StartAsync`: one toolbar group for the workspaces, one for Logout.  Only
+   * the workspaces the user's roles allow are listed; the routes' guards enforce the same rule.
+   */
+  private readonly workspaceGroup = computed<ToolbarGroup>(() => ({
     level: 0,
     actions: [...WORKSPACES]
+      .filter((workspace) => !workspace.roles || this.auth.hasAnyRole(workspace.roles))
       .sort((a, b) => a.sequence - b.sequence)
       .map((workspace) => ({
         label: workspace.displayName,
         icon: workspace.icon,
         execute: () => void this.router.navigate([workspace.route]),
       })),
-  };
+  }));
 
   private readonly logoutGroup: ToolbarGroup = {
     level: 100,
@@ -64,7 +68,7 @@ export class App {
    */
   readonly actions = computed(() =>
     this.isLoggedIn()
-      ? toolbarActions([this.workspaceGroup, this.logoutGroup, ...this.toolbar.groups()])
+      ? toolbarActions([this.workspaceGroup(), this.logoutGroup, ...this.toolbar.groups()])
       : [],
   );
 

@@ -22,6 +22,9 @@ one model, authentication, and entity classes generated from the server's model.
   - [Setting up Ollama](#setting-up-ollama)
   - [Setting up Claude](#setting-up-claude)
 - [Multi-tenancy](#multi-tenancy)
+- [Users and sign-in](#users-and-sign-in)
+  - [Roles](#roles)
+  - [Adding an external provider such as Microsoft Entra ID](#adding-an-external-provider-such-as-microsoft-entra-id)
 - [The database schema](#the-database-schema)
 - [Layout](#layout)
 - [Why these libraries](#why-these-libraries)
@@ -64,7 +67,7 @@ onto the new one.
 | Server | DevForce EntityServer (WCF) | **ASP.NET Core 10** + **Breeze.AspNetCore 8** |
 | ORM | Entity Framework 6 (Code First) | **EF Core 10** |
 | Database | SQL Server Compact (`.sdf`) | **SQL Server LocalDB / Express** |
-| Auth | DevForce `IEntityLoginManager` + server session | **JWT bearer** + PBKDF2 password hashing |
+| Auth | DevForce `IEntityLoginManager` + server session | **ASP.NET Core Identity** + **JWT bearer** |
 
 The application behaves the same as the original: log in, search staffing resources, view one,
 edit it in an isolated sandbox, and save or cancel. `docs/CONVERSION-NOTES.md` maps every piece of
@@ -126,7 +129,7 @@ dotnet restore
 dotnet run
 ```
 
-On startup the server brings two databases (`TempHire` and `TempHireSecurity`) up to date with EF
+On startup the server brings two databases (`TempHire` and `TempHireIdentity`) up to date with EF
 Core migrations, creating them on the first run, and seeds them: two companies, two users each, and
 25 staffing resources per company.  Harbor Staffing's include the nine people the original sample
 shipped with.  See [The database schema](#the-database-schema) for why migrating on startup is fine
@@ -143,10 +146,15 @@ npm start
 Then open <http://localhost:4200> and sign in as one of the sample users.  The password is
 **`password`** for all of them:
 
-| User | Company |
-|---|---|
-| `anna@harbor.test`, `ben@harbor.test` | Harbor Staffing |
-| `carla@summit.test`, `david@summit.test` | Summit Talent |
+| User | Company | Role |
+|---|---|---|
+| `anna@harbor.test` | Harbor Staffing | Editor |
+| `ben@harbor.test` | Harbor Staffing | Reader |
+| `carla@summit.test` | Summit Talent | Editor |
+| `david@summit.test` | Summit Talent | Reader |
+
+An **Editor** can add, change and delete staffing resources; a **Reader** can only look at them
+(see [Roles](#roles)).
 
 In a development build the login page lists them too, and a click on one signs in as that user.
 They come from `environment.development.ts`; a production build doesn't offer them.
@@ -365,8 +373,8 @@ shows the model in use.  User secrets are read in the Development environment; i
 Each user belongs to a company, a **tenant**, and sees and changes only that company's data.
 
 - **Tenants come from the email domain.**  The `Tenants` table maps an email domain to a tenant:
-  `harbor.test` is Harbor Staffing, `summit.test` is Summit Talent.  At login,
-  `AccountController` looks up the tenant for the domain of the user name and refuses users whose
+  `harbor.test` is Harbor Staffing, `summit.test` is Summit Talent.  At login, `AccountController`
+  asks `TenantResolver` for the tenant of the user's email domain and refuses users whose
   domain has none.  The tenant's id is a **GUID**, not the domain, and it travels in the JWT as the
   `tenant_id` claim, so later requests need no lookup.  `HttpCurrentTenant` reads it back as
   `ICurrentTenant`.
@@ -384,10 +392,84 @@ Each user belongs to a company, a **tenant**, and sees and changes only that com
 
 ---
 
+## Users and sign-in
+
+Users are kept by **ASP.NET Core Identity**, in their own database, `TempHireIdentity`
+(`TempHireIdentityDbContext`, users of type `TempHireUser`).  A user's name is their email address.
+
+- **Signing in.**  `POST /api/account/login` finds the user through Identity's `UserManager`, and
+  `SignInManager` checks the password against Identity's salted hash.  Five failed attempts lock
+  the account for five minutes.  Identity's sign-in cookie is not used.
+- **The company comes from the email domain**, at every sign-in: `TenantResolver` finds the tenant
+  whose `EmailDomain` matches (see [Multi-tenancy](#multi-tenancy)).  Nothing on the user record
+  names a company.
+- **The API accepts our own JWT.**  `TokenService` issues it for an Identity user, their roles and a
+  tenant, with the user's name and id, a role claim per role and the `tenant_id` claim.  The Angular
+  client, Breeze, the MCP endpoint and Quinn all present that token, so none of them depends on how
+  the user signed in.
+- **No sign-up or user management.**  The sample users and their roles are seeded
+  (`SampleDataProvider`, through Identity's own password hasher); there are no screens to register
+  or manage users.
+
+### Roles
+
+Two Identity roles, `TempHireRoles` on the server and `Roles` in the client:
+
+| | Home | Resource Management | Add, edit, delete | Quinn's answers about the data |
+|---|---|---|---|---|
+| **Editor** | yes | yes | yes | yes |
+| **Reader** | yes | yes, read-only | no | yes |
+| no role | yes | no | no | no |
+
+- **The server enforces them.**  The roles are signed into the token.  The Breeze queries for the
+  company's data (`StaffingResources`, `StaffingResourceListItems` and the child collections) need
+  Editor or Reader; the metadata and the shared lookups only need a signed-in user, because the
+  client loads them at sign-in.  Saving needs Editor, checked in the save interceptor
+  (`TempHirePersistenceManager.EnsureMaySave`) for every save through Breeze, and answered with
+  `403 Forbidden` otherwise.
+- **The client follows them.**  `AuthService` gets the roles at sign-in (and from `/me` after a
+  reload).  `roleGuard` keeps the Resource Management route to editors and readers, sending anyone
+  else to Home with a message, and the toolbar lists only the workspaces the user may open.  A
+  reader's Resource Management toolbar has only Refresh: Add, Delete, Edit, Save and Cancel are left
+  out.  None of this is security; it only keeps the client from offering what the server refuses.
+- **Quinn follows them too.**  Its tools only read, so an editor and a reader get the same answers.
+  A user with neither role can still chat with Quinn, about its name for instance, but every tool
+  call answers "Access denied" (a call-tool filter on the MCP server, in `Program.cs`), and Quinn's
+  system prompt says the user has no access, so it tells them so rather than guessing.  The filter
+  applies to any MCP client, not only Quinn.
+- **A role change takes effect at the next sign-in**, when a new token is issued.
+
+### Adding an external provider such as Microsoft Entra ID
+
+The parts a provider plugs into are in place: Identity keeps external logins (provider and key) in
+`AspNetUserLogins`, `TenantResolver` picks the company from the email domain, which for Entra ID is
+one the company has verified, and `TokenService` issues the same JWT whatever the sign-in.  What a
+provider adds is the sign-in round trip:
+
+1. **Register an application** with the provider (for Entra ID, an app registration, multi-tenant
+   if several companies' directories sign in), with a redirect URI on the server such as
+   `https://<server>/signin-oidc`.
+2. **Add the provider's authentication scheme** in `Program.cs`, for example
+   `AddOpenIdConnect("EntraId", ...)` with the authority, client id and secret, signing in to an
+   external cookie (`IdentityConstants.ExternalScheme`).  The JWT bearer scheme stays the default
+   for the API.
+3. **Add two endpoints to `AccountController`**: one that starts the sign-in
+   (`Challenge` with the scheme and a return URL), and a callback that reads the external sign-in
+   (`SignInManager.GetExternalLoginInfoAsync`), finds the Identity user linked to it
+   (`FindByLoginAsync`), or links one by email (`AddLoginAsync`) or creates it, asks
+   `TenantResolver` for the company, and calls `TokenService.CreateToken`.  The token goes back to
+   the client in the redirect to the SPA, ideally as a short-lived one-time code it exchanges for
+   the token, not the token itself in the URL.
+4. **In the client**, show a "Sign in with Microsoft" button on the login page that navigates to
+   the start endpoint, and a route that picks up the token on return and signs the user in as
+   `AuthService.login` does today.
+
+---
+
 ## The database schema
 
 The schema is managed with **EF Core migrations**, in `server/TempHire.Model/Migrations/`
-(`TempHire/` and `Security/`, one set per database).  On startup, `DatabaseSetup.Prepare` applies
+(`TempHire/` and `Identity/`, one set per database).  On startup, `DatabaseSetup.Prepare` applies
 any pending migrations to both databases and then seeds them.  A database created by an earlier
 version of this sample with `EnsureCreated()` has no migration history; it is **dropped and
 re-created**, losing its data.
@@ -408,9 +490,15 @@ dotnet tool restore
 dotnet ef migrations add <Name> --context TempHireDbContext --project TempHire.Model --startup-project TempHire.Server --output-dir Migrations/TempHire
 ```
 
+For the identity database, use `--context TempHireIdentityDbContext` and `--output-dir Migrations/Identity`.
+
 The next server start applies it.  To start over with fresh sample data, drop the database
 (`dotnet ef database drop --context TempHireDbContext --project TempHire.Model --startup-project TempHire.Server`)
 and restart the server.
+
+Earlier versions of this sample kept the users in a `TempHireSecurity` database.  Nothing uses it
+any more; drop it with `sqlcmd -S "(localdb)\MSSQLLocalDB" -Q "DROP DATABASE TempHireSecurity"` if
+it is still around.
 
 ---
 
@@ -422,12 +510,13 @@ TempHire.Angular/
 ├── server/
 │   ├── Set-ClaudeApiKey.ps1       # stores the Claude API key in user secrets
 │   ├── TempHire.Model/            # POCO entities, DbContexts, sample data
-│   │   ├── Entities/              # ← DomainModel/ + Security/User.cs, plus Tenant
+│   │   ├── Entities/              # ← DomainModel/, plus Tenant
+│   │   ├── Identity/              # ASP.NET Core Identity user and DbContext (← Security/)
 │   │   ├── Migrations/            # EF Core migrations, one folder per database
 │   │   ├── Projections/           # ← DomainModel/Projections/
 │   │   ├── SampleData/            # ← DomainServices/SampleData/, plus generated people
 │   │   ├── DatabaseSetup.cs       # migrates and seeds on startup
-│   │   └── TempHireDbContext.cs   # business + security contexts, tenant filters
+│   │   └── TempHireDbContext.cs   # the staffing data, tenant filters
 │   └── TempHire.Server/
 │       ├── Controllers/
 │       │   ├── BreezeController.cs   # metadata, queries, SaveChanges, lookups, search
@@ -579,7 +668,7 @@ provider, delete them and add a new initial migration (see [The database schema]
 | Setting | Where | Notes |
 |---|---|---|
 | `ConnectionStrings:TempHire` | `appsettings.json` | Business data |
-| `ConnectionStrings:TempHireSecurity` | `appsettings.json` | Users — a separate database, as in the original |
+| `ConnectionStrings:TempHireIdentity` | `appsettings.json` | Users (ASP.NET Core Identity) — a separate database, as in the original |
 | `Jwt:SigningKey` | `appsettings.Development.json` | **Development placeholder.** Set a real one before deploying: `dotnet user-secrets set "Jwt:SigningKey" "<long random string>"` |
 | `Jwt:ExpiryMinutes` | `appsettings.json` | Defaults to 8 hours |
 | `AllowedClientOrigins` | `appsettings.json` | CORS allow-list for the dev server |

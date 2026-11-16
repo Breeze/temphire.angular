@@ -1,6 +1,10 @@
 import { CanDeactivateFn, Routes } from '@angular/router';
 
-import { authGuard } from './core/services/auth.guard';
+import { authGuard, roleGuard } from './core/services/auth.guard';
+import { Roles } from './core/services/roles';
+
+/** Who may open Resource Management: editors and readers.  Only editors may change anything there. */
+const RESOURCE_MGT_ROLES = [Roles.Editor, Roles.Reader];
 
 /**
  * Port of `IScreen.CanClose` / `INavigationTarget.OnNavigatingFrom`.
@@ -36,7 +40,7 @@ export const routes: Routes = [
   },
   {
     path: 'resourcemgt',
-    canActivate: [authGuard],
+    canActivate: [roleGuard(...RESOURCE_MGT_ROLES)],
     canDeactivate: [pendingChangesGuard],
     loadComponent: () =>
       import('./resource-mgt/resource-mgt.component').then((m) => m.ResourceMgtComponent),
@@ -51,6 +55,8 @@ export interface Workspace {
   route: string;
   sequence: number;
   isDefault: boolean;
+  /** Roles that may open the workspace; anyone signed in if absent.  The route's guard enforces it. */
+  roles?: readonly string[];
   /** A PrimeIcons-style class for the toolbar button. */
   icon?: string;
 }
@@ -62,6 +68,7 @@ export const WORKSPACES: Workspace[] = [
     route: '/resourcemgt',
     sequence: 20,
     isDefault: false,
+    roles: RESOURCE_MGT_ROLES,
     icon: 'pi pi-users',
   },
 ];
