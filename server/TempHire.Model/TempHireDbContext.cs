@@ -259,29 +259,4 @@ namespace TempHire.Model
         {
         }
     }
-
-    /// <summary>
-    /// The security data store.  The original sample deliberately used a second physical database
-    /// (<c>TempHire.Security.sdf</c>) to demonstrate multiple data stores; that separation is preserved
-    /// here as a second DbContext with its own connection string.  It is never exposed through Breeze.
-    /// </summary>
-    public class SecurityDbContext : DbContext
-    {
-        public SecurityDbContext(DbContextOptions<SecurityDbContext> options) : base(options)
-        {
-        }
-
-        public DbSet<User> Users { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<User>(b =>
-            {
-                b.ToTable("Users");
-                b.HasIndex(e => e.Username).IsUnique();
-            });
-        }
-    }
 }

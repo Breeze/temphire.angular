@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using TempHire.Model;
+using TempHire.Model.Identity;
 using TempHire.Server.Auth;
 
 namespace TempHire.Server.Controllers
@@ -13,29 +13,37 @@ namespace TempHire.Server.Controllers
     /// <c>TempHire/Authentication/TempHireAuthenticationService.cs</c>.
     ///
     /// <para>
-    /// The lookup itself is unchanged - find the user by a case-insensitive username, then ask the user
-    /// entity to verify the password.  What changed is what comes back: DevForce returned an
-    /// <c>IPrincipal</c> that it stored in a server session, whereas this returns a JWT for the client
-    /// to present on subsequent requests.
+    /// The users live in ASP.NET Core Identity: <c>SignInManager</c> checks the password against
+    /// Identity's hash and counts failed attempts towards a lockout.  What comes back is a JWT for the
+    /// client to present on later requests, where DevForce returned an <c>IPrincipal</c> that it kept
+    /// in a server session.  Identity's cookie is not used.
     /// </para>
     /// <para>
     /// Multi-tenancy: the user name is an email address, and its domain decides the user's tenant
-    /// (<c>anna@harbor.test</c> belongs to Harbor Staffing).  The tenant is looked up here, once, and
-    /// its id signed into the token.
+    /// (<c>anna@harbor.test</c> belongs to Harbor Staffing).  <see cref="TenantResolver"/> looks it up
+    /// at sign-in, and its id is signed into the token.
     /// </para>
     /// </summary>
     [ApiController]
     [Route("api/account/[action]")]
     public class AccountController : ControllerBase
     {
-        private readonly SecurityDbContext _securityContext;
-        private readonly TempHireDbContext _context;
+        private const string BadCredentials = "The username or password is incorrect.";
+
+        private readonly UserManager<TempHireUser> _users;
+        private readonly SignInManager<TempHireUser> _signIn;
+        private readonly TenantResolver _tenants;
         private readonly TokenService _tokenService;
 
-        public AccountController(SecurityDbContext securityContext, TempHireDbContext context, TokenService tokenService)
+        public AccountController(
+            UserManager<TempHireUser> users,
+            SignInManager<TempHireUser> signIn,
+            TenantResolver tenants,
+            TokenService tokenService)
         {
-            _securityContext = securityContext;
-            _context = context;
+            _users = users;
+            _signIn = signIn;
+            _tenants = tenants;
             _tokenService = tokenService;
         }
 
@@ -59,21 +67,32 @@ namespace TempHire.Server.Controllers
                 return BadRequest(new ErrorResult { Message = "Password cannot be empty." });
             }
 
-            var username = credential.Username.Trim();
-            var user = await _securityContext.Users
-                .FirstOrDefaultAsync(u => u.Username.ToUpper() == username.ToUpper());
-
-            if (user == null || !user.Authenticate(credential.Password))
+            // Identity normalizes the name, so the lookup ignores case as before.
+            var user = await _users.FindByNameAsync(credential.Username.Trim());
+            if (user == null)
             {
                 // Deliberately vague, and identical for "no such user" and "wrong password".
-                return Unauthorized(new ErrorResult { Message = "The username or password is incorrect." });
+                return Unauthorized(new ErrorResult { Message = BadCredentials });
             }
 
-            // The tenant whose email domain matches the user name's.  A user without one has proved who
-            // they are but has no company's data to see, so they are refused here rather than given a
-            // token that would only ever return empty results.
-            var domain = Tenant.DomainOf(user.Username);
-            var tenant = domain == null ? null : await _context.Tenants.SingleOrDefaultAsync(t => t.EmailDomain == domain);
+            // Checks the password and counts a failure towards the lockout; issues no cookie.
+            var result = await _signIn.CheckPasswordSignInAsync(user, credential.Password, lockoutOnFailure: true);
+            if (result.IsLockedOut)
+            {
+                return Unauthorized(new ErrorResult
+                {
+                    Message = "Too many failed attempts. The account is locked for a few minutes; try again later."
+                });
+            }
+
+            if (!result.Succeeded)
+            {
+                return Unauthorized(new ErrorResult { Message = BadCredentials });
+            }
+
+            // A user without a company has proved who they are but has no data to see, so they are
+            // refused here rather than given a token that would only ever return empty results.
+            var tenant = await _tenants.ForEmailAsync(user.Email ?? user.UserName, HttpContext.RequestAborted);
             if (tenant == null)
             {
                 return StatusCode(StatusCodes.Status403Forbidden,
@@ -84,7 +103,7 @@ namespace TempHire.Server.Controllers
 
             return new LoginResult
             {
-                Username = user.Username,
+                Username = user.UserName,
                 TenantName = tenant.Name,
                 Token = token,
                 ExpiresUtc = expiresUtc

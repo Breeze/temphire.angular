@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TempHire.Model.Identity;
 
 namespace TempHire.Model.SampleData
 {
@@ -60,7 +62,7 @@ namespace TempHire.Model.SampleData
         /// Seeds the databases when they are empty.  Run it after the schema is up to date (see
         /// <c>DatabaseSetup</c>).
         /// </summary>
-        public static void Initialize(TempHireDbContext context, SecurityDbContext securityContext)
+        public static void Initialize(TempHireDbContext context, TempHireIdentityDbContext identityContext)
         {
             if (!context.Tenants.Any())
             {
@@ -68,12 +70,12 @@ namespace TempHire.Model.SampleData
                 context.SaveChanges();
             }
 
-            if (!securityContext.Users.Any())
+            if (!identityContext.Users.Any())
             {
                 // Replaces SecuritySampleDataProvider.  The user name is an email address: its domain
                 // decides the tenant.
-                securityContext.Users.AddRange(UserNames.Select(name => User.Create(name, Password)));
-                securityContext.SaveChanges();
+                identityContext.Users.AddRange(UserNames.Select(CreateUser));
+                identityContext.SaveChanges();
             }
 
             // Seeding runs without a signed-in user, so look past the tenant filter.
@@ -102,6 +104,26 @@ namespace TempHire.Model.SampleData
         }
 
         private static Tenant Copy(Tenant t) => new() { Id = t.Id, Name = t.Name, EmailDomain = t.EmailDomain };
+
+        /// <summary>
+        /// A sample user, filled in as Identity's <c>UserManager.CreateAsync</c> would: the password
+        /// hashed by Identity's own hasher, the name and email normalized (upper case, the default
+        /// lookup normalizer), and a security stamp.  Seeding runs before the web host exists, so it
+        /// writes the user directly rather than through <c>UserManager</c>.
+        /// </summary>
+        private static TempHireUser CreateUser(string email)
+        {
+            var user = new TempHireUser(email)
+            {
+                NormalizedUserName = email.ToUpperInvariant(),
+                NormalizedEmail = email.ToUpperInvariant(),
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString("N"),
+                LockoutEnabled = true
+            };
+            user.PasswordHash = new PasswordHasher<TempHireUser>().HashPassword(user, Password);
+            return user;
+        }
 
         /// <summary>How many staffing resources this provider has created so far.</summary>
         private int ResourceCount => _resId - 1;

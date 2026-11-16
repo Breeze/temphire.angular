@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
+using TempHire.Model.Identity;
 using TempHire.Model.SampleData;
 
 namespace TempHire.Model
@@ -20,11 +21,11 @@ namespace TempHire.Model
     /// </summary>
     public static class DatabaseSetup
     {
-        public static void Prepare(TempHireDbContext context, SecurityDbContext securityContext, ILogger logger)
+        public static void Prepare(TempHireDbContext context, TempHireIdentityDbContext identityContext, ILogger logger)
         {
             Migrate(context.Database, "TempHire", logger);
-            Migrate(securityContext.Database, "TempHireSecurity", logger);
-            SampleDataProvider.Initialize(context, securityContext);
+            Migrate(identityContext.Database, "TempHireIdentity", logger);
+            SampleDataProvider.Initialize(context, identityContext);
         }
 
         private static void Migrate(DatabaseFacade database, string name, ILogger logger)

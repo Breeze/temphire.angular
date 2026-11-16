@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using TempHire.Model;
+using TempHire.Model.Identity;
 
 namespace TempHire.Server.Auth
 {
@@ -15,6 +16,12 @@ namespace TempHire.Server.Auth
     /// and then kept a server-side session keyed by a login token that the client's EntityManager
     /// carried on every request.  A Breeze client is just an HTTP client, so the equivalent is a
     /// stateless JWT presented in the <c>Authorization</c> header by an Angular interceptor.
+    /// </para>
+    /// <para>
+    /// The token is issued for an Identity user and a tenant, however the user proved who they are.
+    /// A password sign-in (<c>AccountController.Login</c>) and, once one is added, a sign-in through an
+    /// external provider such as Microsoft Entra ID both end here, so the API, Breeze and the MCP
+    /// endpoint see the same token whichever way the user signed in.
     /// </para>
     /// </summary>
     public class TokenService
@@ -31,7 +38,7 @@ namespace TempHire.Server.Auth
             return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
         }
 
-        public (string Token, DateTime ExpiresUtc) CreateToken(User user, Tenant tenant)
+        public (string Token, DateTime ExpiresUtc) CreateToken(TempHireUser user, Tenant tenant)
         {
             var expires = DateTime.UtcNow.AddMinutes(_options.ExpiryMinutes);
 
@@ -39,9 +46,9 @@ namespace TempHire.Server.Auth
             {
                 // ClaimTypes.Name is what UserPrincipal.Identity.Name resolved to in the original, and
                 // it is what the persistence manager stamps into the audit columns.
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                // The tenant, decided at sign-in from the email domain (see AccountController.Login).
+                // The tenant, decided at sign-in from the email domain (see TenantResolver).
                 // Signed into the token, so the client cannot change it.
                 new Claim(HttpCurrentTenant.TenantIdClaim, tenant.Id.ToString()),
                 new Claim(HttpCurrentTenant.TenantNameClaim, tenant.Name),

@@ -1,6 +1,7 @@
 using Breeze.AspNetCore;
 using Breeze.Core;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Net;
@@ -9,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using TempHire.Model;
+using TempHire.Model.Identity;
 using TempHire.Server.Agent;
 using TempHire.Server.Auth;
 using TempHire.Server.Mcp;
@@ -44,19 +46,39 @@ builder.Services.AddControllers()
 // ---------------------------------------------------------------------------------------------
 // Data stores
 //
-// Two contexts, matching the two SQL Compact files the original shipped with
-// (TempHire.sdf and TempHire.Security.sdf).
+// Two databases, as the original had two SQL Compact files (TempHire.sdf and
+// TempHire.Security.sdf): the staffing data, and the users, now kept by ASP.NET Core Identity.
 // ---------------------------------------------------------------------------------------------
 builder.Services.AddDbContext<TempHireDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TempHire")));
 
-builder.Services.AddDbContext<SecurityDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("TempHireSecurity")));
+builder.Services.AddDbContext<TempHireIdentityDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("TempHireIdentity")));
 
 // Multi-tenancy: TempHireDbContext asks this for the current tenant, which comes from the
 // tenant_id claim in the access token.  See HttpCurrentTenant and TempHireDbContext.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentTenant, HttpCurrentTenant>();
+
+// ---------------------------------------------------------------------------------------------
+// Users - ASP.NET Core Identity
+//
+// Identity keeps the users and checks their passwords (AccountController.Login); the API itself
+// accepts the JWT issued below, not Identity's cookie, so only Identity's core services are added.
+// A sign-in, by password or later through an external provider such as Microsoft Entra ID, ends
+// the same way: TenantResolver picks the company, TokenService issues the token.
+// ---------------------------------------------------------------------------------------------
+builder.Services
+    .AddIdentityCore<TempHireUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    })
+    .AddEntityFrameworkStores<TempHireIdentityDbContext>()
+    .AddSignInManager();
+
+builder.Services.AddScoped<TenantResolver>();
 
 // ---------------------------------------------------------------------------------------------
 // Authentication - the replacement for the DevForce login session
@@ -179,8 +201,8 @@ if (exportIndex >= 0)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TempHireDbContext>();
-    var securityContext = scope.ServiceProvider.GetRequiredService<SecurityDbContext>();
-    DatabaseSetup.Prepare(context, securityContext, app.Logger);
+    var identityContext = scope.ServiceProvider.GetRequiredService<TempHireIdentityDbContext>();
+    DatabaseSetup.Prepare(context, identityContext, app.Logger);
 }
 
 if (app.Environment.IsDevelopment())

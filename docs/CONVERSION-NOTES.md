@@ -57,8 +57,8 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 | `DomainModel/TempHireEntities.cs` (`EntityManager` subclass) | *gone* — the EntityManager is a client concept now |
 | `DomainModel/TempHireEntities.ibmmx` (IdeaBlade model file) | *gone* — metadata is generated from the EF Core model at `GET /api/breeze/Metadata`, and exported to `client/metadata.json`, from which `breeze-gen-entities` (`npm run model`) writes the client classes |
 | `DomainModel/SaveInterceptor.cs` | `server/TempHire.Server/Persistence/TempHirePersistenceManager.cs` |
-| `Security/User.cs`, `LoginManager.cs`, `CryptoHelper.cs` | `…/Entities/User.cs` + `Controllers/AccountController.cs` + `Auth/TokenService.cs` |
-| `Security/SecurityDbContext.cs` | `SecurityDbContext` in `…/TempHireDbContext.cs` |
+| `Security/User.cs`, `LoginManager.cs`, `CryptoHelper.cs` | ASP.NET Core Identity: `…/Identity/TempHireUser.cs` + `Controllers/AccountController.cs` (sign-in) + `Auth/TenantResolver.cs` + `Auth/TokenService.cs` |
+| `Security/SecurityDbContext.cs` | `…/Identity/TempHireIdentityDbContext.cs` (the `TempHireIdentity` database) |
 | `DomainServices/SampleData/*.cs` | `…/SampleData/SampleDataProvider.cs` |
 
 ### DevForce / Punch attributes
@@ -156,12 +156,15 @@ Everything below is a conscious departure from the original.
 
 **Security**
 
-- *Password storage.* The original AES-encrypted the password with a key derived from the password
-  itself and "authenticated" by decrypting and comparing — reversible, and not acceptable today.
-  `User` now stores a PBKDF2-HMAC-SHA256 hash (210,000 iterations, 16-byte salt) and compares in
-  constant time. The `Admin` user is gone: users now sign in with an email address, whose domain
-  picks their company (see "Multi-tenancy" in the README), and the seeded users share the password
-  `password`.
+- *Users and passwords.* The original kept its own user table and AES-encrypted the password with a
+  key derived from the password itself, "authenticating" by decrypting and comparing — reversible,
+  and not acceptable today. Users now live in **ASP.NET Core Identity**, in a database of their own
+  (`TempHireIdentity`): Identity stores salted PBKDF2 hashes, and `SignInManager` checks passwords
+  and locks an account for five minutes after five failed attempts. The `Admin` user is gone: users
+  sign in with an email address, whose domain picks their company (see "Multi-tenancy" in the
+  README), and the seeded users share the password `password`. Identity also keeps external logins,
+  so a provider such as Microsoft Entra ID can be added later (see "Users and sign-in" in the
+  README).
 - *Session.* A stateless JWT replaces the DevForce server session. The token lives in
   `sessionStorage` and is attached by `auth.interceptor.ts`. It cannot be revoked before it expires.
 - *Metadata requires authentication*, matching `[RequiresAuthentication]` on the DevForce
