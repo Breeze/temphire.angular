@@ -7,6 +7,12 @@ what such applications need beyond CRUD screens: a master/detail workspace, edit
 sandboxes with save and cancel, a cached lookup data set, client- and server-side validation from
 one model, authentication, and entity classes generated from the server's model.
 
+> **Prefer React?** [temphire.react](https://github.com/Breeze/temphire.react) is the same
+> application converted to **React 19**, with Mantine, React Router and Vite, on the same Breeze 3
+> and .NET server.  Every file names its Angular counterpart here, and a
+> [guide to React for Angular developers](https://github.com/Breeze/temphire.react/blob/main/docs/REACT-FOR-ANGULAR-DEVELOPERS.md)
+> maps the concepts side by side, with examples from both versions.
+
 ![Resource Management: the search grid, the selected person's card and the contact information tabs](docs/images/resource-management.png)
 
 **Contents**
