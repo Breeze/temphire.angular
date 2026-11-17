@@ -1,9 +1,10 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 
 import { StaffingResource } from '../core/model';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
+import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { ResourceName, ResourceNameEditorComponent } from './resource-name-editor.component';
 import { BreezeFieldDirective } from '../core/validation/breeze-field.directive';
 
@@ -32,7 +33,7 @@ import { BreezeFieldDirective } from '../core/validation/breeze-field.directive'
             [title]="readOnly() ? '' : 'Edit the name'"
             (click)="editName()"
           >
-            {{ staffingResource().fullName }}
+            {{ fullName() }}
             @if (!readOnly()) {
               <i class="pi pi-pencil summary__edit" aria-hidden="true"></i>
             }
@@ -164,15 +165,26 @@ export class ResourceSummaryComponent {
 
   readonly staffingResource = input.required<StaffingResource>();
   readonly readOnly = input.required<boolean>();
+  readonly unitOfWork = input.required<ResourceMgtUnitOfWork>();
 
   /**
-   * First and last initial, for the avatar.  A method rather than a `computed`: the names are
-   * Breeze entity properties, not signals, so they are read again on every render.
+   * The full name, as the name button shows it.  The names are Breeze entity properties, not
+   * signals, and a new name is set after the name dialog closes - outside any event in this
+   * component - so with OnPush change detection the view would not re-render.  Reading the unit of
+   * work's `changes` signal re-derives the name, and re-renders the view, whenever an entity in it
+   * changes; the detail sections derive their rows the same way.
    */
-  protected initials(): string {
+  protected readonly fullName = computed(() => {
+    this.unitOfWork().changes();
+    return this.staffingResource().fullName;
+  });
+
+  /** First and last initial, for the avatar; derived like `fullName`. */
+  protected readonly initials = computed(() => {
+    this.unitOfWork().changes();
     const resource = this.staffingResource();
     return `${resource.firstName?.charAt(0) ?? ''}${resource.lastName?.charAt(0) ?? ''}`.toUpperCase();
-  }
+  });
 
   /** Port of `StaffingResourceSummaryViewModel.EditName`. */
   async editName(): Promise<void> {
