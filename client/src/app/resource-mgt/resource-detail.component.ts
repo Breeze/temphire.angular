@@ -35,7 +35,11 @@ import { ResourceSummaryComponent } from './resource-summary.component';
   ],
   template: `
     <div class="detail">
-      <app-resource-summary [staffingResource]="staffingResource()" [readOnly]="readOnly()" />
+      <app-resource-summary
+        [staffingResource]="staffingResource()"
+        [readOnly]="readOnly()"
+        [unitOfWork]="unitOfWork()"
+      />
 
       <p-tabs [(value)]="activeTab" class="detail__tabs temphire-card">
         <p-tablist>
