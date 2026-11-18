@@ -145,7 +145,7 @@ body {
  * its red border as soon as a required field is empty - before the user has typed anything.  Keep
  * the normal border until the field has been touched.  `signal-form-untouched` is added by the
  * `provideSignalFormsConfig` call in `app.config.ts`, to Signal Forms fields only; fields bound to
- * Breeze entities show their errors at once (see `BreezeFieldDirective`).
+ * entities (template-driven, `ValidationFormsDirectives`) show their errors at once.
  */
 .p-inputtext.p-invalid.signal-form-untouched {
   border-color: var(--p-inputtext-border-color);

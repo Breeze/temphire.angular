@@ -21,6 +21,7 @@ using TempHire.Server.Agent;
 using TempHire.Server.Auth;
 using TempHire.Server.Mcp;
 using TempHire.Server.Persistence;
+using TempHire.Server.Validation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,6 +93,23 @@ builder.Services
 
 builder.Services.AddScoped<TenantResolver>();
 builder.Services.AddScoped<TokenClaims>();
+
+// ---------------------------------------------------------------------------------------------
+// Validation - IdeaBlade.Validation
+//
+// The rules beyond the entities' data annotations: a staffing resource keeps an address and a phone
+// number, an address has a state, a rate is not negative.  They are written once, as validation
+// metadata (Validation/validation.metadata.json).  The server checks them on every save
+// (TempHirePersistenceManager) and serves them to the client (ValidationController), which checks
+// them as the user edits and before it saves.
+// ---------------------------------------------------------------------------------------------
+var validationMetadata = new ValidationMetadataFile(builder.Environment);
+builder.Services.AddSingleton(validationMetadata);
+// The metadata's global `breeze` validator is, on the client, Breeze's own rules; those are built
+// from the entities' data annotations, so on the server `breeze` runs the data annotations.
+builder.Services.AddIdeaBladeValidation(v => v
+    .AddMetadataJson(validationMetadata.Json)
+    .AddDataAnnotations("breeze"));
 
 // ---------------------------------------------------------------------------------------------
 // OAuth 2.1 - the replacement for the DevForce login session
@@ -329,7 +347,8 @@ if (exportIndex >= 0)
     var path = Path.GetFullPath(args[exportIndex + 1]);
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<TempHireDbContext>();
-    var metadata = new TempHirePersistenceManager(context, new ClaimsPrincipal()).Metadata();
+    var validation = scope.ServiceProvider.GetRequiredService<IdeaBlade.Validation.ValidationService>();
+    var metadata = new TempHirePersistenceManager(context, new ClaimsPrincipal(), validation).Metadata();
 
     // Indented, so that a schema change shows up as a readable diff in review.
     File.WriteAllText(path, JToken.Parse(metadata).ToString(Formatting.Indented) + Environment.NewLine);

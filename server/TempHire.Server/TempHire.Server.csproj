@@ -32,6 +32,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TempHire.Model\TempHire.Model.csproj" />
+    <!-- The validation framework, from a sibling checkout of github.com/Breeze/ideablade-validation
+         until it is published as a package. -->
+    <ProjectReference Include="..\..\..\ideablade-validation\dotnet\src\IdeaBlade.Validation\IdeaBlade.Validation.csproj" />
   </ItemGroup>
 
 </Project>

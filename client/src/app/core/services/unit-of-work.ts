@@ -1,5 +1,6 @@
 import { Signal, computed, signal } from '@angular/core';
-import { Entity, EntityManager, InitialValues, SaveOptions } from 'breeze-client';
+import { ValidationError, ValidationService } from '@ideablade/validation';
+import { Entity, EntityManager, EntityState, InitialValues, SaveOptions } from 'breeze-client';
 
 import { EntityManagerProvider } from './entity-manager-provider';
 import { EntityCtor, IRepository, Repository } from './repository';
@@ -62,21 +63,58 @@ export class UnitOfWork {
   });
 
   /**
-   * Whether any pending change has a validation error that would stop a save - a required field
-   * left empty, a value too long.
+   * The broken rules of the validation metadata - the server's rules beyond the data annotations -
+   * across every entity in this unit of work, kept up to date as entities change.
    *
-   * Errors the *server* reported for a failed save (`isServerError`) are left out, by the same rule
-   * Breeze applies when saving: they do not stop a save, because only the server can re-check them.
-   * Counting them would disable Save for good after, say, "a resource must have an address" -
-   * an entity-level error that no edit clears - leaving the user no way to send the fix.
+   * Breeze runs the same rules (`EntityManagerProvider` installs them), but a rule about the
+   * *whole* entity, such as "a resource has at least one address", only when it validates that
+   * entity: when it is attached, and when it is saved.  Deleting a resource's last address changes
+   * the address, not the resource, so Breeze would not notice until the server rejected the save.
+   * Validating every live entity here notices at once, because the rule reads the manager's
+   * addresses (`store('Address')`, which `breezeStoreQuery` serves).
+   *
+   * Breeze's own rules (the global `breeze` validator) are left out: Breeze checks them itself, on
+   * every property change, and running them here would re-validate every entity in Breeze too.
+   * `hasValidationErrors` counts their errors separately.
+   *
+   * Computed, so it only runs while something reads it.
+   */
+  readonly validationErrors: Signal<readonly ValidationError[]> = computed(() => {
+    this.changeCount();
+    return this.manager
+      .getEntities(undefined, [EntityState.Unchanged, EntityState.Added, EntityState.Modified])
+      .flatMap((entity) =>
+        this.validation.validateModelSync(entity, entity.entityType.shortName, {
+          predicate: (validator) => validator.name !== 'breeze',
+        }),
+      );
+  });
+
+  /**
+   * Whether anything would stop a save: a broken rule of the validation metadata
+   * (`validationErrors`), or a property of a pending change that Breeze finds invalid - a required
+   * field left empty, a value too long.
+   *
+   * Two kinds of Breeze errors are left out:
+   *
+   *  - errors the *server* reported for a failed save (`isServerError`), by the same rule Breeze
+   *    applies when saving: they do not stop a save, because only the server can re-check them;
+   *  - errors about a whole entity rather than one property.  Breeze re-checks those only when it
+   *    validates the entity again, so one recorded when a new resource was created without an
+   *    address would outlive the address being added.  `validationErrors` has the current answer.
    */
   readonly hasValidationErrors: Signal<boolean> = computed(() => {
     this.changeCount();
-    return this.manager
-      .getChanges()
-      .some((entity) =>
-        entity.entityAspect.getValidationErrors().some((error) => !error.isServerError),
-      );
+    return (
+      this.validationErrors().length > 0 ||
+      this.manager
+        .getChanges()
+        .some((entity) =>
+          entity.entityAspect
+            .getValidationErrors()
+            .some((error) => !error.isServerError && !!error.propertyName),
+        )
+    );
   });
 
   /**
@@ -85,6 +123,7 @@ export class UnitOfWork {
    */
   constructor(
     protected readonly emProvider: EntityManagerProvider,
+    protected readonly validation: ValidationService,
     private readonly onCommitted: () => void = () => {},
   ) {
     this.manager = emProvider.newManager();

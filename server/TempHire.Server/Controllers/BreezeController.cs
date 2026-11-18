@@ -1,5 +1,6 @@
 using Breeze.AspNetCore;
 using Breeze.Persistence;
+using IdeaBlade.Validation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -41,11 +42,13 @@ namespace TempHire.Server.Controllers
     public class BreezeController : ControllerBase
     {
         private readonly TempHireDbContext _dbContext;
+        private readonly ValidationService _validation;
         private TempHirePersistenceManager _persistenceManager;
 
-        public BreezeController(TempHireDbContext dbContext)
+        public BreezeController(TempHireDbContext dbContext, ValidationService validation)
         {
             _dbContext = dbContext;
+            _validation = validation;
         }
 
         /// <summary>
@@ -53,7 +56,7 @@ namespace TempHire.Server.Controllers
         /// has been constructed, and the persistence manager needs it to stamp the audit columns.
         /// </summary>
         private TempHirePersistenceManager PersistenceManager =>
-            _persistenceManager ??= new TempHirePersistenceManager(_dbContext, User);
+            _persistenceManager ??= new TempHirePersistenceManager(_dbContext, User, _validation);
 
         private TempHireDbContext Context => _dbContext;
 

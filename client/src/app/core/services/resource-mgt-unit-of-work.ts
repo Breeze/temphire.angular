@@ -1,4 +1,5 @@
-import { EntityManager, EntityQuery, FilterQueryOp, InitialValues, Predicate } from 'breeze-client';
+import { ValidationService } from '@ideablade/validation';
+import { EntityManager, EntityQuery, FilterQueryOp } from 'breeze-client';
 
 import {
   Address,
@@ -20,37 +21,14 @@ import { EntityFactory, UnitOfWork } from './unit-of-work';
 /**
  * Port of `DomainServices/Factories/StaffingResourceFactory.cs`.
  *
- * Creates a resource pre-populated with a default (primary) address and phone number, so that the
- * "must have at least one of each" rule is satisfied the moment the entity exists.  The default
- * types come out of the cached lookup repositories - no server round trip - exactly as the original
- * did through `GlobalCacheRepository`.
+ * The original pre-populated a new resource with a default (primary) address and phone number, so
+ * that the "must have at least one of each" rule was satisfied the moment the entity existed.  This
+ * one creates the resource alone: the rule is in the validation metadata, so the user sees it
+ * broken - and Save disabled - until they add an address and a phone number.
  */
 export class StaffingResourceFactory extends EntityFactory<StaffingResource> {
-  constructor(
-    manager: EntityManager,
-    private readonly addressTypes: IRepository<AddressType>,
-    private readonly phoneNumberTypes: IRepository<PhoneNumberType>,
-  ) {
+  constructor(manager: EntityManager) {
     super(StaffingResource, manager);
-  }
-
-  override async create(config?: InitialValues<StaffingResource>): Promise<StaffingResource> {
-    const staffingResource = await super.create(config);
-
-    const isDefault = new Predicate('default', FilterQueryOp.Equals, true);
-    const [addressTypes, phoneNumberTypes] = await Promise.all([
-      this.addressTypes.where(isDefault),
-      this.phoneNumberTypes.where(isDefault),
-    ]);
-
-    if (!addressTypes.length || !phoneNumberTypes.length) {
-      throw new Error('No default address type or phone number type is configured.');
-    }
-
-    staffingResource.addAddress(addressTypes[0]).primary = true;
-    staffingResource.addPhoneNumber(phoneNumberTypes[0]).primary = true;
-
-    return staffingResource;
   }
 }
 
@@ -75,8 +53,12 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
 
   readonly staffingResourceFactory: StaffingResourceFactory;
 
-  constructor(emProvider: EntityManagerProvider, onCommitted?: () => void) {
-    super(emProvider, onCommitted);
+  constructor(
+    emProvider: EntityManagerProvider,
+    validation: ValidationService,
+    onCommitted?: () => void,
+  ) {
+    super(emProvider, validation, onCommitted);
 
     this.staffingResources = this.createRepository(StaffingResource);
     this.addresses = this.createRepository(Address);
@@ -90,11 +72,7 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
     this.rateTypes = this.createRepository(RateType, true);
     this.states = this.createRepository(State, true);
 
-    this.staffingResourceFactory = new StaffingResourceFactory(
-      this.manager,
-      this.addressTypes,
-      this.phoneNumberTypes,
-    );
+    this.staffingResourceFactory = new StaffingResourceFactory(this.manager);
   }
 
   /**

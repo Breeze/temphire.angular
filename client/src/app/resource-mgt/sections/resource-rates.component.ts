@@ -8,7 +8,9 @@ import { Rate, RateType, StaffingResource } from '../../core/model';
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent, ItemSelectorData } from '../item-selector.component';
-import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
+import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+
+import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceRatesViewModel.cs` +
@@ -31,7 +33,14 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
  */
 @Component({
   selector: 'app-resource-rates',
-  imports: [BreezeFieldDirective, FormsModule, CurrencyPipe, ButtonDirective, InputNumberModule],
+  imports: [
+    ValidationFormsDirectives,
+    FieldErrorsDirective,
+    FormsModule,
+    CurrencyPipe,
+    ButtonDirective,
+    InputNumberModule,
+  ],
   template: `
     <div class="rates">
       <div class="rates__header">
@@ -50,7 +59,7 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
       } @else {
         <div class="rates__list">
           @for (rate of sortedRates(); track rate.id) {
-            <div class="rates__row">
+            <div class="rates__row" ngForm [validationModel]="rate">
               <span class="rates__type">{{ rate.rateType?.displayName }}</span>
 
               @if (readOnly()) {
@@ -60,11 +69,10 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
               } @else {
                 <p-inputnumber
                   class="rates__amount"
+                  name="amount"
                   [(ngModel)]="rate.amount"
-                  [breezeField]="rate"
-                  breezeProperty="amount"
-                  #amountField="breezeField"
-                  [invalid]="amountField.invalid()"
+                  #amount="ngModel"
+                  [invalid]="amount.invalid"
                   mode="currency"
                   currency="USD"
                   locale="en-US"

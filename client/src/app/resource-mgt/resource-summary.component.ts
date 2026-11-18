@@ -6,7 +6,9 @@ import { StaffingResource } from '../core/model';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { ResourceName, ResourceNameEditorComponent } from './resource-name-editor.component';
-import { BreezeFieldDirective } from '../core/validation/breeze-field.directive';
+import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+
+import { FieldErrorsDirective } from '../core/validation/field-errors.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceSummaryViewModel.cs` +
@@ -18,7 +20,7 @@ import { BreezeFieldDirective } from '../core/validation/breeze-field.directive'
  */
 @Component({
   selector: 'app-resource-summary',
-  imports: [BreezeFieldDirective, FormsModule, TextareaModule],
+  imports: [ValidationFormsDirectives, FieldErrorsDirective, FormsModule, TextareaModule],
   template: `
     <div class="summary temphire-card">
       <div class="summary__header">
@@ -40,14 +42,14 @@ import { BreezeFieldDirective } from '../core/validation/breeze-field.directive'
           </button>
 
           <div class="summary__facts">
-            @if (staffingResource().primaryAddress; as address) {
+            @if (primaryAddress(); as address) {
               <span class="summary__fact">
                 <i class="pi pi-map-marker" aria-hidden="true"></i>
                 {{ address.city
                 }}{{ address.state?.shortName ? ', ' + address.state.shortName : '' }}
               </span>
             }
-            @if (staffingResource().primaryPhoneNumber; as phone) {
+            @if (primaryPhoneNumber(); as phone) {
               <span class="summary__fact">
                 <i class="pi pi-phone" aria-hidden="true"></i>
                 ({{ phone.areaCode }}) {{ phone.number }}
@@ -62,11 +64,11 @@ import { BreezeFieldDirective } from '../core/validation/breeze-field.directive'
         class="summary__text"
         rows="3"
         [readOnly]="readOnly()"
+        name="summary"
         [(ngModel)]="staffingResource().summary"
-        [breezeField]="staffingResource()"
-        breezeProperty="summary"
-        #summaryField="breezeField"
-        [invalid]="summaryField.invalid()"
+        [validationModel]="staffingResource()"
+        #summary="ngModel"
+        [invalid]="summary.invalid"
         placeholder="Summary"
       ></textarea>
     </div>
@@ -184,6 +186,20 @@ export class ResourceSummaryComponent {
     this.unitOfWork().changes();
     const resource = this.staffingResource();
     return `${resource.firstName?.charAt(0) ?? ''}${resource.lastName?.charAt(0) ?? ''}`.toUpperCase();
+  });
+
+  /**
+   * The primary address and phone number in the header, derived like `fullName`: an address can be
+   * added, deleted or made primary in the contact section, and the header follows at once.
+   */
+  protected readonly primaryAddress = computed(() => {
+    this.unitOfWork().changes();
+    return this.staffingResource().primaryAddress;
+  });
+
+  protected readonly primaryPhoneNumber = computed(() => {
+    this.unitOfWork().changes();
+    return this.staffingResource().primaryPhoneNumber;
   });
 
   /** Port of `StaffingResourceSummaryViewModel.EditName`. */

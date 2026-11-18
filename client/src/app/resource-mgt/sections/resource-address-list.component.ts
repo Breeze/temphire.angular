@@ -2,6 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from '@openng/optimus-ui/button';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { MessageModule } from '@openng/optimus-ui/message';
 import { RadioButtonModule } from '@openng/optimus-ui/radiobutton';
 import { SelectModule } from '@openng/optimus-ui/select';
 
@@ -9,7 +10,9 @@ import { Address, AddressType, StaffingResource } from '../../core/model';
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
-import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
+import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+
+import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceAddressListViewModel.cs` +
@@ -34,10 +37,12 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
 @Component({
   selector: 'app-resource-address-list',
   imports: [
-    BreezeFieldDirective,
+    ValidationFormsDirectives,
+    FieldErrorsDirective,
     FormsModule,
     ButtonDirective,
     InputTextModule,
+    MessageModule,
     RadioButtonModule,
     SelectModule,
   ],
@@ -55,47 +60,48 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
         Add
       </button>
 
+      @for (error of ruleErrors(); track error.key) {
+        <p-message severity="error" size="small">{{ error.errorMessage }}</p-message>
+      }
+
       <div class="addresses__cards">
         @for (address of addresses(); track address.id) {
           <div class="address temphire-elevated">
             <div class="address__header">{{ address.addressType?.displayName }}</div>
 
             <div class="address__body">
-              <div class="address__fields">
+              <div class="address__fields" ngForm [validationModel]="address">
                 <label [for]="'address1-' + address.id">Address 1:</label>
                 <input
                   pInputText
                   [id]="'address1-' + address.id"
+                  name="address1"
                   [readOnly]="readOnly()"
                   [(ngModel)]="address.address1"
-                  [breezeField]="address"
-                  breezeProperty="address1"
-                  #address1Field="breezeField"
-                  [invalid]="address1Field.invalid()"
+                  #address1="ngModel"
+                  [invalid]="address1.invalid"
                 />
 
                 <label [for]="'address2-' + address.id">Address 2:</label>
                 <input
                   pInputText
                   [id]="'address2-' + address.id"
+                  name="address2"
                   [readOnly]="readOnly()"
                   [(ngModel)]="address.address2"
-                  [breezeField]="address"
-                  breezeProperty="address2"
-                  #address2Field="breezeField"
-                  [invalid]="address2Field.invalid()"
+                  #address2="ngModel"
+                  [invalid]="address2.invalid"
                 />
 
                 <label [for]="'city-' + address.id">City:</label>
                 <input
                   pInputText
                   [id]="'city-' + address.id"
+                  name="city"
                   [readOnly]="readOnly()"
                   [(ngModel)]="address.city"
-                  [breezeField]="address"
-                  breezeProperty="city"
-                  #cityField="breezeField"
-                  [invalid]="cityField.invalid()"
+                  #city="ngModel"
+                  [invalid]="city.invalid"
                 />
 
                 <label [for]="'state-' + address.id">State:</label>
@@ -104,12 +110,11 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
                   [options]="states()"
                   optionValue="id"
                   optionLabel="name"
+                  name="stateId"
                   [disabled]="readOnly()"
                   [(ngModel)]="address.stateId"
-                  [breezeField]="address"
-                  breezeProperty="stateId"
-                  #stateIdField="breezeField"
-                  [invalid]="stateIdField.invalid()"
+                  #stateId="ngModel"
+                  [invalid]="stateId.invalid"
                   appendTo="body"
                   styleClass="address__state"
                 />
@@ -119,12 +124,11 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
                   pInputText
                   class="address__zipcode"
                   [id]="'zipcode-' + address.id"
+                  name="zipcode"
                   [readOnly]="readOnly()"
                   [(ngModel)]="address.zipcode"
-                  [breezeField]="address"
-                  breezeProperty="zipcode"
-                  #zipcodeField="breezeField"
-                  [invalid]="zipcodeField.invalid()"
+                  #zipcode="ngModel"
+                  [invalid]="zipcode.invalid"
                 />
               </div>
 
@@ -257,9 +261,25 @@ export class ResourceAddressListComponent {
 
   readonly states = computed(() => this.unitOfWork().states.allInCache('name'));
 
-  /** Port of `StaffingResourceAddressItemViewModel.CanDelete`. */
-  canDelete(address: Address): boolean {
-    return !this.readOnly() && !address.primary && this.staffingResource().addresses.length > 1;
+  /**
+   * The resource's "at least one address" rule, when it is broken.  It is a rule of the validation
+   * metadata about the whole resource, so no field shows it; the unit of work keeps it current.
+   */
+  readonly ruleErrors = computed(() =>
+    this.unitOfWork()
+      .validationErrors()
+      .filter(
+        (error) => error.model === this.staffingResource() && error.id === 'ADDRESS_REQUIRED',
+      ),
+  );
+
+  /**
+   * Port of `StaffingResourceAddressItemViewModel.CanDelete`, without its "not the primary one, not
+   * the last one" condition.  The last address may go too: the user then sees the resource's rule
+   * broken, and cannot save until they add one.
+   */
+  canDelete(_address: Address): boolean {
+    return !this.readOnly();
   }
 
   /** Port of `StaffingResourceAddressItemViewModel.CanSetPrimary`. */

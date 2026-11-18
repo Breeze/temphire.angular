@@ -1,4 +1,5 @@
-import { EntityType, MetadataStore } from 'breeze-client';
+import { ModelValidationMetadataMap } from '@ideablade/validation';
+import { ComplexType, EntityType, MetadataStore } from 'breeze-client';
 
 import { modelClasses } from './model';
 
@@ -36,23 +37,47 @@ const COMMON_DISPLAY_NAMES: Record<string, string> = {
  *
  * Each name is the override from `DISPLAY_NAMES` if there is one, else derived from the property
  * name: `positionTitle` becomes "Position title", `address1` "Address 1", and a foreign key such as
- * `stateId` is named after what it points to, "State".  The name editor's Signal Form uses the same
- * Breeze validators (`validateWithBreeze`), so its messages read the same way.
+ * `stateId` is named after what it points to, "State".
+ *
+ * These are the only display names in the app.  The validation framework's messages - the rules in
+ * the server's validation metadata - read them from Breeze too (`displayNameMetadata`), and so does
+ * the name editor (`breezeRuleSource`), so every message names a field the same way.
  */
 export function setDisplayNames(metadataStore: MetadataStore): void {
   for (const type of metadataStore.getEntityTypes()) {
     const overrides: Record<string, string | undefined> =
       DISPLAY_NAMES[type.shortName as ModelName] ?? {};
-    const properties = [
-      ...type.dataProperties,
-      ...(type instanceof EntityType ? type.navigationProperties : []),
-    ];
 
-    for (const property of properties) {
+    for (const property of propertiesOf(type)) {
       property.displayName =
         overrides[property.name] ?? COMMON_DISPLAY_NAMES[property.name] ?? humanize(property.name);
     }
   }
+}
+
+/**
+ * Breeze's display names as validation metadata, so that the validation framework names a property
+ * the way Breeze does: "'State' is required" from the server's `Address.stateId` rule, just as
+ * "'City' is required" from Breeze's own `[Required]`.
+ *
+ * The server's validation metadata has no display names - on the server a message names the
+ * property as the payload does - so the client adds these to it.  Call after `setDisplayNames`.
+ */
+export function displayNameMetadata(metadataStore: MetadataStore): ModelValidationMetadataMap {
+  return Object.fromEntries(
+    metadataStore.getEntityTypes().map((type) => [
+      type.shortName,
+      {
+        properties: Object.fromEntries(
+          propertiesOf(type).map((property) => [property.name, { displayName: property.displayName }]),
+        ),
+      },
+    ]),
+  );
+}
+
+function propertiesOf(type: EntityType | ComplexType) {
+  return [...type.dataProperties, ...(type instanceof EntityType ? type.navigationProperties : [])];
 }
 
 /** `positionTitle` -> "Position title", `address1` -> "Address 1", `stateId` -> "State", `id` -> "ID". */

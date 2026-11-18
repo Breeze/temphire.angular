@@ -1,4 +1,5 @@
-import { Injectable, Signal, inject, signal } from '@angular/core';
+import { Injectable, Injector, Signal, inject, signal } from '@angular/core';
+import { ValidationService } from '@ideablade/validation';
 
 import { EntityManagerProvider } from './entity-manager-provider';
 import { ResourceMgtUnitOfWork } from './resource-mgt-unit-of-work';
@@ -24,6 +25,9 @@ export const SHARED_UNIT_OF_WORK_KEY = '00000000-0000-0000-0000-000000000000';
 @Injectable({ providedIn: 'root' })
 export class UnitOfWorkManager {
   private readonly emProvider = inject(EntityManagerProvider);
+  // Looked up when a unit of work is created: sign-out (`AuthService`) clears this manager, and
+  // needs none.
+  private readonly injector = inject(Injector);
   private readonly cache = new Map<string, ResourceMgtUnitOfWork>();
   private readonly saveCount = signal(0);
 
@@ -49,7 +53,7 @@ export class UnitOfWorkManager {
 
   /** Creates an unregistered unit of work - port of `IUnitOfWorkManager.Create`. */
   create(): ResourceMgtUnitOfWork {
-    return new ResourceMgtUnitOfWork(this.emProvider, () =>
+    return new ResourceMgtUnitOfWork(this.emProvider, this.injector.get(ValidationService), () =>
       this.saveCount.update((count) => count + 1),
     );
   }
