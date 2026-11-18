@@ -10,6 +10,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { ValidationService } from '@ideablade/validation';
+import { provideValidationScope } from '@ideablade/validation/angular';
 
 import { CanComponentDeactivate } from '../app.routes';
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
@@ -52,7 +54,8 @@ type EditMode = 'view' | 'edit';
 @Component({
   selector: 'app-resource-mgt',
   imports: [ResourceSearchComponent, ResourceDetailComponent, ProgressSpinnerModule],
-  providers: [BusyService],
+  // The route's own validation service, for the scope of its unit of work: see the constructor.
+  providers: [BusyService, provideValidationScope()],
   templateUrl: './resource-mgt.component.html',
   styleUrl: './resource-mgt.component.css',
 })
@@ -72,6 +75,14 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   readonly editMode = signal<EditMode>('view');
   readonly unitOfWork = signal<ResourceMgtUnitOfWork | null>(null);
   readonly selectedId = signal<string | null>(null);
+
+  /**
+   * The route's validation service.  Its entity store is the unit of work being shown, so the
+   * forms in the detail sections validate in it: `store(type)` sees that unit of work's entities
+   * (the "a resource keeps an address" rule reads them), and the fields re-validate whenever an
+   * entity in it changes - in another section, or in code.
+   */
+  private readonly validation = inject(ValidationService);
 
   /**
    * The `resource` query parameter: a staffing resource to open, from a link in Quinn's answers.
@@ -173,6 +184,8 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   }
 
   constructor() {
+    effect(() => this.validation.setEntityStore(this.unitOfWork()?.entityStore));
+
     // `ResourceMgtViewModel.OnActivate` added its toolbar group and `OnDeactivate` removed it;
     // `registerToolbarGroup` does both, tying the group to this component's lifetime.
     registerToolbarGroup(this.toolbarGroup);

@@ -1,5 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ValidationError } from '@ideablade/validation';
+import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 
 import { StaffingResource } from '../core/model';
@@ -20,7 +22,7 @@ import { FieldErrorsDirective } from '../core/validation/field-errors.directive'
  */
 @Component({
   selector: 'app-resource-summary',
-  imports: [ValidationFormsDirectives, FieldErrorsDirective, FormsModule, TextareaModule],
+  imports: [ValidationFormsDirectives, FieldErrorsDirective, FormsModule, DatePickerModule, TextareaModule],
   template: `
     <div class="summary temphire-card">
       <div class="summary__header">
@@ -59,18 +61,55 @@ import { FieldErrorsDirective } from '../core/validation/field-errors.directive'
         </div>
       </div>
 
-      <textarea
-        pTextarea
-        class="summary__text"
-        rows="3"
-        [readOnly]="readOnly()"
-        name="summary"
-        [(ngModel)]="staffingResource().summary"
-        [validationModel]="staffingResource()"
-        #summary="ngModel"
-        [invalid]="summary.invalid"
-        placeholder="Summary"
-      ></textarea>
+      <div class="summary__form" ngForm [validationModel]="staffingResource()" #form="validationForm">
+        <div class="summary__dates">
+          <label class="summary__date">
+            <span>Date of birth</span>
+            <p-datepicker
+              name="dateOfBirth"
+              [(ngModel)]="staffingResource().dateOfBirth"
+              #dateOfBirth="ngModel"
+              [invalid]="dateOfBirth.invalid"
+              [disabled]="readOnly()"
+              [showIcon]="true"
+              [showClear]="true"
+              appendTo="body"
+              dateFormat="mm/dd/yy"
+            />
+          </label>
+
+          <label class="summary__date">
+            <span>Hire date</span>
+            <p-datepicker
+              name="hireDate"
+              [(ngModel)]="staffingResource().hireDate"
+              #hireDate="ngModel"
+              [invalid]="hireDate.invalid"
+              [disabled]="readOnly()"
+              [showIcon]="true"
+              [showClear]="true"
+              appendTo="body"
+              dateFormat="mm/dd/yy"
+            />
+          </label>
+        </div>
+
+        @for (message of datesMessages(form.errors()); track message) {
+          <small class="temphire-field-error">{{ message }}</small>
+        }
+
+        <textarea
+          pTextarea
+          class="summary__text"
+          rows="3"
+          [readOnly]="readOnly()"
+          name="summary"
+          [(ngModel)]="staffingResource().summary"
+          #summary="ngModel"
+          [invalid]="summary.invalid"
+          placeholder="Summary"
+        ></textarea>
+      </div>
     </div>
   `,
   styles: [
@@ -153,6 +192,26 @@ import { FieldErrorsDirective } from '../core/validation/field-errors.directive'
         border: 1px solid var(--temphire-border);
       }
 
+      .summary__form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .summary__dates {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
+      }
+
+      .summary__date {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--temphire-muted);
+        font-weight: 600;
+      }
+
       .summary__text {
         width: 100%;
         resize: vertical;
@@ -201,6 +260,15 @@ export class ResourceSummaryComponent {
     this.unitOfWork().changes();
     return this.staffingResource().primaryPhoneNumber;
   });
+
+  /**
+   * The messages about the two dates, once each: a rule comparing them (date of birth before hire
+   * date, in the server's validation metadata) is about both, so both fields show it as invalid.
+   */
+  protected datesMessages(errors: readonly ValidationError[]): string[] {
+    const messages = errors.filter((e) => e.isFor('dateOfBirth') || e.isFor('hireDate')).map((e) => e.errorMessage);
+    return [...new Set(messages)];
+  }
 
   /** Port of `StaffingResourceSummaryViewModel.EditName`. */
   async editName(): Promise<void> {

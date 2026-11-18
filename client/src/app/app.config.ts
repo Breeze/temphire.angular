@@ -20,7 +20,6 @@ import { provideRuleSources, provideValidation } from '@ideablade/validation/ang
 import {
   breezeModelType,
   breezeRuleSource,
-  breezeStoreQuery,
   breezeValidator,
 } from '@ideablade/validation/breeze';
 
@@ -65,16 +64,16 @@ export const appConfig: ApplicationConfig = {
      *  - `breezeValidator` brings Breeze's own rules into the framework (`clientValidationMetadata`),
      *    so form fields show them like every other rule;
      *  - `breezeModelType` lets the form directives find an entity's model type themselves;
-     *  - `breezeStoreQuery` gives a single entity's rules `store(type)` - the other entities in its
-     *    `EntityManager` - which the "a resource keeps an address" rule reads;
      *  - `breezeRuleSource` lets a view model property inherit an entity property's Breeze rules
      *    with `from` (the name editor).
+     *
+     * This is the app's validation service.  The resource management route has its own, whose
+     * entity store is the unit of work being shown (see `ResourceMgtComponent`).
      */
     provideValidation({
       metadata: clientValidationMetadata,
       validators: [breezeValidator],
       modelTypeResolvers: [breezeModelType],
-      storeResolvers: [breezeStoreQuery],
     }),
     provideRuleSources(() => breezeRuleSource(inject(EntityManagerProvider).metadataStore)),
 

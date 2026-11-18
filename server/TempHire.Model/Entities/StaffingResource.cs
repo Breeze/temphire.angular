@@ -32,6 +32,12 @@ namespace TempHire.Model
         [Required]
         public string Summary { get; set; }
 
+        /// <summary>Optional.  The validation metadata checks that it is before <see cref="HireDate"/>.</summary>
+        public DateTime? DateOfBirth { get; set; }
+
+        /// <summary>Optional.  The validation metadata checks that it is after <see cref="DateOfBirth"/>.</summary>
+        public DateTime? HireDate { get; set; }
+
         public ICollection<Address> Addresses { get; set; } = new List<Address>();
 
         public ICollection<PhoneNumber> PhoneNumbers { get; set; } = new List<PhoneNumber>();

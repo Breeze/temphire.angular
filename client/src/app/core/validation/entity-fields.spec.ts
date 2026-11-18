@@ -6,7 +6,6 @@ import { ModelValidationMetadataMap, ValidationError } from '@ideablade/validati
 import { ValidationFormsDirectives, provideValidation } from '@ideablade/validation/angular';
 import {
   breezeModelType,
-  breezeStoreQuery,
   breezeValidator,
   installBreezeValidators,
 } from '@ideablade/validation/breeze';
@@ -56,7 +55,6 @@ describe('entity fields', () => {
           metadata: [clientValidationMetadata, serverRules, displayNameMetadata(metadataStore)],
           validators: [breezeValidator],
           modelTypeResolvers: [breezeModelType],
-          storeResolvers: [breezeStoreQuery],
         }),
       ],
     });

@@ -1,6 +1,6 @@
 import { ModelValidationMetadataMap, createValidationService } from '@ideablade/validation';
 import {
-  breezeStoreQuery,
+  breezeEntityStore,
   breezeValidator,
   installBreezeValidators,
 } from '@ideablade/validation/breeze';
@@ -30,17 +30,18 @@ describe('the server validation rules on the client', () => {
     const serverRules = Object.fromEntries(
       Object.entries(rules).filter(([key]) => !key.startsWith('$')),
     ) as ModelValidationMetadataMap;
-    const service = createValidationService({
-      metadata: [serverRules, displayNameMetadata(metadataStore)],
-      validators: [breezeValidator],
-      storeResolvers: [breezeStoreQuery],
-    });
-    installBreezeValidators(metadataStore, service);
-
     const manager = new EntityManager({
       dataService: new DataService({ serviceName: 'api/breeze', hasServerMetadata: false }),
       metadataStore,
     });
+
+    // A service whose entity store is the manager's entities, as a unit of work's is.
+    const service = createValidationService({
+      metadata: [serverRules, displayNameMetadata(metadataStore)],
+      validators: [breezeValidator],
+      entityStore: breezeEntityStore(manager),
+    });
+    installBreezeValidators(metadataStore, service);
 
     const resource = manager.createEntity('StaffingResource', {
       id: crypto.randomUUID(),
@@ -63,8 +64,24 @@ describe('the server validation rules on the client', () => {
       });
     const ruleIds = () => service.validateModelSync(resource, 'StaffingResource').map((e) => e.id);
 
-    return { manager, resource, addAddress, addPhoneNumber, ruleIds };
+    return { manager, service, resource, addAddress, addPhoneNumber, ruleIds };
   }
+
+  it('wants the date of birth before the hire date, and reports it on both', () => {
+    const { resource, addAddress, addPhoneNumber, service } = setUp();
+    addAddress();
+    addPhoneNumber();
+    resource.setProperty('dateOfBirth', new Date(2000, 0, 1));
+    resource.setProperty('hireDate', new Date(1999, 0, 1));
+
+    const errors = service.validateModelSync(resource, 'StaffingResource');
+    expect(errors.map((e) => [e.id, e.errorMessage, e.propertyNames])).toEqual([
+      ['BORN_BEFORE_HIRED', 'The date of birth must be before the hire date', ['dateOfBirth', 'hireDate']],
+    ]);
+
+    resource.setProperty('hireDate', new Date(2020, 0, 1));
+    expect(service.validateModelSync(resource, 'StaffingResource')).toEqual([]);
+  });
 
   it('wants a new resource to have an address and a phone number', () => {
     const { addAddress, addPhoneNumber, ruleIds } = setUp();

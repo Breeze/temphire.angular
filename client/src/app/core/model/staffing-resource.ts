@@ -39,6 +39,8 @@ export class StaffingResource extends BaseEntity {
   declare modified: Date;  // @generated
   declare modifyUser: string;  // @generated
   declare rowVersion: number;  // @generated
+  declare dateOfBirth: Date;  // @generated
+  declare hireDate: Date;  // @generated
 
   constructor() {
     super();

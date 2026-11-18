@@ -212,7 +212,7 @@ namespace TempHire.Server.Persistence
                 .ValidateEntitiesAsync(new SaveValidationStore(Context, saveMap))
                 .GetAwaiter()
                 .GetResult()
-                .Select(ToEntityError)
+                .SelectMany(ToEntityErrors)
                 .ToList();
 
             if (errors.Count > 0)
@@ -223,28 +223,33 @@ namespace TempHire.Server.Persistence
         }
 
         /// <summary>
-        /// A validation metadata error as a Breeze <see cref="EntityError"/>.  The metadata names
-        /// properties as the client does (<c>stateId</c>); the error names the property as the payload
-        /// does (<c>StateId</c>), both in <c>PropertyName</c>, which the Breeze client maps back to its
-        /// own name, and in the message.
+        /// A validation metadata error as Breeze <see cref="EntityError"/>s: one for each property the
+        /// error is about (a rule comparing two dates is about both), or one for the entity as a whole.
+        /// The metadata names properties as the client does (<c>stateId</c>); the errors name them as
+        /// the payload does (<c>StateId</c>), both in <c>PropertyName</c>, which the Breeze client maps
+        /// back to its own name, and in a property rule's message.
         /// </summary>
-        private EntityError ToEntityError(IdeaBlade.Validation.ValidationError error)
+        private IEnumerable<EntityError> ToEntityErrors(IdeaBlade.Validation.ValidationError error)
         {
             var entity = error.Model!;
-            var property = error.PropertyName == null
-                ? null
-                : entity.GetType().GetProperty(
-                    error.PropertyName,
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+            string PayloadName(string name) =>
+                entity.GetType().GetProperty(
+                    name,
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase)?.Name
+                ?? name;
 
-            return new EntityError
+            // A property rule's message names its property; a model-level rule's message is its own.
+            var message = error.Context.PropertyName is { } validated ? error.GetErrorMessage(PayloadName(validated)) : error.ErrorMessage;
+            var propertyNames = error.PropertyNames.Count > 0 ? error.PropertyNames.Select(PayloadName) : new string[] { null };
+
+            return propertyNames.Select(propertyName => new EntityError
             {
                 ErrorName = error.Id,
                 EntityTypeName = entity.GetType().FullName,
                 KeyValues = KeyValuesOf(entity),
-                PropertyName = property?.Name ?? error.PropertyName,
-                ErrorMessage = property != null ? error.GetErrorMessage(property.Name) : error.ErrorMessage
-            };
+                PropertyName = propertyName,
+                ErrorMessage = message
+            });
         }
 
         /// <summary>

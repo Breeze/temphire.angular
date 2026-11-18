@@ -1,5 +1,6 @@
 import { Signal, computed, signal } from '@angular/core';
-import { ValidationError, ValidationService } from '@ideablade/validation';
+import { NotifyingEntityStore, ValidationError, ValidationService } from '@ideablade/validation';
+import { breezeEntityStore } from '@ideablade/validation/breeze';
 import { Entity, EntityManager, EntityState, InitialValues, SaveOptions } from 'breeze-client';
 
 import { EntityManagerProvider } from './entity-manager-provider';
@@ -47,6 +48,13 @@ export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
 export class UnitOfWork {
   protected readonly manager: EntityManager;
 
+  /**
+   * The live entities of this unit of work, as a validation entity store: what `store(type)` sees
+   * in the validation rules, and what tells the forms that something changed.  The route's
+   * validation service uses it for the unit of work it shows (`ResourceMgtComponent`).
+   */
+  readonly entityStore: NotifyingEntityStore;
+
   private readonly changeCount = signal(0);
 
   /**
@@ -71,7 +79,7 @@ export class UnitOfWork {
    * entity: when it is attached, and when it is saved.  Deleting a resource's last address changes
    * the address, not the resource, so Breeze would not notice until the server rejected the save.
    * Validating every live entity here notices at once, because the rule reads the manager's
-   * addresses (`store('Address')`, which `breezeStoreQuery` serves).
+   * addresses (`store('Address')`, from `entityStore`).
    *
    * Breeze's own rules (the global `breeze` validator) are left out: Breeze checks them itself, on
    * every property change, and running them here would re-validate every entity in Breeze too.
@@ -86,6 +94,7 @@ export class UnitOfWork {
       .flatMap((entity) =>
         this.validation.validateModelSync(entity, entity.entityType.shortName, {
           predicate: (validator) => validator.name !== 'breeze',
+          store: this.entityStore.getEntities,
         }),
       );
   });
@@ -127,6 +136,7 @@ export class UnitOfWork {
     private readonly onCommitted: () => void = () => {},
   ) {
     this.manager = emProvider.newManager();
+    this.entityStore = breezeEntityStore(this.manager);
 
     const bump = () => this.changeCount.update((count) => count + 1);
     this.manager.entityChanged.subscribe(bump);

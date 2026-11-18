@@ -717,8 +717,9 @@ The validation rules are written once, on the server, in two places:
 - **the entities' data annotations** - `[Required]`, `[StringLength]` - which reach the client in
   the Breeze metadata as validators;
 - **the validation metadata**, `TempHire.Server/Validation/validation.metadata.json`, for the rules
-  annotations cannot express: an address has a state, a rate is not negative, and a staffing
-  resource has at least one address and one phone number.  These use
+  annotations cannot express: an address has a state, a rate is not negative, a staffing resource
+  has at least one address and one phone number, and its date of birth is before its hire date.
+  These use
   [IdeaBlade.Validation / `@ideablade/validation`](https://github.com/Breeze/ideablade-validation),
   which reads the same metadata on both sides.
 
@@ -752,6 +753,15 @@ The forms add no rules of their own; they show the verdict:
 
   Errors the *server* reports for a failed save are shown in the save's error message, not on
   fields; the client checks the same rules first, so they are rare.
+
+- **A form validates the whole entity** whenever a field changes, so a rule about two fields shows
+  on both: "the date of birth is before the hire date" names both dates (`propertyNames` in the
+  metadata), and changing either one re-checks the other.  The summary card shows its message once,
+  under the dates.
+- **The route has its own validation service** (`provideValidationScope` in
+  `ResourceMgtComponent`), whose entity store is the unit of work being shown.  Its forms see that
+  unit of work's entities in `store(type)`, and re-validate whenever an entity in it changes, in
+  another section or in code.
 
 - **Rules about a whole entity**, such as "at least one address", have no field.  The unit of work
   keeps them current (`UnitOfWork.validationErrors`) - deleting a resource's last address breaks the

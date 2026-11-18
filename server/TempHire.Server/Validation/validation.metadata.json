@@ -26,6 +26,15 @@
           "expression": "store('PhoneNumber').some(p => p.staffingResourceId === model.id)",
           "messageTemplate": "A staffing resource must have at least one phone number"
         }
+      },
+      {
+        "name": "expression",
+        "id": "BORN_BEFORE_HIRED",
+        "propertyNames": ["dateOfBirth", "hireDate"],
+        "context": {
+          "expression": "!model.dateOfBirth || !model.hireDate || model.dateOfBirth < model.hireDate",
+          "messageTemplate": "The date of birth must be before the hire date"
+        }
       }
     ]
   },
