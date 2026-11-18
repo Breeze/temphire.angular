@@ -4,7 +4,8 @@
     "TempHire's validation rules, for the client and the server: ValidationController serves them to the client, which installs them into Breeze, and the server checks them on every save (TempHirePersistenceManager).",
     "The global breeze validator brings the entities' data annotations ([Required], [MaxLength], ...) into the framework.  On the client it runs Breeze's validators, which Breeze builds from those annotations; on the server it runs the annotations themselves (AddDataAnnotations(\"breeze\") in Program.cs).  The other rules are the ones annotations cannot express.",
     "Property names are the client's (camelCase), because the expressions run in the browser too; the server matches them to its properties case-insensitively.  There are no display names: on the server a message names the property as the payload does, and the client takes its display names from Breeze.",
-    "Address.stateId: the foreign key is a non-nullable Guid, so an address without a state has the empty Guid, which [Required] accepts."
+    "Address.stateId: the foreign key is a non-nullable Guid, so an address without a state has the empty Guid, which [Required] accepts.",
+    "Addresses are U.S. addresses: a state, and a U.S. ZIP code.  Phone numbers are U.S. numbers: a 3-digit area code, and a 7-digit number with an optional dash or dot after the first 3 digits."
   ],
 
   "global": { "validators": ["breeze"] },
@@ -36,7 +37,15 @@
           "messageTemplate": "The date of birth must be before the hire date"
         }
       }
-    ]
+    ],
+    "properties": {
+      "dateOfBirth": {
+        "validators": [{ "name": "date", "context": { "messageTemplate": "'%displayName%' must be a valid date" } }]
+      },
+      "hireDate": {
+        "validators": [{ "name": "date", "context": { "messageTemplate": "'%displayName%' must be a valid date" } }]
+      }
+    }
   },
 
   "Address": {
@@ -52,6 +61,40 @@
             }
           }
         ]
+      },
+      "zipcode": {
+        "validators": [
+          {
+            "name": "zipCode",
+            "context": { "messageTemplate": "'%displayName%' must be a U.S. ZIP code, like 98101 or 98101-1234" }
+          }
+        ]
+      }
+    }
+  },
+
+  "PhoneNumber": {
+    "properties": {
+      "areaCode": {
+        "validators": [
+          {
+            "name": "pattern",
+            "id": "AREA_CODE_FORMAT",
+            "context": { "expression": "^\\d{3}$", "messageTemplate": "'%displayName%' must be 3 digits" }
+          }
+        ]
+      },
+      "number": {
+        "validators": [
+          {
+            "name": "pattern",
+            "id": "PHONE_NUMBER_FORMAT",
+            "context": {
+              "expression": "^\\d{3}[-.]?\\d{4}$",
+              "messageTemplate": "'%displayName%' must be 7 digits, like 555-1234"
+            }
+          }
+        ]
       }
     }
   },
@@ -60,12 +103,24 @@
     "properties": {
       "amount": {
         "validators": [
+          { "name": "currency", "context": { "messageTemplate": "'%displayName%' must be a valid amount" } },
           {
             "name": "range",
             "id": "RATE_NOT_NEGATIVE",
             "context": { "minValue": 0, "messageTemplate": "%displayName% must not be negative" }
           }
         ]
+      }
+    }
+  },
+
+  "WorkExperienceItem": {
+    "properties": {
+      "from": {
+        "validators": [{ "name": "date", "context": { "messageTemplate": "'%displayName%' must be a valid date" } }]
+      },
+      "to": {
+        "validators": [{ "name": "date", "context": { "messageTemplate": "'%displayName%' must be a valid date" } }]
       }
     }
   }

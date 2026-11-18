@@ -117,6 +117,64 @@ describe('the server validation rules on the client', () => {
     expect(address.entityAspect.getValidationErrors('stateId')).toEqual([]);
   });
 
+  describe('field formats', () => {
+    /** The messages of the validation metadata's rules about one property (Breeze's own left out). */
+    function messagesFor(entityType: string, values: Record<string, unknown>, property: string) {
+      const { manager, resource, service } = setUp();
+      const entity = manager.createEntity(entityType, {
+        id: crypto.randomUUID(),
+        staffingResourceId: resource.id,
+        ...values,
+      });
+      return service
+        .validateModelSync(entity, entityType, { predicate: (v) => v.name !== 'breeze' })
+        .filter((e) => e.isFor(property))
+        .map((e) => e.errorMessage);
+    }
+
+    it('wants a U.S. ZIP code', () => {
+      expect(messagesFor('Address', { zipcode: '98101' }, 'zipcode')).toEqual([]);
+      expect(messagesFor('Address', { zipcode: '98101-1234' }, 'zipcode')).toEqual([]);
+      expect(messagesFor('Address', { zipcode: 'SW1 8JR' }, 'zipcode')).toEqual([
+        "'Zipcode' must be a U.S. ZIP code, like 98101 or 98101-1234",
+      ]);
+    });
+
+    it('wants a 3-digit area code and a 7-digit number, with a dash or a dot after 3 digits', () => {
+      expect(messagesFor('PhoneNumber', { areaCode: '206' }, 'areaCode')).toEqual([]);
+      expect(messagesFor('PhoneNumber', { areaCode: '20a' }, 'areaCode')).toEqual(["'Area code' must be 3 digits"]);
+      expect(messagesFor('PhoneNumber', { areaCode: '20' }, 'areaCode')).toEqual(["'Area code' must be 3 digits"]);
+
+      for (const number of ['555-1234', '555.1234', '5551234']) {
+        expect(messagesFor('PhoneNumber', { number }, 'number')).toEqual([]);
+      }
+      for (const number of ['55-51234', '555-123', '555 1234', '555-12345']) {
+        expect(messagesFor('PhoneNumber', { number }, 'number')).toEqual([
+          "'Phone number' must be 7 digits, like 555-1234",
+        ]);
+      }
+    });
+
+    it('wants valid dates', () => {
+      expect(messagesFor('WorkExperienceItem', { from: new Date(2020, 0, 1) }, 'from')).toEqual([]);
+      expect(messagesFor('WorkExperienceItem', { from: new Date(Number.NaN) }, 'from')).toEqual([
+        "'From' must be a valid date",
+      ]);
+      const { resource, service } = setUp();
+      resource.setProperty('hireDate', new Date(Number.NaN));
+      expect(
+        service
+          .validateModelSync(resource, 'StaffingResource', { predicate: (v) => v.name === 'date' })
+          .map((e) => e.errorMessage),
+      ).toEqual(["'Hire date' must be a valid date"]);
+    });
+
+    it('wants a valid amount', () => {
+      expect(messagesFor('Rate', { amount: 125.5 }, 'amount')).toEqual([]);
+      expect(messagesFor('Rate', { amount: 'lots' }, 'amount')).toContain("'Rate' must be a valid amount");
+    });
+  });
+
   it('uses the display name overrides', () => {
     const { manager, resource } = setUp();
     const rate = manager.createEntity('Rate', {

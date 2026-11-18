@@ -276,8 +276,7 @@ namespace TempHire.Model.SampleData
                                  new State {Id = CreateGuid(48), ShortName = "WA", Name = "Washington"},
                                  new State {Id = CreateGuid(49), ShortName = "WV", Name = "West Virginia"},
                                  new State {Id = CreateGuid(50), ShortName = "WI", Name = "Wisconsin"},
-                                 new State {Id = CreateGuid(51), ShortName = "WY", Name = "Wyoming"},
-                                 new State {Id = CreateGuid(52), ShortName = "--", Name = "International"}
+                                 new State {Id = CreateGuid(51), ShortName = "WY", Name = "Wyoming"}
                              };
             context.AddRange(states);
             _states = states;
@@ -365,9 +364,11 @@ namespace TempHire.Model.SampleData
             r = NewResource("Steven", "T", "Buchanan",
                             "Steven Buchanan graduated from St. Andrews University, Scotland, with a BSC degree in 1976.  Upon joining the company as a sales representative in 1992, he spent 6 months in an orientation program at the Seattle office and then returned to his permanent post in London.  He was promoted to sales manager in March 1993.  Mr. Buchanan has completed the courses \"Successful Telemarketing\" and \"International Sales Management.\"  He is fluent in French.");
             context.Add(r);
-            context.Add(NewAddress(r.Id, addressTypes[0], "14 Garrett Hill", "", "London", states[51], "SW1 8JR", true));
-            context.Add(NewPhone(r.Id, phoneTypes[0], "071", "555-4848", true));
-            context.Add(NewPhone(r.Id, phoneTypes[1], "071", "555-3453", false));
+            // The original sample's London addresses are U.S. addresses here: TempHire takes U.S.
+            // addresses only (a state, and a ZIP code).
+            context.Add(NewAddress(r.Id, addressTypes[0], "14 Garrett Hill", "", "Boston", states[21], "02108", true));
+            context.Add(NewPhone(r.Id, phoneTypes[0], "617", "555-4848", true));
+            context.Add(NewPhone(r.Id, phoneTypes[1], "617", "555-3453", false));
             context.Add(NewRate(r.Id, rateTypes[0], 50));
             context.Add(NewRate(r.Id, rateTypes[1], 300));
             context.Add(NewRate(r.Id, rateTypes[2], 1500));
@@ -382,10 +383,10 @@ namespace TempHire.Model.SampleData
             r = NewResource("Michael", "", "Suyama",
                             "Michael is a graduate of Sussex University (MA, economics, 1983) and the University of California at Los Angeles (MBA, marketing, 1986).  He has also taken the courses \"Multi-Cultural Selling\" and \"Time Management for the Sales Professional.\"  He is fluent in Japanese and can read and write French, Portuguese, and Spanish.");
             context.Add(r);
-            context.Add(NewAddress(r.Id, addressTypes[0], "Coventry House  Miner Rd.", "", "London", states[51],
-                                            "EC2 7JR", true));
-            context.Add(NewPhone(r.Id, phoneTypes[0], "071", "555-7773", true));
-            context.Add(NewPhone(r.Id, phoneTypes[1], "071", "555-0428", false));
+            context.Add(NewAddress(r.Id, addressTypes[0], "Coventry House  Miner Rd.", "", "Chicago", states[13],
+                                            "60601", true));
+            context.Add(NewPhone(r.Id, phoneTypes[0], "312", "555-7773", true));
+            context.Add(NewPhone(r.Id, phoneTypes[1], "312", "555-0428", false));
             context.Add(NewWork(r.Id, new DateTime(1989, 6, 22), new DateTime(1994, 1, 1), "Rainout",
                                          "Oakland CA", "CRM Analyst",
                                          "Responsible for all aspects of CRM business management and marketing development."));
@@ -410,10 +411,10 @@ namespace TempHire.Model.SampleData
             r = NewResource("Anne", "F", "Dodsworth",
                             "Anne has a BA degree in English from St. Lawrence College.  She is fluent in French and German.");
             context.Add(r);
-            context.Add(NewAddress(r.Id, addressTypes[0], "7 Houndstooth Rd.", "", "London", states[51], "WG2 7LT",
+            context.Add(NewAddress(r.Id, addressTypes[0], "7 Houndstooth Rd.", "", "New York", states[32], "10001",
                                             true));
-            context.Add(NewPhone(r.Id, phoneTypes[0], "071", "555-4444", true));
-            context.Add(NewPhone(r.Id, phoneTypes[1], "071", "555-0452", false));
+            context.Add(NewPhone(r.Id, phoneTypes[0], "212", "555-4444", true));
+            context.Add(NewPhone(r.Id, phoneTypes[1], "212", "555-0452", false));
             context.Add(NewWork(r.Id, new DateTime(1989, 6, 22), new DateTime(1995, 8, 4), "TigerGate",
                                          "Bellvue WA", "Editorial Program Manager",
                                          "Defined guidelines and policies for the landing page content selection and promotion."));
