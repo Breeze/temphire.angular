@@ -76,9 +76,9 @@ namespace TempHire.Server.Controllers
         /// trip; the change set arrives as a Breeze "save bundle".
         /// </summary>
         [HttpPost]
-        public ActionResult<SaveResult> SaveChanges([FromBody] JObject saveBundle)
+        public async Task<ActionResult<SaveResult>> SaveChanges([FromBody] JObject saveBundle, CancellationToken cancellationToken)
         {
-            return PersistenceManager.SaveChanges(saveBundle);
+            return await PersistenceManager.SaveChangesAsync(saveBundle, cancellationToken: cancellationToken);
         }
 
         /// <summary>

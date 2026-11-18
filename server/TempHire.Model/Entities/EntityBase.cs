@@ -27,7 +27,7 @@ namespace TempHire.Model
         /// Optimistic concurrency token.  DevForce did this with
         /// <c>[ConcurrencyStrategy(ConcurrencyStrategy.AutoIncrement)]</c>; here the column is a plain
         /// int marked as an EF Core concurrency token and incremented by
-        /// <c>TempHirePersistenceManager.BeforeSaveEntities</c>.
+        /// <c>TempHirePersistenceManager.BeforeSaveEntitiesAsync</c>.
         /// </summary>
         [ConcurrencyCheck]
         public int RowVersion { get; set; }

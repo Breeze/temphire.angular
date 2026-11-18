@@ -30,7 +30,9 @@ namespace TempHire.Server.Persistence
     ///   </item>
     /// </list>
     /// <para>
-    /// Rows are read with <c>AsNoTracking</c>: Breeze attaches the save's entities to the same
+    /// Everything is read from the database up front, asynchronously, by <see cref="CreateAsync"/>:
+    /// the rules call <c>store(type)</c> while they evaluate, which can't wait for a query.  Rows are
+    /// read with <c>AsNoTracking</c>: Breeze attaches the save's entities to the same
     /// <c>DbContext</c>, so nothing read here may be tracked.  Entities a resource is being deleted
     /// with are left out; a resource on its way out need not keep an address.
     /// </para>
@@ -40,28 +42,41 @@ namespace TempHire.Server.Persistence
         private const string ResourceIdProperty = nameof(Address.StaffingResourceId);
 
         private static readonly MethodInfo StoredChildrenMethod =
-            typeof(SaveValidationStore).GetMethod(nameof(StoredChildren), BindingFlags.NonPublic | BindingFlags.Instance)!;
+            typeof(SaveValidationStore).GetMethod(nameof(StoredChildrenAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
 
         private readonly TempHireDbContext _context;
         private readonly List<EntityInfo> _pending;
         private readonly HashSet<object> _pendingKeys;
-        private readonly List<Guid> _resourceIds;
+        private readonly Dictionary<Type, List<object>> _storedChildren;
         private readonly Dictionary<string, List<object>> _byType = new();
 
-        public SaveValidationStore(TempHireDbContext context, Dictionary<Type, List<EntityInfo>> saveMap)
+        private SaveValidationStore(
+            TempHireDbContext context,
+            List<EntityInfo> pending,
+            List<object> entities,
+            Dictionary<Type, List<object>> storedChildren)
         {
             _context = context;
-            _pending = saveMap.SelectMany(kv => kv.Value).ToList();
-            _pendingKeys = _pending.Select(info => KeyOf(info.Entity)).ToHashSet();
+            _pending = pending;
+            _pendingKeys = pending.Select(info => KeyOf(context, info.Entity)).ToHashSet();
+            _storedChildren = storedChildren;
+            Entities = entities;
+        }
 
-            var deletedResources = _pending
+        /// <summary>Reads what the rules may need for this save from the database.</summary>
+        public static async Task<SaveValidationStore> CreateAsync(
+            TempHireDbContext context, Dictionary<Type, List<EntityInfo>> saveMap, CancellationToken cancellationToken)
+        {
+            var pending = saveMap.SelectMany(kv => kv.Value).ToList();
+
+            var deletedResources = pending
                 .Where(info => info.EntityState == EntityState.Deleted && info.Entity is StaffingResource)
                 .Select(info => ((StaffingResource)info.Entity).Id)
                 .ToHashSet();
 
             // The resources concerned: those in the save, and those a changed child belongs to now or
             // belonged to before (a child moved to another resource leaves its old one).
-            _resourceIds = _pending
+            var resourceIds = pending
                 .SelectMany(info => info.Entity switch
                 {
                     StaffingResource resource => [resource.Id],
@@ -72,13 +87,28 @@ namespace TempHire.Server.Persistence
                 .Distinct()
                 .ToList();
 
-            var live = _pending.Where(info => info.EntityState != EntityState.Deleted).Select(info => info.Entity).ToList();
+            var live = pending.Where(info => info.EntityState != EntityState.Deleted).Select(info => info.Entity).ToList();
             var savedResources = live.OfType<StaffingResource>().Select(r => r.Id).ToHashSet();
-            var storedResources = _resourceIds.Where(id => !savedResources.Contains(id)).ToList();
+            var storedResourceIds = resourceIds.Where(id => !savedResources.Contains(id)).ToList();
+            var storedResources = storedResourceIds.Count == 0
+                ? []
+                : await context.StaffingResources.AsNoTracking()
+                    .Where(r => storedResourceIds.Contains(r.Id))
+                    .ToListAsync(cancellationToken);
 
-            Entities = live
-                .Concat(_context.StaffingResources.AsNoTracking().Where(r => storedResources.Contains(r.Id)))
-                .ToList();
+            // The stored children of the resources concerned, of every child type a rule might read.
+            var storedChildren = new Dictionary<Type, List<object>>();
+            if (resourceIds.Count > 0)
+            {
+                foreach (var childType in context.Model.GetEntityTypes().Select(t => t.ClrType).Where(typeof(IHasRoot).IsAssignableFrom))
+                {
+                    var query = (Task<List<object>>)StoredChildrenMethod.MakeGenericMethod(childType)
+                        .Invoke(null, [context, resourceIds, cancellationToken])!;
+                    storedChildren[childType] = await query;
+                }
+            }
+
+            return new SaveValidationStore(context, pending, live.Concat(storedResources).ToList(), storedChildren);
         }
 
         /// <summary>The entities to validate.</summary>
@@ -90,12 +120,10 @@ namespace TempHire.Server.Persistence
             if (!_byType.TryGetValue(entityType, out var entities))
             {
                 var clrType = _context.Model.GetEntityTypes().FirstOrDefault(t => t.ClrType.Name == entityType)?.ClrType;
-                var stored = clrType != null && typeof(IHasRoot).IsAssignableFrom(clrType)
-                    ? (IEnumerable<object>)StoredChildrenMethod.MakeGenericMethod(clrType).Invoke(this, null)!
-                    : [];
+                var stored = clrType != null && _storedChildren.TryGetValue(clrType, out var rows) ? rows : [];
 
                 entities = stored
-                    .Where(entity => !_pendingKeys.Contains(KeyOf(entity)))
+                    .Where(entity => !_pendingKeys.Contains(KeyOf(_context, entity)))
                     .Concat(_pending
                         .Where(info => info.EntityState != EntityState.Deleted && info.Entity.GetType().Name == entityType)
                         .Select(info => info.Entity))
@@ -109,24 +137,25 @@ namespace TempHire.Server.Persistence
             return entities;
         }
 
-        /// <summary>The stored rows of a resource's child type that belong to the resources concerned.</summary>
-        private List<object> StoredChildren<T>() where T : class
+        /// <summary>The stored rows of a resource's child type that belong to the given resources.</summary>
+        private static async Task<List<object>> StoredChildrenAsync<T>(
+            TempHireDbContext context, List<Guid> resourceIds, CancellationToken cancellationToken) where T : class
         {
-            var ids = _resourceIds;
             var row = Expression.Parameter(typeof(T), "row");
             var belongs = Expression.Lambda<Func<T, bool>>(
                 Expression.Call(
                     typeof(Enumerable), nameof(Enumerable.Contains), [typeof(Guid)],
-                    Expression.Constant(ids),
+                    Expression.Constant(resourceIds),
                     Expression.Call(typeof(EF), nameof(EF.Property), [typeof(Guid)], row, Expression.Constant(ResourceIdProperty))),
                 row);
 
-            return ids.Count == 0 ? [] : _context.Set<T>().AsNoTracking().Where(belongs).Cast<object>().ToList();
+            var rows = await context.Set<T>().AsNoTracking().Where(belongs).ToListAsync(cancellationToken);
+            return rows.Cast<object>().ToList();
         }
 
-        private object KeyOf(object entity)
+        private static object KeyOf(TempHireDbContext context, object entity)
         {
-            var key = _context.Model.FindEntityType(entity.GetType())?.FindPrimaryKey()?.Properties.Single().PropertyInfo;
+            var key = context.Model.FindEntityType(entity.GetType())?.FindPrimaryKey()?.Properties.Single().PropertyInfo;
             return (entity.GetType(), key?.GetValue(entity));
         }
 

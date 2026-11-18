@@ -28,9 +28,9 @@ namespace TempHire.Server.Persistence
     ///     <b>Validation.</b>  <c>ValidateSave</c> spun up a sandbox EntityManager, restored the cache
     ///     state into it and called <c>Validate</c> on every entity so that cross-entity rules
     ///     ("a resource must have an address") could see the whole graph.  Neither Breeze nor EF Core
-    ///     validates on save, so <see cref="ValidateSave"/> does it here: each entity's data annotations,
-    ///     then the validation metadata, cross-entity rules included, against what the database will
-    ///     hold after the save.
+    ///     validates on save, so <see cref="ValidateSaveAsync"/> does it here: the validation metadata,
+    ///     the entities' data annotations and cross-entity rules included, against what the database
+    ///     will hold after the save.
     ///   </item>
     ///   <item>
     ///     <b>Audit columns.</b>  <c>ExecuteSave</c> stamped Created/Modified and the user name.
@@ -38,6 +38,13 @@ namespace TempHire.Server.Persistence
     ///     <c>ConcurrencyStrategy.AutoIncrement</c> used to do for us.
     ///   </item>
     /// </list>
+    /// <para>
+    /// Saves are asynchronous (<see cref="SaveChangesAsync"/>): validation rules may be, and the rules
+    /// read the database.  Breeze's asynchronous save calls the synchronous hooks as well as the
+    /// asynchronous ones, so the per-entity checks stay in <see cref="BeforeSaveEntity"/>, and the rest is
+    /// in <see cref="BeforeSaveEntitiesAsync"/>.  The synchronous <see cref="SaveChanges"/> would skip it,
+    /// so it refuses to run.
+    /// </para>
     /// </summary>
     public class TempHirePersistenceManager : EFPersistenceManager<TempHireDbContext>
     {
@@ -122,7 +129,7 @@ namespace TempHire.Server.Persistence
         /// </summary>
         protected override bool BeforeSaveEntity(EntityInfo entityInfo)
         {
-            // Breeze calls this for each entity before BeforeSaveEntities, so the role is checked here
+            // Breeze calls this for each entity before BeforeSaveEntitiesAsync, so the role is checked here
             // first: a reader's save is refused before anything else looks at it.
             EnsureMaySave();
 
@@ -148,14 +155,19 @@ namespace TempHire.Server.Persistence
             return true;
         }
 
-        protected override Dictionary<Type, List<EntityInfo>> BeforeSaveEntities(
-            Dictionary<Type, List<EntityInfo>> saveMap)
+        /// <summary>Not supported: a save must be asynchronous, see <see cref="SaveChangesAsync"/>.</summary>
+        public new SaveResult SaveChanges(JObject saveBundle, TransactionSettings transactionSettings = null) =>
+            throw new NotSupportedException(
+                "TempHire saves asynchronously, so that validation rules can be asynchronous: use SaveChangesAsync.");
+
+        protected override async Task<Dictionary<Type, List<EntityInfo>>> BeforeSaveEntitiesAsync(
+            Dictionary<Type, List<EntityInfo>> saveMap, CancellationToken cancellationToken)
         {
             EnsureMaySave();
             StampAuditColumns(saveMap);
-            ValidateSave(saveMap);
+            await ValidateSaveAsync(saveMap, cancellationToken);
 
-            return base.BeforeSaveEntities(saveMap);
+            return await base.BeforeSaveEntitiesAsync(saveMap, cancellationToken);
         }
 
         /// <summary>Port of <c>SaveInterceptor.ExecuteSave</c>.</summary>
@@ -202,16 +214,12 @@ namespace TempHire.Server.Persistence
         /// annotations Breeze publishes to the client as validators; the rest are the rules beyond
         /// them, cross-entity ones included.  All of it sees the database as it will be after the save
         /// (<see cref="SaveValidationStore"/>), so "a resource keeps an address" also catches a save
-        /// that deletes a resource's last address on its own.
+        /// that deletes a resource's last address on its own.  Asynchronous rules run too.
         /// </summary>
-        private void ValidateSave(Dictionary<Type, List<EntityInfo>> saveMap)
+        private async Task ValidateSaveAsync(Dictionary<Type, List<EntityInfo>> saveMap, CancellationToken cancellationToken)
         {
-            // Nothing in the metadata is asynchronous, so this completes at once; Breeze's save
-            // pipeline is synchronous.
-            var errors = _validation
-                .ValidateEntitiesAsync(new SaveValidationStore(Context, saveMap))
-                .GetAwaiter()
-                .GetResult()
+            var store = await SaveValidationStore.CreateAsync(Context, saveMap, cancellationToken);
+            var errors = (await _validation.ValidateEntitiesAsync(store, cancellationToken: cancellationToken))
                 .SelectMany(ToEntityErrors)
                 .ToList();
 
