@@ -67,20 +67,21 @@ describe('the server validation rules on the client', () => {
     return { manager, service, resource, addAddress, addPhoneNumber, ruleIds };
   }
 
-  it('wants the date of birth before the hire date, and reports it on both', () => {
+  it('wants a resource at least 18 years old when hired, and reports it on both dates', () => {
     const { resource, addAddress, addPhoneNumber, service } = setUp();
     addAddress();
     addPhoneNumber();
-    resource.setProperty('dateOfBirth', new Date(2000, 0, 1));
-    resource.setProperty('hireDate', new Date(1999, 0, 1));
+    resource.setProperty('dateOfBirth', new Date(2000, 4, 15));
+    const ids = (hireDate: Date) => {
+      resource.setProperty('hireDate', hireDate);
+      return service.validateModelSync(resource, 'StaffingResource').map((e) => [e.id, e.errorMessage, e.propertyNames]);
+    };
 
-    const errors = service.validateModelSync(resource, 'StaffingResource');
-    expect(errors.map((e) => [e.id, e.errorMessage, e.propertyNames])).toEqual([
-      ['BORN_BEFORE_HIRED', 'The date of birth must be before the hire date', ['dateOfBirth', 'hireDate']],
-    ]);
-
-    resource.setProperty('hireDate', new Date(2020, 0, 1));
-    expect(service.validateModelSync(resource, 'StaffingResource')).toEqual([]);
+    const tooYoung = [['ADULT_WHEN_HIRED', 'A staffing resource must be at least 18 years old when hired', ['dateOfBirth', 'hireDate']]];
+    expect(ids(new Date(2000, 5, 5))).toEqual(tooYoung); // three weeks old
+    expect(ids(new Date(2018, 4, 14))).toEqual(tooYoung); // the day before the 18th birthday
+    expect(ids(new Date(2018, 4, 15))).toEqual([]); // the 18th birthday
+    expect(ids(new Date(2030, 0, 1))).toEqual([]);
   });
 
   it('wants a new resource to have an address and a phone number', () => {

@@ -30,11 +30,11 @@
       },
       {
         "name": "expression",
-        "id": "BORN_BEFORE_HIRED",
+        "id": "ADULT_WHEN_HIRED",
         "propertyNames": ["dateOfBirth", "hireDate"],
         "context": {
-          "expression": "!model.dateOfBirth || !model.hireDate || model.dateOfBirth < model.hireDate",
-          "messageTemplate": "The date of birth must be before the hire date"
+          "expression": "!model.dateOfBirth || !model.hireDate || new Date(model.dateOfBirth.getFullYear() + 18, model.dateOfBirth.getMonth(), model.dateOfBirth.getDate()) <= model.hireDate",
+          "messageTemplate": "A staffing resource must be at least 18 years old when hired"
         }
       }
     ],

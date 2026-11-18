@@ -92,22 +92,102 @@ namespace TempHire.Model.SampleData
                 return;
             }
 
-            var provider = new SampleDataProvider();
+            new SampleDataProvider().Generate(context, () => context.SaveChanges());
+        }
+
+        /// <summary>
+        /// Generates the sample data of both tenants into <paramref name="context"/>, calling
+        /// <paramref name="save"/> after each tenant's.
+        /// </summary>
+        private void Generate(TempHireDbContext context, Action save)
+        {
             try
             {
                 // The context stamps every new tenant-owned row with its current tenant.
                 context.UseTenant(Harbor.Id);
-                provider.GenerateSampleData(context);
-                provider.GenerateResources(context, ResourcesPerTenant - provider.ResourceCount, new Random(1));
-                context.SaveChanges();
+                GenerateSampleData(context);
+                GenerateResources(context, ResourcesPerTenant - ResourceCount, new Random(1));
+                AssignSampleDates(context);
+                save();
 
                 context.UseTenant(Summit.Id);
-                provider.GenerateResources(context, ResourcesPerTenant, new Random(2));
-                context.SaveChanges();
+                GenerateResources(context, ResourcesPerTenant, new Random(2));
+                AssignSampleDates(context);
+                save();
             }
             finally
             {
                 context.UseTenant(null);
+            }
+        }
+
+        /// <summary>
+        /// The date of birth and hire date of every sample staffing resource, as a new database is
+        /// seeded with them.  The sample data is generated into a context that never connects to a
+        /// database, so a migration can give an existing database the same dates.
+        /// </summary>
+        public static IReadOnlyList<(Guid Id, DateTime DateOfBirth, DateTime HireDate)> SampleDates()
+        {
+            using var context = new TempHireDbContext(
+                new DbContextOptionsBuilder<TempHireDbContext>().UseSqlServer("Server=(none)").Options);
+            new SampleDataProvider().Generate(context, () => { });
+
+            return context.ChangeTracker.Entries<StaffingResource>()
+                .Select(e => (e.Entity.Id, e.Entity.DateOfBirth!.Value, e.Entity.HireDate!.Value))
+                .ToList();
+        }
+
+        /// <summary>
+        /// The dates of birth and hire dates of the original sample's resources, which fit their
+        /// summaries: born about 22 years before the degree a summary names (Nancy Davolio's BA, 1970),
+        /// or before the first job; hired a few weeks after the last job in their work history.
+        /// </summary>
+        private static readonly Dictionary<string, (DateTime DateOfBirth, DateTime HireDate)> OriginalDates = new()
+        {
+            ["Nancy Davolio"] = (new DateTime(1948, 12, 8), new DateTime(2011, 5, 2)),       // BA 1970
+            ["Andrew Fuller"] = (new DateTime(1952, 2, 19), new DateTime(2011, 10, 3)),      // BTS 1974
+            ["Janet Leverling"] = (new DateTime(1963, 8, 30), new DateTime(2010, 2, 1)),     // BS 1984
+            ["Margaret Peacock"] = (new DateTime(1937, 9, 19), new DateTime(2008, 6, 2)),    // BA 1958
+            ["Steven Buchanan"] = (new DateTime(1955, 3, 4), new DateTime(2002, 3, 4)),      // BSC 1976
+            ["Michael Suyama"] = (new DateTime(1961, 7, 2), new DateTime(2005, 12, 5)),      // MA 1983
+            ["Laura Callahan"] = (new DateTime(1966, 1, 9), new DateTime(2010, 2, 15)),      // first job 1989
+            ["Anne Dodsworth"] = (new DateTime(1966, 1, 27), new DateTime(2011, 7, 5)),      // first job 1989
+            ["Pearl Pindlegrass"] = (new DateTime(1964, 4, 12), new DateTime(1997, 8, 4)),   // first job 1989
+        };
+
+        /// <summary>
+        /// Gives each new sample staffing resource a realistic date of birth and hire date.  The
+        /// original sample's resources get <see cref="OriginalDates"/>.  A generated resource's come
+        /// from its work history, which covers the years of experience its summary names: born at
+        /// least 22 years before the first job, hired a few weeks after the last one - so "5 years of
+        /// experience" means hired at 27 or older, and always old enough to be hired (the validation
+        /// metadata wants 18).  The variation comes from a <see cref="Random"/> seeded by the
+        /// resource's id, not from the generator's, so the rest of the sample data is the same as it
+        /// was before resources had these dates.
+        /// </summary>
+        private static void AssignSampleDates(TempHireDbContext context)
+        {
+            var work = context.ChangeTracker.Entries<WorkExperienceItem>()
+                .Select(e => e.Entity)
+                .ToLookup(w => w.StaffingResourceId);
+
+            foreach (var resource in context.ChangeTracker.Entries<StaffingResource>()
+                         .Select(e => e.Entity)
+                         .Where(r => r.DateOfBirth == null && r.HireDate == null))
+            {
+                if (OriginalDates.TryGetValue($"{resource.FirstName} {resource.LastName}", out var original))
+                {
+                    (resource.DateOfBirth, resource.HireDate) = original;
+                    continue;
+                }
+
+                var random = new Random(BitConverter.ToInt32(resource.Id.ToByteArray(), 0));
+                var jobs = work[resource.Id].ToList();
+                var firstJob = jobs.Count > 0 ? jobs.Min(w => w.From) : new DateTime(1995, 6, 1);
+                var lastJob = jobs.Count > 0 ? jobs.Max(w => w.To) : new DateTime(2011, 6, 1);
+
+                resource.DateOfBirth = firstJob.AddYears(-22 - random.Next(0, 4)).AddDays(-random.Next(0, 365)).Date;
+                resource.HireDate = lastJob.AddDays(random.Next(14, 120)).Date;
             }
         }
 

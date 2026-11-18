@@ -720,7 +720,7 @@ The validation rules are written once, on the server, in two places:
   annotations cannot express: an address is a U.S. address, with a state and a ZIP code; a phone
   number has a 3-digit area code and a 7-digit number (a dash or a dot may follow the first 3
   digits); a rate is a valid amount and not negative; dates are valid dates; and a staffing resource
-  has at least one address and one phone number, and its date of birth is before its hire date.
+  has at least one address and one phone number, and it is at least 18 years old when hired.
   These use
   [IdeaBlade.Validation / `@ideablade/validation`](https://github.com/Breeze/ideablade-validation),
   which reads the same metadata on both sides.
@@ -757,7 +757,7 @@ The forms add no rules of their own; they show the verdict:
   fields; the client checks the same rules first, so they are rare.
 
 - **A form validates the whole entity** whenever a field changes, so a rule about two fields shows
-  on both: "the date of birth is before the hire date" names both dates (`propertyNames` in the
+  on both: "at least 18 years old when hired" names both dates (`propertyNames` in the
   metadata), and changing either one re-checks the other.  The summary card shows its message once,
   under the dates.
 - **The route has its own validation service** (`provideValidationScope` in
