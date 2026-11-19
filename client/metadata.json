@@ -956,6 +956,16 @@
           ]
         },
         {
+          "dataType": "DateTime",
+          "isNullable": true,
+          "nameOnServer": "DateOfBirth",
+          "validators": [
+            {
+              "name": "date"
+            }
+          ]
+        },
+        {
           "dataType": "String",
           "isNullable": false,
           "maxLength": 100,
@@ -967,6 +977,16 @@
             {
               "maxLength": 100,
               "name": "maxLength"
+            }
+          ]
+        },
+        {
+          "dataType": "DateTime",
+          "isNullable": true,
+          "nameOnServer": "HireDate",
+          "validators": [
+            {
+              "name": "date"
             }
           ]
         },

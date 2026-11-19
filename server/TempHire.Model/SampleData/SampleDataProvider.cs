@@ -92,22 +92,102 @@ namespace TempHire.Model.SampleData
                 return;
             }
 
-            var provider = new SampleDataProvider();
+            new SampleDataProvider().Generate(context, () => context.SaveChanges());
+        }
+
+        /// <summary>
+        /// Generates the sample data of both tenants into <paramref name="context"/>, calling
+        /// <paramref name="save"/> after each tenant's.
+        /// </summary>
+        private void Generate(TempHireDbContext context, Action save)
+        {
             try
             {
                 // The context stamps every new tenant-owned row with its current tenant.
                 context.UseTenant(Harbor.Id);
-                provider.GenerateSampleData(context);
-                provider.GenerateResources(context, ResourcesPerTenant - provider.ResourceCount, new Random(1));
-                context.SaveChanges();
+                GenerateSampleData(context);
+                GenerateResources(context, ResourcesPerTenant - ResourceCount, new Random(1));
+                AssignSampleDates(context);
+                save();
 
                 context.UseTenant(Summit.Id);
-                provider.GenerateResources(context, ResourcesPerTenant, new Random(2));
-                context.SaveChanges();
+                GenerateResources(context, ResourcesPerTenant, new Random(2));
+                AssignSampleDates(context);
+                save();
             }
             finally
             {
                 context.UseTenant(null);
+            }
+        }
+
+        /// <summary>
+        /// The date of birth and hire date of every sample staffing resource, as a new database is
+        /// seeded with them.  The sample data is generated into a context that never connects to a
+        /// database, so a migration can give an existing database the same dates.
+        /// </summary>
+        public static IReadOnlyList<(Guid Id, DateTime DateOfBirth, DateTime HireDate)> SampleDates()
+        {
+            using var context = new TempHireDbContext(
+                new DbContextOptionsBuilder<TempHireDbContext>().UseSqlServer("Server=(none)").Options);
+            new SampleDataProvider().Generate(context, () => { });
+
+            return context.ChangeTracker.Entries<StaffingResource>()
+                .Select(e => (e.Entity.Id, e.Entity.DateOfBirth!.Value, e.Entity.HireDate!.Value))
+                .ToList();
+        }
+
+        /// <summary>
+        /// The dates of birth and hire dates of the original sample's resources, which fit their
+        /// summaries: born about 22 years before the degree a summary names (Nancy Davolio's BA, 1970),
+        /// or before the first job; hired a few weeks after the last job in their work history.
+        /// </summary>
+        private static readonly Dictionary<string, (DateTime DateOfBirth, DateTime HireDate)> OriginalDates = new()
+        {
+            ["Nancy Davolio"] = (new DateTime(1948, 12, 8), new DateTime(2011, 5, 2)),       // BA 1970
+            ["Andrew Fuller"] = (new DateTime(1952, 2, 19), new DateTime(2011, 10, 3)),      // BTS 1974
+            ["Janet Leverling"] = (new DateTime(1963, 8, 30), new DateTime(2010, 2, 1)),     // BS 1984
+            ["Margaret Peacock"] = (new DateTime(1937, 9, 19), new DateTime(2008, 6, 2)),    // BA 1958
+            ["Steven Buchanan"] = (new DateTime(1955, 3, 4), new DateTime(2002, 3, 4)),      // BSC 1976
+            ["Michael Suyama"] = (new DateTime(1961, 7, 2), new DateTime(2005, 12, 5)),      // MA 1983
+            ["Laura Callahan"] = (new DateTime(1966, 1, 9), new DateTime(2010, 2, 15)),      // first job 1989
+            ["Anne Dodsworth"] = (new DateTime(1966, 1, 27), new DateTime(2011, 7, 5)),      // first job 1989
+            ["Pearl Pindlegrass"] = (new DateTime(1964, 4, 12), new DateTime(1997, 8, 4)),   // first job 1989
+        };
+
+        /// <summary>
+        /// Gives each new sample staffing resource a realistic date of birth and hire date.  The
+        /// original sample's resources get <see cref="OriginalDates"/>.  A generated resource's come
+        /// from its work history, which covers the years of experience its summary names: born at
+        /// least 22 years before the first job, hired a few weeks after the last one - so "5 years of
+        /// experience" means hired at 27 or older, and always old enough to be hired (the validation
+        /// metadata wants 18).  The variation comes from a <see cref="Random"/> seeded by the
+        /// resource's id, not from the generator's, so the rest of the sample data is the same as it
+        /// was before resources had these dates.
+        /// </summary>
+        private static void AssignSampleDates(TempHireDbContext context)
+        {
+            var work = context.ChangeTracker.Entries<WorkExperienceItem>()
+                .Select(e => e.Entity)
+                .ToLookup(w => w.StaffingResourceId);
+
+            foreach (var resource in context.ChangeTracker.Entries<StaffingResource>()
+                         .Select(e => e.Entity)
+                         .Where(r => r.DateOfBirth == null && r.HireDate == null))
+            {
+                if (OriginalDates.TryGetValue($"{resource.FirstName} {resource.LastName}", out var original))
+                {
+                    (resource.DateOfBirth, resource.HireDate) = original;
+                    continue;
+                }
+
+                var random = new Random(BitConverter.ToInt32(resource.Id.ToByteArray(), 0));
+                var jobs = work[resource.Id].ToList();
+                var firstJob = jobs.Count > 0 ? jobs.Min(w => w.From) : new DateTime(1995, 6, 1);
+                var lastJob = jobs.Count > 0 ? jobs.Max(w => w.To) : new DateTime(2011, 6, 1);
+
+                resource.DateOfBirth = firstJob.AddYears(-22 - random.Next(0, 4)).AddDays(-random.Next(0, 365)).Date;
+                resource.HireDate = lastJob.AddDays(random.Next(14, 120)).Date;
             }
         }
 
@@ -276,8 +356,7 @@ namespace TempHire.Model.SampleData
                                  new State {Id = CreateGuid(48), ShortName = "WA", Name = "Washington"},
                                  new State {Id = CreateGuid(49), ShortName = "WV", Name = "West Virginia"},
                                  new State {Id = CreateGuid(50), ShortName = "WI", Name = "Wisconsin"},
-                                 new State {Id = CreateGuid(51), ShortName = "WY", Name = "Wyoming"},
-                                 new State {Id = CreateGuid(52), ShortName = "--", Name = "International"}
+                                 new State {Id = CreateGuid(51), ShortName = "WY", Name = "Wyoming"}
                              };
             context.AddRange(states);
             _states = states;
@@ -365,9 +444,11 @@ namespace TempHire.Model.SampleData
             r = NewResource("Steven", "T", "Buchanan",
                             "Steven Buchanan graduated from St. Andrews University, Scotland, with a BSC degree in 1976.  Upon joining the company as a sales representative in 1992, he spent 6 months in an orientation program at the Seattle office and then returned to his permanent post in London.  He was promoted to sales manager in March 1993.  Mr. Buchanan has completed the courses \"Successful Telemarketing\" and \"International Sales Management.\"  He is fluent in French.");
             context.Add(r);
-            context.Add(NewAddress(r.Id, addressTypes[0], "14 Garrett Hill", "", "London", states[51], "SW1 8JR", true));
-            context.Add(NewPhone(r.Id, phoneTypes[0], "071", "555-4848", true));
-            context.Add(NewPhone(r.Id, phoneTypes[1], "071", "555-3453", false));
+            // The original sample's London addresses are U.S. addresses here: TempHire takes U.S.
+            // addresses only (a state, and a ZIP code).
+            context.Add(NewAddress(r.Id, addressTypes[0], "14 Garrett Hill", "", "Boston", states[21], "02108", true));
+            context.Add(NewPhone(r.Id, phoneTypes[0], "617", "555-4848", true));
+            context.Add(NewPhone(r.Id, phoneTypes[1], "617", "555-3453", false));
             context.Add(NewRate(r.Id, rateTypes[0], 50));
             context.Add(NewRate(r.Id, rateTypes[1], 300));
             context.Add(NewRate(r.Id, rateTypes[2], 1500));
@@ -382,10 +463,10 @@ namespace TempHire.Model.SampleData
             r = NewResource("Michael", "", "Suyama",
                             "Michael is a graduate of Sussex University (MA, economics, 1983) and the University of California at Los Angeles (MBA, marketing, 1986).  He has also taken the courses \"Multi-Cultural Selling\" and \"Time Management for the Sales Professional.\"  He is fluent in Japanese and can read and write French, Portuguese, and Spanish.");
             context.Add(r);
-            context.Add(NewAddress(r.Id, addressTypes[0], "Coventry House  Miner Rd.", "", "London", states[51],
-                                            "EC2 7JR", true));
-            context.Add(NewPhone(r.Id, phoneTypes[0], "071", "555-7773", true));
-            context.Add(NewPhone(r.Id, phoneTypes[1], "071", "555-0428", false));
+            context.Add(NewAddress(r.Id, addressTypes[0], "Coventry House  Miner Rd.", "", "Chicago", states[13],
+                                            "60601", true));
+            context.Add(NewPhone(r.Id, phoneTypes[0], "312", "555-7773", true));
+            context.Add(NewPhone(r.Id, phoneTypes[1], "312", "555-0428", false));
             context.Add(NewWork(r.Id, new DateTime(1989, 6, 22), new DateTime(1994, 1, 1), "Rainout",
                                          "Oakland CA", "CRM Analyst",
                                          "Responsible for all aspects of CRM business management and marketing development."));
@@ -410,10 +491,10 @@ namespace TempHire.Model.SampleData
             r = NewResource("Anne", "F", "Dodsworth",
                             "Anne has a BA degree in English from St. Lawrence College.  She is fluent in French and German.");
             context.Add(r);
-            context.Add(NewAddress(r.Id, addressTypes[0], "7 Houndstooth Rd.", "", "London", states[51], "WG2 7LT",
+            context.Add(NewAddress(r.Id, addressTypes[0], "7 Houndstooth Rd.", "", "New York", states[32], "10001",
                                             true));
-            context.Add(NewPhone(r.Id, phoneTypes[0], "071", "555-4444", true));
-            context.Add(NewPhone(r.Id, phoneTypes[1], "071", "555-0452", false));
+            context.Add(NewPhone(r.Id, phoneTypes[0], "212", "555-4444", true));
+            context.Add(NewPhone(r.Id, phoneTypes[1], "212", "555-0452", false));
             context.Add(NewWork(r.Id, new DateTime(1989, 6, 22), new DateTime(1995, 8, 4), "TigerGate",
                                          "Bellvue WA", "Editorial Program Manager",
                                          "Defined guidelines and policies for the landing page content selection and promotion."));

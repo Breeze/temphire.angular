@@ -70,7 +70,7 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 | `[RequiresAuthentication]` on `EntityBase` | `[Authorize]` on `BreezeController` |
 | `[ClientCanSave(true)]` on `AuditEntityBase` + `DefaultAuthorization = false` | `TempHirePersistenceManager.BeforeSaveEntity` rejects anything that is not an `AuditEntityBase`. Same effect: the four lookup types are read-only to the client |
 | `[ClientCanQuery(false)]` on `User` | `User` is not exposed by any controller and lives in a separate DbContext, so it never reaches the client metadata |
-| `[ConcurrencyStrategy(ConcurrencyStrategy.AutoIncrement)]` | `[ConcurrencyCheck]` on `RowVersion`; incremented in `BeforeSaveEntities` |
+| `[ConcurrencyStrategy(ConcurrencyStrategy.AutoIncrement)]` | `[ConcurrencyCheck]` on `RowVersion`; incremented in `BeforeSaveEntitiesAsync` |
 | `[BeforeSet]` string trimming on `EntityBase` | Not ported. It silently trimmed every string on assignment; doing that on the client would fight the user's cursor. Trim at the point of use instead |
 | `[AfterSet("FirstName")] → ForcePropertyChanged("FullName")` | Unnecessary — `fullName` is a plain getter and Angular re-evaluates it each change detection pass |
 
@@ -200,13 +200,15 @@ Everything below is a conscious departure from the original.
 - *Validation runs against the save bundle, not a sandbox EntityManager.* `SaveInterceptor.ValidateSave`
   restored the cache state into a throwaway `EntityManager` so that cross-entity rules could see the
   whole graph. Neither Breeze nor EF Core validates on save, so `TempHirePersistenceManager` does it
-  in `BeforeSaveEntities`, where it gets the whole change set at once: each entity's data
-  annotations and own rules, and the one cross-entity rule (a resource keeps at least one address
-  and one phone number) by counting ids: the rows stored now, minus what the save deletes or moves
-  away, plus what it adds or moves in. Nothing is hung on the entities' navigation properties;
-  Breeze attaches a modified entity with `DbContext.Add`, which would take any rows found there
-  for new ones. Counting also catches deleting a resource's last address without the resource
-  itself being in the save.
+  in `BeforeSaveEntitiesAsync` (saves are asynchronous, so validation rules can be), where it gets the whole change set at once, through the validation metadata
+  (`Validation/validation.metadata.json`): its global `breeze` validator runs each entity's data
+  annotations, and its other rules replaced the entities' `Validate` methods and the hand-written
+  cross-entity check. The rules see the database as it will be after the save (`SaveValidationStore`): the rows
+  stored now, read without tracking, minus what the save deletes or moves away, plus what it adds or
+  moves in. Nothing is hung on the entities' navigation properties; Breeze attaches a modified entity
+  with `DbContext.Add`, which would take any rows found there for new ones. The resources whose
+  children the save changes are validated too, so deleting a resource's last address is caught
+  even when the resource itself is not in the save. The client checks the same metadata first.
 
 **Not carried over**
 
@@ -236,11 +238,13 @@ Everything below is a conscious departure from the original.
   `signal-form-untouched` class through `provideSignalFormsConfig`, and `styles.css` holds back the
   invalid border on those fields until they have been touched.  Entity fields are not held back:
   a Breeze error shows at once.
-- **Adding an editable entity field** means binding it with `[(ngModel)]` plus
-  `[breezeField]="entity" breezeProperty="name" #nameField="breezeField"
-  [invalid]="nameField.invalid()"`.  Without the directive the field still works, but its Breeze
-  errors reach neither the form nor Optimus UI.  Validation rules belong on the server's entity, not
-  in the form.
+- **Adding an editable entity field** means binding it with `name="property"` and `[(ngModel)]`
+  inside an `ngForm [validationModel]="entity"` element, plus `#field="ngModel"
+  [invalid]="field.invalid"`, in a component that imports `ValidationFormsDirectives` and
+  `FieldErrorsDirective`.  Without them the field still works, but its errors reach neither the
+  form nor Optimus UI.  Validation rules belong on the
+  server - a data annotation on the entity, or a rule in `Validation/validation.metadata.json` -
+  not in the form.
 - **One `MetadataStore` for the page.** Breeze binds each registered entity class to a single
   store, so `EntityManagerProvider` keeps one store across logout and login and registers the
   classes once.  Creating a new store per login made the second login in a page fail.

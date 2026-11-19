@@ -27,20 +27,14 @@ namespace TempHire.Model
         /// Optimistic concurrency token.  DevForce did this with
         /// <c>[ConcurrencyStrategy(ConcurrencyStrategy.AutoIncrement)]</c>; here the column is a plain
         /// int marked as an EF Core concurrency token and incremented by
-        /// <c>TempHirePersistenceManager.BeforeSaveEntities</c>.
+        /// <c>TempHirePersistenceManager.BeforeSaveEntitiesAsync</c>.
         /// </summary>
         [ConcurrencyCheck]
         public int RowVersion { get; set; }
 
-        /// <summary>
-        /// Custom, cross-property validation.  The DevForce version received a
-        /// <c>VerifierResultCollection</c>; the Breeze equivalent is a list of
-        /// <see cref="ValidationResult"/> which the persistence manager turns into
-        /// Breeze <c>EntityError</c>s and returns to the client with a 403.
-        /// </summary>
-        public virtual void Validate(ICollection<ValidationResult> validationErrors)
-        {
-        }
+        // The DevForce version had a virtual Validate for rules beyond the data annotations.  Those
+        // rules are now validation metadata (TempHire.Server/Validation/validation.metadata.json),
+        // written once for the client and the server; TempHirePersistenceManager checks them on save.
     }
 
     /// <summary>

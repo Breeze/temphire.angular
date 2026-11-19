@@ -32,6 +32,12 @@ namespace TempHire.Model
         [Required]
         public string Summary { get; set; }
 
+        /// <summary>Optional.  The validation metadata checks that it is before <see cref="HireDate"/>.</summary>
+        public DateTime? DateOfBirth { get; set; }
+
+        /// <summary>Optional.  The validation metadata checks that it is after <see cref="DateOfBirth"/>.</summary>
+        public DateTime? HireDate { get; set; }
+
         public ICollection<Address> Addresses { get; set; } = new List<Address>();
 
         public ICollection<PhoneNumber> PhoneNumbers { get; set; } = new List<PhoneNumber>();
@@ -49,8 +55,8 @@ namespace TempHire.Model
                 : $"{FirstName?.Trim()} {LastName?.Trim()}";
 
         // The original's rule that a resource always has at least one address and one phone number is
-        // not checked here: an entity in a Breeze save sees only what the client sent, not its
-        // existing children.  TempHirePersistenceManager checks it against what the database will
-        // hold after the save.
+        // in the validation metadata (TempHire.Server/Validation/validation.metadata.json).  The client
+        // checks it as the user edits; the server checks it on save, against what the database will
+        // hold after the save (SaveValidationStore).
     }
 }

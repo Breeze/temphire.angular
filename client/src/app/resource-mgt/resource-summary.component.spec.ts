@@ -1,5 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideValidation } from '@ideablade/validation/angular';
+import { breezeModelType } from '@ideablade/validation/breeze';
 import { DataService, Entity, EntityManager, MetadataStore } from 'breeze-client';
 
 import metadata from '../../../metadata.json';
@@ -46,6 +48,8 @@ describe('ResourceSummaryComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        // The fields use the validation framework's form directives; entities supply their own type.
+        provideValidation({ modelTypeResolvers: [breezeModelType] }),
         // The name dialog: resolves with the new name after the click handler has returned.
         {
           provide: AppDialogService,

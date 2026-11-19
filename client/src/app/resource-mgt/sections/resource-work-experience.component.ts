@@ -8,7 +8,9 @@ import { TextareaModule } from '@openng/optimus-ui/textarea';
 
 import { StaffingResource, WorkExperienceItem } from '../../core/model';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
-import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
+import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+
+import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceWorkExperienceViewModel.cs` +
@@ -33,7 +35,8 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
 @Component({
   selector: 'app-resource-work-experience',
   imports: [
-    BreezeFieldDirective,
+    ValidationFormsDirectives,
+    FieldErrorsDirective,
     FormsModule,
     ButtonDirective,
     DatePickerModule,
@@ -60,16 +63,15 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
         </p>
       } @else {
         @for (item of sortedWorkExperience(); track item.id; let last = $last) {
-          <div class="work__item">
+          <div class="work__item" ngForm [validationModel]="item">
             <div class="work__row">
               <label class="work__field work__field--date">
                 <span class="work__label">From:</span>
                 <p-datepicker
+                  name="from"
                   [(ngModel)]="item.from"
-                  [breezeField]="item"
-                  breezeProperty="from"
-                  #fromField="breezeField"
-                  [invalid]="fromField.invalid()"
+                  #from="ngModel"
+                  [invalid]="from.invalid"
                   [disabled]="readOnly()"
                   [showIcon]="true"
                   appendTo="body"
@@ -81,11 +83,10 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
               <label class="work__field work__field--date">
                 <span class="work__label">To:</span>
                 <p-datepicker
+                  name="to"
                   [(ngModel)]="item.to"
-                  [breezeField]="item"
-                  breezeProperty="to"
-                  #toField="breezeField"
-                  [invalid]="toField.invalid()"
+                  #to="ngModel"
+                  [invalid]="to.invalid"
                   [disabled]="readOnly()"
                   [showIcon]="true"
                   appendTo="body"
@@ -99,11 +100,10 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
                 <input
                   pInputText
                   type="text"
+                  name="positionTitle"
                   [(ngModel)]="item.positionTitle"
-                  [breezeField]="item"
-                  breezeProperty="positionTitle"
-                  #positionTitleField="breezeField"
-                  [invalid]="positionTitleField.invalid()"
+                  #positionTitle="ngModel"
+                  [invalid]="positionTitle.invalid"
                   [readOnly]="readOnly()"
                 />
               </label>
@@ -113,11 +113,10 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
                 <input
                   pInputText
                   type="text"
+                  name="location"
                   [(ngModel)]="item.location"
-                  [breezeField]="item"
-                  breezeProperty="location"
-                  #locationField="breezeField"
-                  [invalid]="locationField.invalid()"
+                  #location="ngModel"
+                  [invalid]="location.invalid"
                   [readOnly]="readOnly()"
                 />
               </label>
@@ -142,11 +141,10 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
               <input
                 pInputText
                 type="text"
+                name="company"
                 [(ngModel)]="item.company"
-                [breezeField]="item"
-                breezeProperty="company"
-                #companyField="breezeField"
-                [invalid]="companyField.invalid()"
+                #company="ngModel"
+                [invalid]="company.invalid"
                 [readOnly]="readOnly()"
               />
             </label>
@@ -156,11 +154,10 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
               <textarea
                 pTextarea
                 rows="4"
+                name="description"
                 [(ngModel)]="item.description"
-                [breezeField]="item"
-                breezeProperty="description"
-                #descriptionField="breezeField"
-                [invalid]="descriptionField.invalid()"
+                #description="ngModel"
+                [invalid]="description.invalid"
                 [readOnly]="readOnly()"
               ></textarea>
             </label>

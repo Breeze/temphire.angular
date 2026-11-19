@@ -4,9 +4,7 @@ import { ButtonDirective } from '@openng/optimus-ui/button';
 import { DynamicDialogConfig, DynamicDialogRef } from '@openng/optimus-ui/dynamicdialog';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 
-import { StaffingResource } from '../core/model';
-import { EntityManagerProvider } from '../core/services/entity-manager-provider';
-import { validateWithBreeze } from '../core/validation/breeze-validators';
+import { validateWithMetadata } from '@ideablade/validation/angular/signal-forms';
 
 export interface ResourceName {
   firstName: string;
@@ -94,18 +92,15 @@ export interface ResourceName {
 export class ResourceNameEditorComponent {
   private readonly ref = inject(DynamicDialogRef);
 
-  /** The metadata for the entity these names are for. */
-  private readonly staffingResourceType =
-    inject(EntityManagerProvider).metadataStore.getAsEntityType(StaffingResource);
-
   /**
    * A Signal Form over the name being edited, seeded from the dialog's data when renaming.  OK (or
    * Enter) submits.
    *
    * There are no Angular validators here.  The names end up on a `StaffingResource`, so the form
-   * applies `StaffingResource`'s own Breeze validators: first and last name required, and at most
-   * 100 characters each, from `[Required]` / `[StringLength]` on the server's model.  That is the
-   * original's `CanOk` rule, taken from the model instead of restated here.
+   * applies the `ResourceName` validation metadata (`clientValidationMetadata`), whose properties
+   * inherit `StaffingResource`'s with `from`: first and last name required, and at most 100
+   * characters each, from `[Required]` / `[StringLength]` on the server's model, which Breeze
+   * carries.  That is the original's `CanOk` rule, taken from the model instead of restated here.
    */
   readonly nameForm = form(
     signal<ResourceName>({
@@ -114,11 +109,7 @@ export class ResourceNameEditorComponent {
       lastName: '',
       ...(inject(DynamicDialogConfig).data as Partial<ResourceName> | undefined),
     }),
-    (name) => {
-      validateWithBreeze(name.firstName, this.staffingResourceType.getDataProperty('firstName'));
-      validateWithBreeze(name.middleName, this.staffingResourceType.getDataProperty('middleName'));
-      validateWithBreeze(name.lastName, this.staffingResourceType.getDataProperty('lastName'));
-    },
+    (name) => validateWithMetadata(name, { modelType: 'ResourceName' }),
     { submission: { action: async (field) => this.accept(field().value()) } },
   );
 

@@ -42,18 +42,8 @@ namespace TempHire.Model
         [NotMapped]
         public object Root => StaffingResource;
 
-        /// <summary>
-        /// The DevForce version checked <c>State.EntityFacts.EntityAspect.IsNullOrPendingEntity</c>.
-        /// With Breeze the equivalent check is simply that a real StateId was chosen; the client-side
-        /// entity adds the "please pick a state" message while editing.
-        /// </summary>
-        public override void Validate(ICollection<ValidationResult> validationErrors)
-        {
-            if (StateId == Guid.Empty)
-            {
-                validationErrors.Add(new ValidationResult(
-                    "The State field is required", new[] { nameof(StateId) }));
-            }
-        }
+        // The DevForce version's Validate checked that a state was chosen.  That rule is now in the
+        // validation metadata (TempHire.Server/Validation/validation.metadata.json, Address.stateId),
+        // which both the client and the server check.
     }
 }

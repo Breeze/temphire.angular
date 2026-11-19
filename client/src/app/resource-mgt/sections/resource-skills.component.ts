@@ -5,7 +5,9 @@ import { InputTextModule } from '@openng/optimus-ui/inputtext';
 
 import { Skill, StaffingResource } from '../../core/model';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
-import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
+import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+
+import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceSkillsViewModel.cs` +
@@ -26,7 +28,13 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
  */
 @Component({
   selector: 'app-resource-skills',
-  imports: [BreezeFieldDirective, FormsModule, ButtonDirective, InputTextModule],
+  imports: [
+    ValidationFormsDirectives,
+    FieldErrorsDirective,
+    FormsModule,
+    ButtonDirective,
+    InputTextModule,
+  ],
   template: `
     <div class="skills">
       <div class="skills__header">
@@ -47,16 +55,15 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
       } @else {
         <div class="skills__list">
           @for (skill of sortedSkills(); track skill.id) {
-            <div class="skills__row">
+            <div class="skills__row" ngForm [validationModel]="skill">
               <input
                 pInputText
                 type="text"
                 class="skills__input"
+                name="description"
                 [(ngModel)]="skill.description"
-                [breezeField]="skill"
-                breezeProperty="description"
-                #descriptionField="breezeField"
-                [invalid]="descriptionField.invalid()"
+                #description="ngModel"
+                [invalid]="description.invalid"
                 [readOnly]="readOnly()"
               />
 

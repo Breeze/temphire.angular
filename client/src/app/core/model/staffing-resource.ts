@@ -39,6 +39,8 @@ export class StaffingResource extends BaseEntity {
   declare modified: Date;  // @generated
   declare modifyUser: string;  // @generated
   declare rowVersion: number;  // @generated
+  declare dateOfBirth: Date;  // @generated
+  declare hireDate: Date;  // @generated
 
   constructor() {
     super();
@@ -65,18 +67,28 @@ export class StaffingResource extends BaseEntity {
     return (this.phoneNumbers ?? []).find((p) => p.primary);
   }
 
+  /** Adds an address; the resource's first one is its primary address. */
   addAddress(type: AddressType): Address {
-    const address = this.entityAspect.entityManager!.createEntity(Address, {
+    return this.entityAspect.entityManager!.createEntity(Address, {
       addressTypeId: type.id,
       staffingResourceId: this.id,
+      primary: this.addresses.length === 0,
     });
-
-    return address;
   }
 
+  /**
+   * Deletes an address, the last one too: a resource without an address breaks a rule in the
+   * validation metadata, which the user sees, rather than something the UI prevents.  Deleting the
+   * primary address makes the next one primary.
+   */
   deleteAddress(address: Address): void {
     this.throwIfNotOwnerOf(address, 'Address');
+    const wasPrimary = address.primary;
     address.entityAspect.setDeleted();
+
+    if (wasPrimary && this.addresses.length > 0) {
+      this.setPrimaryAddress(this.addresses[0]);
+    }
   }
 
   /**
@@ -88,16 +100,27 @@ export class StaffingResource extends BaseEntity {
     address.primary = true;
   }
 
+  /** Adds a phone number; the resource's first one is its primary phone number. */
   addPhoneNumber(type: PhoneNumberType): PhoneNumber {
     return this.entityAspect.entityManager!.createEntity(PhoneNumber, {
       phoneNumberTypeId: type.id,
       staffingResourceId: this.id,
+      primary: this.phoneNumbers.length === 0,
     });
   }
 
+  /**
+   * Deletes a phone number, the last one too, as `deleteAddress` does; deleting the primary one
+   * makes the next one primary.
+   */
   deletePhoneNumber(phoneNumber: PhoneNumber): void {
     this.throwIfNotOwnerOf(phoneNumber, 'PhoneNumber');
+    const wasPrimary = phoneNumber.primary;
     phoneNumber.entityAspect.setDeleted();
+
+    if (wasPrimary && this.phoneNumbers.length > 0) {
+      this.setPrimaryPhoneNumber(this.phoneNumbers[0]);
+    }
   }
 
   setPrimaryPhoneNumber(phoneNumber: PhoneNumber): void {

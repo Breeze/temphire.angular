@@ -2,13 +2,16 @@ import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from '@openng/optimus-ui/button';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
+import { MessageModule } from '@openng/optimus-ui/message';
 import { RadioButtonModule } from '@openng/optimus-ui/radiobutton';
 
 import { PhoneNumber, PhoneNumberType, StaffingResource } from '../../core/model';
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
-import { BreezeFieldDirective } from '../../core/validation/breeze-field.directive';
+import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+
+import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourcePhoneListViewModel.cs` +
@@ -23,7 +26,15 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
  */
 @Component({
   selector: 'app-resource-phone-list',
-  imports: [BreezeFieldDirective, FormsModule, ButtonDirective, InputTextModule, RadioButtonModule],
+  imports: [
+    ValidationFormsDirectives,
+    FieldErrorsDirective,
+    FormsModule,
+    ButtonDirective,
+    InputTextModule,
+    MessageModule,
+    RadioButtonModule,
+  ],
   template: `
     <div class="phones">
       <button
@@ -38,33 +49,35 @@ import { BreezeFieldDirective } from '../../core/validation/breeze-field.directi
         Add
       </button>
 
+      @for (error of ruleErrors(); track error.key) {
+        <p-message severity="error" size="small">{{ error.errorMessage }}</p-message>
+      }
+
       <div class="phones__cards">
         @for (phoneNumber of phoneNumbers(); track phoneNumber.id) {
-          <div class="phone temphire-elevated">
+          <div class="phone temphire-elevated" ngForm [validationModel]="phoneNumber">
             <span class="phone__type">{{ phoneNumber.phoneNumberType?.name }}</span>
 
             <input
               pInputText
               class="phone__area-code"
               aria-label="Area code"
+              name="areaCode"
               [readOnly]="readOnly()"
               [(ngModel)]="phoneNumber.areaCode"
-              [breezeField]="phoneNumber"
-              breezeProperty="areaCode"
-              #areaCodeField="breezeField"
-              [invalid]="areaCodeField.invalid()"
+              #areaCode="ngModel"
+              [invalid]="areaCode.invalid"
             />
 
             <input
               pInputText
               class="phone__number"
               aria-label="Number"
+              name="number"
               [readOnly]="readOnly()"
               [(ngModel)]="phoneNumber.number"
-              [breezeField]="phoneNumber"
-              breezeProperty="number"
-              #numberField="breezeField"
-              [invalid]="numberField.invalid()"
+              #number="ngModel"
+              [invalid]="number.invalid"
             />
 
             <div class="phone__primary">
@@ -160,11 +173,23 @@ export class ResourcePhoneListComponent {
     return [...this.staffingResource().phoneNumbers];
   });
 
-  /** Port of `StaffingResourcePhoneItemViewModel.CanDelete`. */
-  canDelete(phoneNumber: PhoneNumber): boolean {
-    return (
-      !this.readOnly() && !phoneNumber.primary && this.staffingResource().phoneNumbers.length > 1
-    );
+  /**
+   * The resource's "at least one phone number" rule, when it is broken; see the address list.
+   */
+  readonly ruleErrors = computed(() =>
+    this.unitOfWork()
+      .validationErrors()
+      .filter(
+        (error) => error.model === this.staffingResource() && error.id === 'PHONE_NUMBER_REQUIRED',
+      ),
+  );
+
+  /**
+   * Port of `StaffingResourcePhoneItemViewModel.CanDelete`, without its "not the primary one, not
+   * the last one" condition, as in the address list.
+   */
+  canDelete(_phoneNumber: PhoneNumber): boolean {
+    return !this.readOnly();
   }
 
   /** Port of `StaffingResourcePhoneItemViewModel.CanSetPrimary`. */

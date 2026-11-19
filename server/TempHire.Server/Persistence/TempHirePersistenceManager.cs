@@ -1,7 +1,7 @@
-using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Breeze.Persistence;
 using Breeze.Persistence.EFCore;
+using ValidationService = IdeaBlade.Validation.ValidationService;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using TempHire.Model;
@@ -28,9 +28,9 @@ namespace TempHire.Server.Persistence
     ///     <b>Validation.</b>  <c>ValidateSave</c> spun up a sandbox EntityManager, restored the cache
     ///     state into it and called <c>Validate</c> on every entity so that cross-entity rules
     ///     ("a resource must have an address") could see the whole graph.  Neither Breeze nor EF Core
-    ///     validates on save, so <see cref="ValidateSave"/> does it here: each entity's data annotations
-    ///     and own rules, and the cross-entity rule by counting what the database will hold after the
-    ///     save, without rebuilding the graph.
+    ///     validates on save, so <see cref="ValidateSaveAsync"/> does it here: the validation metadata,
+    ///     the entities' data annotations and cross-entity rules included, against what the database
+    ///     will hold after the save.
     ///   </item>
     ///   <item>
     ///     <b>Audit columns.</b>  <c>ExecuteSave</c> stamped Created/Modified and the user name.
@@ -38,15 +38,28 @@ namespace TempHire.Server.Persistence
     ///     <c>ConcurrencyStrategy.AutoIncrement</c> used to do for us.
     ///   </item>
     /// </list>
+    /// <para>
+    /// Saves are asynchronous (<see cref="SaveChangesAsync"/>): validation rules may be, and the rules
+    /// read the database.  Breeze's asynchronous save calls the synchronous hooks as well as the
+    /// asynchronous ones, so the per-entity checks stay in <see cref="BeforeSaveEntity"/>, and the rest is
+    /// in <see cref="BeforeSaveEntitiesAsync"/>.  The synchronous <see cref="SaveChanges"/> would skip it,
+    /// so it refuses to run.
+    /// </para>
     /// </summary>
     public class TempHirePersistenceManager : EFPersistenceManager<TempHireDbContext>
     {
         private readonly ClaimsPrincipal _principal;
+        private readonly ValidationService _validation;
 
-        public TempHirePersistenceManager(TempHireDbContext dbContext, ClaimsPrincipal principal = null)
+        /// <param name="validation">
+        /// Checks the validation metadata, data annotations included, on every save.
+        /// </param>
+        public TempHirePersistenceManager(
+            TempHireDbContext dbContext, ClaimsPrincipal principal, ValidationService validation)
             : base(dbContext)
         {
             _principal = principal;
+            _validation = validation ?? throw new ArgumentNullException(nameof(validation));
         }
 
         private string CurrentUserName =>
@@ -116,7 +129,7 @@ namespace TempHire.Server.Persistence
         /// </summary>
         protected override bool BeforeSaveEntity(EntityInfo entityInfo)
         {
-            // Breeze calls this for each entity before BeforeSaveEntities, so the role is checked here
+            // Breeze calls this for each entity before BeforeSaveEntitiesAsync, so the role is checked here
             // first: a reader's save is refused before anything else looks at it.
             EnsureMaySave();
 
@@ -142,14 +155,19 @@ namespace TempHire.Server.Persistence
             return true;
         }
 
-        protected override Dictionary<Type, List<EntityInfo>> BeforeSaveEntities(
-            Dictionary<Type, List<EntityInfo>> saveMap)
+        /// <summary>Not supported: a save must be asynchronous, see <see cref="SaveChangesAsync"/>.</summary>
+        public new SaveResult SaveChanges(JObject saveBundle, TransactionSettings transactionSettings = null) =>
+            throw new NotSupportedException(
+                "TempHire saves asynchronously, so that validation rules can be asynchronous: use SaveChangesAsync.");
+
+        protected override async Task<Dictionary<Type, List<EntityInfo>>> BeforeSaveEntitiesAsync(
+            Dictionary<Type, List<EntityInfo>> saveMap, CancellationToken cancellationToken)
         {
             EnsureMaySave();
             StampAuditColumns(saveMap);
-            ValidateSave(saveMap);
+            await ValidateSaveAsync(saveMap, cancellationToken);
 
-            return base.BeforeSaveEntities(saveMap);
+            return await base.BeforeSaveEntitiesAsync(saveMap, cancellationToken);
         }
 
         /// <summary>Port of <c>SaveInterceptor.ExecuteSave</c>.</summary>
@@ -189,51 +207,21 @@ namespace TempHire.Server.Persistence
 
         /// <summary>
         /// Port of <c>SaveInterceptor.ValidateSave</c>.  Neither Breeze nor EF Core validates on save,
-        /// so this is the server's check behind the client's own validation.
+        /// so this is the server's check behind the client's own validation, and it is the same check:
+        /// the validation metadata (<c>Validation/validation.metadata.json</c>), which the client
+        /// installs into Breeze.  Its global <c>breeze</c> validator is, on the server, the entities'
+        /// data annotations ([Required], [StringLength], ... - registered in Program.cs), the same
+        /// annotations Breeze publishes to the client as validators; the rest are the rules beyond
+        /// them, cross-entity ones included.  All of it sees the database as it will be after the save
+        /// (<see cref="SaveValidationStore"/>), so "a resource keeps an address" also catches a save
+        /// that deletes a resource's last address on its own.  Asynchronous rules run too.
         /// </summary>
-        private void ValidateSave(Dictionary<Type, List<EntityInfo>> saveMap)
+        private async Task ValidateSaveAsync(Dictionary<Type, List<EntityInfo>> saveMap, CancellationToken cancellationToken)
         {
-            var errors = new List<EntityError>();
-
-            foreach (var (entity, info) in EntitiesOfType<EntityBase>(saveMap))
-            {
-                if (info.EntityState == EntityState.Deleted)
-                {
-                    continue;
-                }
-
-                var results = new List<ValidationResult>();
-
-                // Data annotations first ([Required], [StringLength], ...) - the same annotations Breeze
-                // publishes to the client as validators, re-checked on the server.
-                Validator.TryValidateObject(entity, new ValidationContext(entity), results, validateAllProperties: true);
-
-                // ...then the entity's own cross-property rules.
-                entity.Validate(results);
-
-                errors.AddRange(results.Select(r => new EntityError
-                {
-                    ErrorName = "ValidationError",
-                    EntityTypeName = entity.GetType().FullName,
-                    KeyValues = KeyValuesOf(entity),
-                    PropertyName = r.MemberNames?.FirstOrDefault(),
-                    ErrorMessage = r.ErrorMessage
-                }));
-            }
-
-            // The original's cross-entity rule: every staffing resource keeps at least one address and
-            // one phone number.
-            CheckEveryResourceKeeps<Address>(saveMap, errors, nameof(StaffingResource.Addresses),
-                "StaffingResource must have at least one address",
-                ids => Context.Addresses.Where(a => ids.Contains(a.StaffingResourceId))
-                    .Select(a => new Child(a.Id, a.StaffingResourceId)).ToList(),
-                a => new Child(a.Id, a.StaffingResourceId));
-
-            CheckEveryResourceKeeps<PhoneNumber>(saveMap, errors, nameof(StaffingResource.PhoneNumbers),
-                "StaffingResource must have at least one phone number",
-                ids => Context.PhoneNumbers.Where(p => ids.Contains(p.StaffingResourceId))
-                    .Select(p => new Child(p.Id, p.StaffingResourceId)).ToList(),
-                p => new Child(p.Id, p.StaffingResourceId));
+            var store = await SaveValidationStore.CreateAsync(Context, saveMap, cancellationToken);
+            var errors = (await _validation.ValidateEntitiesAsync(store, cancellationToken: cancellationToken))
+                .SelectMany(ToEntityErrors)
+                .ToList();
 
             if (errors.Count > 0)
             {
@@ -242,101 +230,34 @@ namespace TempHire.Server.Persistence
             }
         }
 
-        /// <summary>A child row (an address, a phone number) and the staffing resource it belongs to.</summary>
-        private sealed record Child(Guid Id, Guid ResourceId);
-
         /// <summary>
-        /// Checks that every staffing resource this save touches - itself, or through one of its
-        /// <typeparamref name="TChild"/> rows - still has at least one such row afterwards.
-        ///
-        /// <para>
-        /// It works on ids only: the rows stored now (<paramref name="stored"/>, one query for all the
-        /// resources concerned), minus the ones this save deletes or moves away, plus the ones it adds
-        /// or moves in.  Nothing is attached to the entities.  (An earlier version hung the stored rows
-        /// on the resource's navigation properties to call a rule on the entity; Breeze attaches a
-        /// modified entity with <c>DbContext.Add</c>, which then took those rows for new ones.)
-        /// </para>
-        /// <para>
-        /// Unlike that version, this also catches a save that deletes a resource's last address
-        /// without the resource itself being in the save.
-        /// </para>
+        /// A validation metadata error as Breeze <see cref="EntityError"/>s: one for each property the
+        /// error is about (a rule comparing two dates is about both), or one for the entity as a whole.
+        /// The metadata names properties as the client does (<c>stateId</c>); the errors name them as
+        /// the payload does (<c>StateId</c>), both in <c>PropertyName</c>, which the Breeze client maps
+        /// back to its own name, and in a property rule's message.
         /// </summary>
-        private void CheckEveryResourceKeeps<TChild>(
-            Dictionary<Type, List<EntityInfo>> saveMap,
-            List<EntityError> errors,
-            string propertyName,
-            string message,
-            Func<List<Guid>, List<Child>> stored,
-            Func<TChild, Child> asChild) where TChild : class
+        private IEnumerable<EntityError> ToEntityErrors(IdeaBlade.Validation.ValidationError error)
         {
-            var resources = EntitiesOfType<StaffingResource>(saveMap);
-            var deletedResources = resources
-                .Where(r => r.Info.EntityState == EntityState.Deleted)
-                .Select(r => r.Entity.Id)
-                .ToHashSet();
+            var entity = error.Model!;
+            string PayloadName(string name) =>
+                entity.GetType().GetProperty(
+                    name,
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase)?.Name
+                ?? name;
 
-            var pending = EntitiesOfType<TChild>(saveMap)
-                .Select(c => (Child: asChild(c.Entity), c.Info))
-                .ToList();
+            // A property rule's message names its property; a model-level rule's message is its own.
+            var message = error.Context.PropertyName is { } validated ? error.GetErrorMessage(PayloadName(validated)) : error.ErrorMessage;
+            var propertyNames = error.PropertyNames.Count > 0 ? error.PropertyNames.Select(PayloadName) : new string[] { null };
 
-            // The resources concerned: those in the save, and those a pending child belongs to now or
-            // belonged to before (a child moved to another resource leaves its old one).  A resource
-            // being deleted takes its children with it, so the rule does not apply to it.
-            var resourceIds = resources.Select(r => r.Entity.Id)
-                .Concat(pending.Select(p => p.Child.ResourceId))
-                .Concat(pending.Select(p => OriginalResourceId(p.Info)).OfType<Guid>())
-                .Where(id => !deletedResources.Contains(id))
-                .Distinct()
-                .ToList();
-
-            if (resourceIds.Count == 0)
+            return propertyNames.Select(propertyName => new EntityError
             {
-                return;
-            }
-
-            var storedChildren = stored(resourceIds);
-
-            foreach (var resourceId in resourceIds)
-            {
-                var remaining = storedChildren
-                    .Where(c => c.ResourceId == resourceId)
-                    .Select(c => c.Id)
-                    .ToHashSet();
-
-                foreach (var (child, info) in pending)
-                {
-                    remaining.Remove(child.Id);
-                    if (info.EntityState != EntityState.Deleted && child.ResourceId == resourceId)
-                    {
-                        remaining.Add(child.Id);
-                    }
-                }
-
-                if (remaining.Count > 0)
-                {
-                    continue;
-                }
-
-                var resource = resources.FirstOrDefault(r => r.Entity.Id == resourceId).Entity;
-                errors.Add(new EntityError
-                {
-                    ErrorName = "ValidationError",
-                    EntityTypeName = typeof(StaffingResource).FullName,
-                    KeyValues = resource != null ? KeyValuesOf(resource) : [resourceId],
-                    PropertyName = propertyName,
-                    ErrorMessage = message
-                });
-            }
-        }
-
-        /// <summary>The resource a modified child belonged to before this save, if it was moved.</summary>
-        private static Guid? OriginalResourceId(EntityInfo info)
-        {
-            return info.OriginalValuesMap != null
-                   && info.OriginalValuesMap.TryGetValue("StaffingResourceId", out var value)
-                   && Guid.TryParse(value?.ToString(), out var id)
-                ? id
-                : null;
+                ErrorName = error.Id,
+                EntityTypeName = entity.GetType().FullName,
+                KeyValues = KeyValuesOf(entity),
+                PropertyName = propertyName,
+                ErrorMessage = message
+            });
         }
 
         /// <summary>

@@ -1,12 +1,16 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ValidationError } from '@ideablade/validation';
+import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 
 import { StaffingResource } from '../core/model';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { ResourceName, ResourceNameEditorComponent } from './resource-name-editor.component';
-import { BreezeFieldDirective } from '../core/validation/breeze-field.directive';
+import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+
+import { FieldErrorsDirective } from '../core/validation/field-errors.directive';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceSummaryViewModel.cs` +
@@ -18,7 +22,7 @@ import { BreezeFieldDirective } from '../core/validation/breeze-field.directive'
  */
 @Component({
   selector: 'app-resource-summary',
-  imports: [BreezeFieldDirective, FormsModule, TextareaModule],
+  imports: [ValidationFormsDirectives, FieldErrorsDirective, FormsModule, DatePickerModule, TextareaModule],
   template: `
     <div class="summary temphire-card">
       <div class="summary__header">
@@ -40,14 +44,14 @@ import { BreezeFieldDirective } from '../core/validation/breeze-field.directive'
           </button>
 
           <div class="summary__facts">
-            @if (staffingResource().primaryAddress; as address) {
+            @if (primaryAddress(); as address) {
               <span class="summary__fact">
                 <i class="pi pi-map-marker" aria-hidden="true"></i>
                 {{ address.city
                 }}{{ address.state?.shortName ? ', ' + address.state.shortName : '' }}
               </span>
             }
-            @if (staffingResource().primaryPhoneNumber; as phone) {
+            @if (primaryPhoneNumber(); as phone) {
               <span class="summary__fact">
                 <i class="pi pi-phone" aria-hidden="true"></i>
                 ({{ phone.areaCode }}) {{ phone.number }}
@@ -57,18 +61,55 @@ import { BreezeFieldDirective } from '../core/validation/breeze-field.directive'
         </div>
       </div>
 
-      <textarea
-        pTextarea
-        class="summary__text"
-        rows="3"
-        [readOnly]="readOnly()"
-        [(ngModel)]="staffingResource().summary"
-        [breezeField]="staffingResource()"
-        breezeProperty="summary"
-        #summaryField="breezeField"
-        [invalid]="summaryField.invalid()"
-        placeholder="Summary"
-      ></textarea>
+      <div class="summary__form" ngForm [validationModel]="staffingResource()" #form="validationForm">
+        <div class="summary__dates">
+          <label class="summary__date">
+            <span>Date of birth</span>
+            <p-datepicker
+              name="dateOfBirth"
+              [(ngModel)]="staffingResource().dateOfBirth"
+              #dateOfBirth="ngModel"
+              [invalid]="dateOfBirth.invalid"
+              [disabled]="readOnly()"
+              [showIcon]="true"
+              [showClear]="true"
+              appendTo="body"
+              dateFormat="mm/dd/yy"
+            />
+          </label>
+
+          <label class="summary__date">
+            <span>Hire date</span>
+            <p-datepicker
+              name="hireDate"
+              [(ngModel)]="staffingResource().hireDate"
+              #hireDate="ngModel"
+              [invalid]="hireDate.invalid"
+              [disabled]="readOnly()"
+              [showIcon]="true"
+              [showClear]="true"
+              appendTo="body"
+              dateFormat="mm/dd/yy"
+            />
+          </label>
+        </div>
+
+        @for (message of datesMessages(form.errors()); track message) {
+          <small class="temphire-field-error">{{ message }}</small>
+        }
+
+        <textarea
+          pTextarea
+          class="summary__text"
+          rows="3"
+          [readOnly]="readOnly()"
+          name="summary"
+          [(ngModel)]="staffingResource().summary"
+          #summary="ngModel"
+          [invalid]="summary.invalid"
+          placeholder="Summary"
+        ></textarea>
+      </div>
     </div>
   `,
   styles: [
@@ -151,6 +192,26 @@ import { BreezeFieldDirective } from '../core/validation/breeze-field.directive'
         border: 1px solid var(--temphire-border);
       }
 
+      .summary__form {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .summary__dates {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1.5rem;
+      }
+
+      .summary__date {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--temphire-muted);
+        font-weight: 600;
+      }
+
       .summary__text {
         width: 100%;
         resize: vertical;
@@ -185,6 +246,29 @@ export class ResourceSummaryComponent {
     const resource = this.staffingResource();
     return `${resource.firstName?.charAt(0) ?? ''}${resource.lastName?.charAt(0) ?? ''}`.toUpperCase();
   });
+
+  /**
+   * The primary address and phone number in the header, derived like `fullName`: an address can be
+   * added, deleted or made primary in the contact section, and the header follows at once.
+   */
+  protected readonly primaryAddress = computed(() => {
+    this.unitOfWork().changes();
+    return this.staffingResource().primaryAddress;
+  });
+
+  protected readonly primaryPhoneNumber = computed(() => {
+    this.unitOfWork().changes();
+    return this.staffingResource().primaryPhoneNumber;
+  });
+
+  /**
+   * The messages about the two dates, once each: a rule comparing them (date of birth before hire
+   * date, in the server's validation metadata) is about both, so both fields show it as invalid.
+   */
+  protected datesMessages(errors: readonly ValidationError[]): string[] {
+    const messages = errors.filter((e) => e.isFor('dateOfBirth') || e.isFor('hireDate')).map((e) => e.errorMessage);
+    return [...new Set(messages)];
+  }
 
   /** Port of `StaffingResourceSummaryViewModel.EditName`. */
   async editName(): Promise<void> {

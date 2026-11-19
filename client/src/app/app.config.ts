@@ -16,7 +16,16 @@ import { provideOptimus } from '@openng/optimus-ui/config';
 import { DialogService } from '@openng/optimus-ui/dynamicdialog';
 import { HttpClient } from '@angular/common/http';
 
+import { provideRuleSources, provideValidation } from '@ideablade/validation/angular';
+import {
+  breezeModelType,
+  breezeRuleSource,
+  breezeValidator,
+} from '@ideablade/validation/breeze';
+
 import { routes } from './app.routes';
+import { EntityManagerProvider } from './core/services/entity-manager-provider';
+import { clientValidationMetadata } from './core/validation/client-validation-metadata';
 import { authInterceptor } from './core/services/auth.interceptor';
 import { emptyBodyAsNull } from './core/services/breeze-fetch';
 import { TempHirePreset } from './core/theme/temphire-preset';
@@ -44,6 +53,29 @@ export const appConfig: ApplicationConfig = {
     provideSignalFormsConfig({
       classes: { 'signal-form-untouched': (field) => !field.state().touched() },
     }),
+
+    /**
+     * Validation (`@ideablade/validation`).
+     *
+     * The rules come from the server's validation metadata, which `EntityManagerProvider` loads at
+     * sign-in next to the Breeze metadata and installs into Breeze; the view models' metadata is
+     * the client's own (`clientValidationMetadata`).
+     *
+     *  - `breezeValidator` brings Breeze's own rules into the framework (`clientValidationMetadata`),
+     *    so form fields show them like every other rule;
+     *  - `breezeModelType` lets the form directives find an entity's model type themselves;
+     *  - `breezeRuleSource` lets a view model property inherit an entity property's Breeze rules
+     *    with `from` (the name editor).
+     *
+     * This is the app's validation service.  The resource management route has its own, whose
+     * entity store is the unit of work being shown (see `ResourceMgtComponent`).
+     */
+    provideValidation({
+      metadata: clientValidationMetadata,
+      validators: [breezeValidator],
+      modelTypeResolvers: [breezeModelType],
+    }),
+    provideRuleSources(() => breezeRuleSource(inject(EntityManagerProvider).metadataStore)),
 
     // Port of `Common/Errors/ErrorHandler.cs`, which Punch installed as the global handler.
     { provide: ErrorHandler, useClass: AppErrorHandler },
