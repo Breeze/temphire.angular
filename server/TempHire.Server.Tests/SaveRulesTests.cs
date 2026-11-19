@@ -97,6 +97,20 @@ namespace TempHire.Server.Tests
         }
 
         [Fact]
+        public async Task APropertyErrorNamesThePropertyAsTheEntityDoes()
+        {
+            // The rule is the metadata's stateId; the entity's property, and the payload's, is StateId.
+            var (resource, _, _) = _db.StoreValidResource();
+            var address = SaveFixture.Address(resource.Id);
+            address.StateId = Guid.Empty;
+
+            var errors = await Assert.ThrowsAsync<EntityErrorsException>(() => _db.SaveAsync(new SaveBundle().Add(address).Build()));
+
+            var error = Assert.Single(errors.EntityErrors);
+            Assert.Equal(("STATE_REQUIRED", "StateId", "'StateId' is required"), (error.ErrorName, error.PropertyName, error.ErrorMessage));
+        }
+
+        [Fact]
         public async Task ARuleBrokenByTwoUsersTogetherIsCaught()
         {
             // A resource with two addresses, which two users open at the same time.

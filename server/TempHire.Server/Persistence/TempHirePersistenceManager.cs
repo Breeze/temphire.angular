@@ -250,22 +250,15 @@ namespace TempHire.Server.Persistence
         /// <summary>
         /// A validation metadata error as Breeze <see cref="EntityError"/>s: one for each property the
         /// error is about (a rule comparing two dates is about both), or one for the entity as a whole.
-        /// The metadata names properties as the client does (<c>stateId</c>); the errors name them as
-        /// the payload does (<c>StateId</c>), both in <c>PropertyName</c>, which the Breeze client maps
-        /// back to its own name, and in a property rule's message.
+        /// The metadata names properties as the client does (<c>stateId</c>); the validation service's
+        /// naming convention (camelCase, the default) has the errors name them as the entities do
+        /// (<c>StateId</c>), both in <c>PropertyNames</c>, which the Breeze client maps back to its own
+        /// names, and in a property rule's message: <c>'StateId' is required</c>.
         /// </summary>
         private IEnumerable<EntityError> ToEntityErrors(IdeaBlade.Validation.ValidationError error)
         {
             var entity = error.Model!;
-            string PayloadName(string name) =>
-                entity.GetType().GetProperty(
-                    name,
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase)?.Name
-                ?? name;
-
-            // A property rule's message names its property; a model-level rule's message is its own.
-            var message = error.Context.PropertyName is { } validated ? error.GetErrorMessage(PayloadName(validated)) : error.ErrorMessage;
-            var propertyNames = error.PropertyNames.Count > 0 ? error.PropertyNames.Select(PayloadName) : new string[] { null };
+            var propertyNames = error.PropertyNames.Count > 0 ? error.PropertyNames : new string[] { null };
 
             return propertyNames.Select(propertyName => new EntityError
             {
@@ -273,7 +266,7 @@ namespace TempHire.Server.Persistence
                 EntityTypeName = entity.GetType().FullName,
                 KeyValues = KeyValuesOf(entity),
                 PropertyName = propertyName,
-                ErrorMessage = message
+                ErrorMessage = error.ErrorMessage
             });
         }
 

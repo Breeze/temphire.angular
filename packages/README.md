@@ -3,9 +3,9 @@
 Builds of [ideablade-validation](https://github.com/Breeze/ideablade-validation) that TempHire uses
 until the library is published to npm and NuGet:
 
-- `IdeaBlade.Validation.0.1.0-preview.2.nupkg` - the server's `IdeaBlade.Validation` package, found
+- `IdeaBlade.Validation.0.1.0-preview.3.nupkg` - the server's `IdeaBlade.Validation` package, found
   through the `local` source in `nuget.config`;
-- `ideablade-validation-0.1.0-preview.2.tgz` - the client's `@ideablade/validation`, a `file:`
+- `ideablade-validation-0.1.0-preview.3.tgz` - the client's `@ideablade/validation`, a `file:`
   dependency in `client/package.json`.
 
 **Updating them.**  Build them from the library with a new prerelease version - never the same
@@ -15,12 +15,12 @@ the old one.
 ```
 cd ideablade-validation/js
 npm run build
-npm version 0.1.0-preview.2 --no-git-tag-version
+npm version 0.1.0-preview.4 --no-git-tag-version
 npm pack --pack-destination <this folder>
 git checkout -- package.json package-lock.json
 
 cd ../dotnet/src/IdeaBlade.Validation
-dotnet pack -c Release -p:Version=0.1.0-preview.2 -o <this folder>
+dotnet pack -c Release -p:Version=0.1.0-preview.4 -o <this folder>
 ```
 
 Then delete the old files here, change the version in `server/TempHire.Server/TempHire.Server.csproj`
