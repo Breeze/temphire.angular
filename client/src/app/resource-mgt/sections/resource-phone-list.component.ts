@@ -1,5 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ValidationService } from '@ideablade/validation';
 import { ButtonDirective } from '@openng/optimus-ui/button';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MessageModule } from '@openng/optimus-ui/message';
@@ -177,12 +179,12 @@ export class ResourcePhoneListComponent {
    * The resource's "at least one phone number" rule, when it is broken; see the address list.
    */
   readonly ruleErrors = computed(() =>
-    this.unitOfWork()
-      .validationErrors()
-      .filter(
-        (error) => error.model === this.staffingResource() && error.id === 'PHONE_NUMBER_REQUIRED',
-      ),
+    (this.validationResult()?.validationErrors ?? []).filter(
+      (error) => error.model === this.staffingResource() && error.id === 'PHONE_NUMBER_REQUIRED',
+    ),
   );
+
+  private readonly validationResult = toSignal(inject(ValidationService).validateEntityStore());
 
   /**
    * Port of `StaffingResourcePhoneItemViewModel.CanDelete`, without its "not the primary one, not

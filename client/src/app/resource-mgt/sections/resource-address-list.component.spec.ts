@@ -35,7 +35,6 @@ describe('ResourceAddressListComponent', () => {
     manager.entityChanged.subscribe(() => changes.update((count) => count + 1));
     const unitOfWork = {
       changes,
-      validationErrors: signal([]),
       addressTypes: { allInCache: () => [] },
       states: { allInCache: () => [] },
     };

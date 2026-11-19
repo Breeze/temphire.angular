@@ -1,7 +1,7 @@
 import { Signal, computed, signal } from '@angular/core';
-import { NotifyingEntityStore, ValidationError, ValidationService } from '@ideablade/validation';
+import { NotifyingEntityStore } from '@ideablade/validation';
 import { breezeEntityStore } from '@ideablade/validation/breeze';
-import { Entity, EntityManager, EntityState, InitialValues, SaveOptions } from 'breeze-client';
+import { Entity, EntityManager, InitialValues, SaveOptions } from 'breeze-client';
 
 import { EntityManagerProvider } from './entity-manager-provider';
 import { EntityCtor, IRepository, Repository } from './repository';
@@ -40,10 +40,10 @@ export class EntityFactory<T extends Entity> implements IEntityFactory<T> {
  * **Signals and Breeze entities.**  Breeze entities are plain mutable objects, not signals, so
  * nothing reactive notices when `address.city` changes.  The unit of work bridges the two: it
  * listens to its manager's `entityChanged`, `hasChangesChanged` and `validationErrorsChanged` events
- * and bumps a counter signal, `changes`.  Anything derived from entity state - `hasChanges` and
- * `hasValidationErrors` below, the toolbar's `canSave` - reads that counter inside a `computed`, and
- * so re-evaluates whenever an entity in this unit of work changes.  The WPF original got the same
- * effect from `EntityChangedMessage`.
+ * and bumps a counter signal, `changes`.  Anything derived from entity state - `hasChanges` below,
+ * the toolbar's `canSave` - reads that counter inside a `computed`, and so re-evaluates whenever
+ * an entity in this unit of work changes.  The WPF original got the same effect from
+ * `EntityChangedMessage`.
  */
 export class UnitOfWork {
   protected readonly manager: EntityManager;
@@ -51,7 +51,8 @@ export class UnitOfWork {
   /**
    * The live entities of this unit of work, as a validation entity store: what `store(type)` sees
    * in the validation rules, and what tells the forms that something changed.  The route's
-   * validation service uses it for the unit of work it shows (`ResourceMgtComponent`).
+   * validation service uses it for the unit of work it shows, and validates it continuously: the
+   * errors that hold up a save (`ResourceMgtComponent`).
    */
   readonly entityStore: NotifyingEntityStore;
 
@@ -71,68 +72,11 @@ export class UnitOfWork {
   });
 
   /**
-   * The broken rules of the validation metadata - the server's rules beyond the data annotations -
-   * across every entity in this unit of work, kept up to date as entities change.
-   *
-   * Breeze runs the same rules (`EntityManagerProvider` installs them), but a rule about the
-   * *whole* entity, such as "a resource has at least one address", only when it validates that
-   * entity: when it is attached, and when it is saved.  Deleting a resource's last address changes
-   * the address, not the resource, so Breeze would not notice until the server rejected the save.
-   * Validating every live entity here notices at once, because the rule reads the manager's
-   * addresses (`store('Address')`, from `entityStore`).
-   *
-   * Breeze's own rules (the global `breeze` validator) are left out: Breeze checks them itself, on
-   * every property change, and running them here would re-validate every entity in Breeze too.
-   * `hasValidationErrors` counts their errors separately.
-   *
-   * Computed, so it only runs while something reads it.
-   */
-  readonly validationErrors: Signal<readonly ValidationError[]> = computed(() => {
-    this.changeCount();
-    return this.manager
-      .getEntities(undefined, [EntityState.Unchanged, EntityState.Added, EntityState.Modified])
-      .flatMap((entity) =>
-        this.validation.validateModelSync(entity, entity.entityType.shortName, {
-          predicate: (validator) => validator.name !== 'breeze',
-          store: this.entityStore.getEntities,
-        }),
-      );
-  });
-
-  /**
-   * Whether anything would stop a save: a broken rule of the validation metadata
-   * (`validationErrors`), or a property of a pending change that Breeze finds invalid - a required
-   * field left empty, a value too long.
-   *
-   * Two kinds of Breeze errors are left out:
-   *
-   *  - errors the *server* reported for a failed save (`isServerError`), by the same rule Breeze
-   *    applies when saving: they do not stop a save, because only the server can re-check them;
-   *  - errors about a whole entity rather than one property.  Breeze re-checks those only when it
-   *    validates the entity again, so one recorded when a new resource was created without an
-   *    address would outlive the address being added.  `validationErrors` has the current answer.
-   */
-  readonly hasValidationErrors: Signal<boolean> = computed(() => {
-    this.changeCount();
-    return (
-      this.validationErrors().length > 0 ||
-      this.manager
-        .getChanges()
-        .some((entity) =>
-          entity.entityAspect
-            .getValidationErrors()
-            .some((error) => !error.isServerError && !!error.propertyName),
-        )
-    );
-  });
-
-  /**
    * @param onCommitted called after every successful save, so the owner can publish it.  This is
    *   the replacement for Punch's `SavedMessage`; see `UnitOfWorkManager.saves`.
    */
   constructor(
     protected readonly emProvider: EntityManagerProvider,
-    protected readonly validation: ValidationService,
     private readonly onCommitted: () => void = () => {},
   ) {
     this.manager = emProvider.newManager();
