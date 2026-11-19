@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
-using TempHire.Model;
 using TempHire.Model.Identity;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
