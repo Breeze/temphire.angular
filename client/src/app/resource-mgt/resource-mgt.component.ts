@@ -9,6 +9,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ValidationService } from '@ideablade/validation';
 import { provideValidationScope } from '@ideablade/validation/angular';
@@ -85,6 +86,18 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   private readonly validation = inject(ValidationService);
 
   /**
+   * The continuous validation of that unit of work: every live entity in it, against every rule -
+   * the validation metadata's, sync and async, and Breeze's own (the `breeze` validator) - again
+   * whenever an entity in it changes.  It follows the unit of work when the route moves on to
+   * another one.  The address and phone lists show the resource's rules from the same validation.
+   *
+   * Validating the whole unit of work is what keeps a rule about related entities current: "a
+   * resource keeps an address" is re-checked when an address is deleted, which Breeze, validating
+   * entity by entity, would only do when the resource itself was saved.
+   */
+  private readonly validationResult = toSignal(this.validation.validateEntityStore());
+
+  /**
    * The `resource` query parameter: a staffing resource to open, from a link in Quinn's answers.
    * Bound by the router (`withComponentInputBinding`).
    */
@@ -104,9 +117,9 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   readonly canEdit = computed(() => this.mayEdit() && this.hasResource() && this.isReadOnly());
   readonly canCancel = computed(() => this.hasResource() && !this.isReadOnly());
 
-  // `hasChanges`, `hasValidationErrors` and `changes` are signals on the unit of work (see
-  // `UnitOfWork`), so these re-evaluate whenever an entity in the active unit of work changes - an
-  // edit, a save, a delete, a new validation error.
+  // `hasChanges` and `changes` are signals on the unit of work (see `UnitOfWork`), so these
+  // re-evaluate whenever an entity in the active unit of work changes - an edit, a save, a delete -
+  // and `canSave` whenever its validation has a new result.
   readonly canSave = computed(() => {
     const resource = this.staffingResource();
     const unitOfWork = this.unitOfWork();
@@ -115,10 +128,14 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     }
 
     unitOfWork.changes();
+    const validation = this.validationResult();
     return (
       unitOfWork.hasChanges() &&
-      // The fields with errors are highlighted; Save waits until they are fixed.
-      !unitOfWork.hasValidationErrors() &&
+      // The fields with errors are highlighted; Save waits until they are fixed, and until the
+      // async rules, if any, have answered.
+      !!validation &&
+      !validation.pending &&
+      validation.validationErrors.length === 0 &&
       !resource.entityAspect.entityState.isDeleted()
     );
   });

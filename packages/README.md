@@ -3,9 +3,9 @@
 Builds of [ideablade-validation](https://github.com/Breeze/ideablade-validation) that TempHire uses
 until the library is published to npm and NuGet:
 
-- `IdeaBlade.Validation.0.1.0-preview.1.nupkg` - the server's `IdeaBlade.Validation` package, found
+- `IdeaBlade.Validation.0.1.0-preview.2.nupkg` - the server's `IdeaBlade.Validation` package, found
   through the `local` source in `nuget.config`;
-- `ideablade-validation-0.1.0-preview.1.tgz` - the client's `@ideablade/validation`, a `file:`
+- `ideablade-validation-0.1.0-preview.2.tgz` - the client's `@ideablade/validation`, a `file:`
   dependency in `client/package.json`.
 
 **Updating them.**  Build them from the library with a new prerelease version - never the same

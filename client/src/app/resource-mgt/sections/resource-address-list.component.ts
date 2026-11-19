@@ -1,5 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ValidationService } from '@ideablade/validation';
 import { ButtonDirective } from '@openng/optimus-ui/button';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MessageModule } from '@openng/optimus-ui/message';
@@ -263,15 +265,17 @@ export class ResourceAddressListComponent {
 
   /**
    * The resource's "at least one address" rule, when it is broken.  It is a rule of the validation
-   * metadata about the whole resource, so no field shows it; the unit of work keeps it current.
+   * metadata about the whole resource, so no field shows it.  It comes from the continuous
+   * validation of the route's unit of work, which the Save button reacts to too
+   * (`ResourceMgtComponent`): the route's validation service shares it.
    */
   readonly ruleErrors = computed(() =>
-    this.unitOfWork()
-      .validationErrors()
-      .filter(
-        (error) => error.model === this.staffingResource() && error.id === 'ADDRESS_REQUIRED',
-      ),
+    (this.validationResult()?.validationErrors ?? []).filter(
+      (error) => error.model === this.staffingResource() && error.id === 'ADDRESS_REQUIRED',
+    ),
   );
+
+  private readonly validationResult = toSignal(inject(ValidationService).validateEntityStore());
 
   /**
    * Port of `StaffingResourceAddressItemViewModel.CanDelete`, without its "not the primary one, not

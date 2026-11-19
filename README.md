@@ -702,7 +702,7 @@ The client is meant to show current Angular, not just to run on it:
 
 ### Validation comes from the server
 
-> **Preview.**  Validation uses a preview of IdeaBlade Validation (`0.1.0-preview.1`), which
+> **Preview.**  Validation uses a preview of IdeaBlade Validation (`0.1.0-preview.2`), which
 > isn't published to NuGet or npm yet: the builds are in `packages/`, where `nuget.config` and
 > `client/package.json` find them (`packages/README.md` explains how to update them).  The
 > framework's API may still change before its first release, and so may its name - the
@@ -760,11 +760,14 @@ The forms add no rules of their own; they show the verdict:
   `ResourceMgtComponent`), whose entity store is the unit of work being shown.  Its forms see that
   unit of work's entities in `store(type)`, and re-validate whenever an entity in it changes, in
   another section or in code.
-
-- **Rules about a whole entity**, such as "at least one address", have no field.  The unit of work
-  keeps them current (`UnitOfWork.validationErrors`) - deleting a resource's last address breaks the
-  resource's rule without changing the resource - and the address and phone lists show them.
-  Save stays disabled while any rule is broken.  A new resource starts without an address or a
+- **The service also validates that unit of work continuously** (`validateEntityStore()`): every
+  live entity against every rule, sync and async, the metadata's and Breeze's, again whenever an
+  entity changes.  Save reacts to that one result: it stays disabled while any rule is broken, and
+  while async rules have yet to answer.
+- **Rules about a whole entity**, such as "at least one address", have no field.  Validating the
+  whole unit of work keeps them current - deleting a resource's last address breaks the resource's
+  rule without changing the resource - and the address and phone lists show them from the same
+  result.  A new resource starts without an address or a
   phone number, and the last one of each can be deleted, so the rule is the user's to satisfy.
 - **The name editor**, a Signal Form over names for a `StaffingResource`, validates a
   `ResourceName` view model with `validateWithMetadata`.  Its properties inherit the
