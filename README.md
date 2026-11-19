@@ -131,20 +131,10 @@ The look - cards with layered shadows on a soft gradient, in one blue - comes fr
 
 ## Running it
 
-TempHire's validation uses [ideablade-validation](https://github.com/Breeze/ideablade-validation),
-which isn't published as a package yet.  Both projects take it from a checkout next to this one,
-`../ideablade-validation`: the server as a project reference, the client as a `file:` dependency
-(`client/.npmrc` installs it as a copy).  Clone it and build its TypeScript package once:
-
-```
-git clone https://github.com/Breeze/ideablade-validation.git ../ideablade-validation
-cd ../ideablade-validation/js
-npm ci
-npm run build
-```
-
-After changing the library, run `npm run build` there again, then reinstall it in `client`
-(`npm install @ideablade/validation@file:../../ideablade-validation/js`).
+TempHire's validation uses a preview of
+[IdeaBlade Validation](https://github.com/Breeze/ideablade-validation), which isn't published yet.
+Its packages are in `packages/`, and `dotnet` and `npm install` take them from there (see
+[Validation](#validation-comes-from-the-server)), so there is nothing extra to install.
 
 Then two terminals. Server first, because the client fetches its Breeze and validation metadata
 from it.
@@ -711,6 +701,12 @@ The client is meant to show current Angular, not just to run on it:
   fallback.
 
 ### Validation comes from the server
+
+> **Preview.**  Validation uses a preview of IdeaBlade Validation (`0.1.0-preview.1`), which
+> isn't published to NuGet or npm yet: the builds are in `packages/`, where `nuget.config` and
+> `client/package.json` find them (`packages/README.md` explains how to update them).  The
+> framework's API may still change before its first release, and so may its name - the
+> `IdeaBlade.Validation` / `@ideablade/validation` packages and their namespaces and imports.
 
 The validation rules are written once, on the server, in two places:
 

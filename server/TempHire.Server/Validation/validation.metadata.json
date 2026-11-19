@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../ideablade-validation/spec/validation-metadata.schema.json",
+  "$schema": "../../../client/node_modules/@ideablade/validation/schema/validation-metadata.schema.json",
   "$comment": [
     "TempHire's validation rules, for the client and the server: ValidationController serves them to the client, which installs them into Breeze, and the server checks them on every save (TempHirePersistenceManager).",
     "The global breeze validator brings the entities' data annotations ([Required], [MaxLength], ...) into the framework.  On the client it runs Breeze's validators, which Breeze builds from those annotations; on the server it runs the annotations themselves (AddDataAnnotations(\"breeze\") in Program.cs).  The other rules are the ones annotations cannot express.",
