@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Breeze.Persistence;
 using Breeze.Persistence.EFCore;
 using ValidationService = IdeaBlade.Validation.ValidationService;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using TempHire.Model;
 using TempHire.Model.Identity;
@@ -282,16 +281,6 @@ namespace TempHire.Server.Persistence
             return entityType.FindPrimaryKey()!.Properties
                 .Select(p => p.PropertyInfo?.GetValue(entity))
                 .ToArray();
-        }
-
-        private static List<(T Entity, EntityInfo Info)> EntitiesOfType<T>(
-            Dictionary<Type, List<EntityInfo>> saveMap) where T : class
-        {
-            return saveMap
-                .SelectMany(kv => kv.Value)
-                .Where(info => info.Entity is T)
-                .Select(info => ((T)info.Entity, info))
-                .ToList();
         }
     }
 }

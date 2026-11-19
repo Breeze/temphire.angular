@@ -11,5 +11,3 @@ export const Roles = {
   Editor: 'Editor',
   Reader: 'Reader',
 } as const;
-
-export type Role = (typeof Roles)[keyof typeof Roles];
