@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace TempHire.Model
 {
     /// <summary>Lookup type - read-only to the client.</summary>
-    public class RateType : EntityBase
+    public class RateType
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]

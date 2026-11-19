@@ -196,12 +196,29 @@ namespace TempHire.Server.Persistence
                     case EntityState.Modified:
                         entity.Modified = now;
                         entity.ModifyUser = user;
-                        // DevForce did this via ConcurrencyStrategy.AutoIncrement.  EF Core keeps the
-                        // *original* value in the UPDATE ... WHERE clause because RowVersion is marked
-                        // [ConcurrencyCheck], so bumping it here is safe and gives the same behaviour.
-                        entity.RowVersion += 1;
+                        IncrementRowVersion(entityInfo, entity);
                         break;
                 }
+            }
+        }
+
+        /// <summary>
+        /// The new version of a modified row - what DevForce's <c>ConcurrencyStrategy.AutoIncrement</c>
+        /// did.  EF Core compares the stored row with the <i>original</i> <c>RowVersion</c>, the
+        /// version the client loaded, in the UPDATE's WHERE clause, and writes the current one.
+        /// <para>
+        /// The Breeze client increments it itself before it saves, and sends the version it loaded
+        /// among the original values; then there is nothing to do.  Any other client may not: then
+        /// the version it sent is the one it loaded, so it is recorded as the original value, which
+        /// Breeze hands to EF Core, and incremented.
+        /// </para>
+        /// </summary>
+        private static void IncrementRowVersion(EntityInfo entityInfo, AuditEntityBase entity)
+        {
+            entityInfo.OriginalValuesMap ??= new Dictionary<string, object>();
+            if (entityInfo.OriginalValuesMap.TryAdd(nameof(AuditEntityBase.RowVersion), entity.RowVersion))
+            {
+                entity.RowVersion += 1;
             }
         }
 

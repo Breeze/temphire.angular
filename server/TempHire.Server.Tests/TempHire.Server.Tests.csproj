@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- An in-memory SQLite database: real SQL, so EF Core's concurrency checks run as they do on SQL Server. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TempHire.Server\TempHire.Server.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The server's validation rules, as it loads them at startup. -->
+    <None Include="..\TempHire.Server\Validation\validation.metadata.json" Link="validation.metadata.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -4,11 +4,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace TempHire.Model
 {
     /// <summary>
-    /// Lookup type.  Derives from <see cref="EntityBase"/> rather than <see cref="AuditEntityBase"/>,
-    /// which is what makes it read-only to the client - see the authorization check in
-    /// <c>TempHirePersistenceManager.BeforeSaveEntity</c>.
+    /// Lookup type.  Not an <see cref="AuditEntityBase"/>, which is what makes it read-only to the
+    /// client - see the authorization check in <c>TempHirePersistenceManager.BeforeSaveEntity</c>.
     /// </summary>
-    public class AddressType : EntityBase
+    public class AddressType
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]

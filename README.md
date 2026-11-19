@@ -599,21 +599,23 @@ TempHire.Angular/
 │   │   ├── SampleData/            # ← DomainServices/SampleData/, plus generated people
 │   │   ├── DatabaseSetup.cs       # migrates and seeds on startup
 │   │   └── TempHireDbContext.cs   # the staffing data, tenant filters
-│   └── TempHire.Server/
-│       ├── Controllers/
-│       │   ├── BreezeController.cs   # metadata, queries, SaveChanges, lookups, search
-│       │   ├── AccountController.cs  # me: who the token belongs to
-│       │   ├── AuthorizationController.cs  # OAuth: authorize, token, logout
-│       │   ├── ClientRegistrationController.cs  # OAuth: MCP clients register
-│       │   ├── SignInController.cs   # the sign-in page
-│       │   └── AgentController.cs    # Quinn: info / chat
-│       ├── Agent/                 # Quinn: persona, chat client factory, agent
-│       ├── Mcp/                   # MCP server tools (StaffingTools)
-│       ├── Persistence/
-│       │   └── TempHirePersistenceManager.cs   # ← DomainModel/SaveInterceptor.cs
-│       ├── Auth/                  # OAuth settings and clients, token claims, audience check, current tenant
-│       ├── Views/                 # the sign-in and consent pages
-│       └── Program.cs
+│   ├── TempHire.Server/
+│   │   ├── Controllers/
+│   │   │   ├── BreezeController.cs   # metadata, queries, SaveChanges, lookups, search
+│   │   │   ├── AccountController.cs  # me: who the token belongs to
+│   │   │   ├── AuthorizationController.cs  # OAuth: authorize, token, logout
+│   │   │   ├── ClientRegistrationController.cs  # OAuth: MCP clients register
+│   │   │   ├── SignInController.cs   # the sign-in page
+│   │   │   └── AgentController.cs    # Quinn: info / chat
+│   │   ├── Agent/                 # Quinn: persona, chat client factory, agent
+│   │   ├── Mcp/                   # MCP server tools (StaffingTools)
+│   │   ├── Persistence/
+│   │   │   ├── TempHirePersistenceManager.cs   # ← DomainModel/SaveInterceptor.cs
+│   │   │   └── SaveValidationStore.cs   # what the save-time rules read from the database
+│   │   ├── Auth/                  # OAuth settings and clients, token claims, audience check, current tenant
+│   │   ├── Views/                 # the sign-in and consent pages
+│   │   └── Program.cs
+│   └── TempHire.Server.Tests/     # saves, concurrency and save-time rules (dotnet test)
 └── client/
     ├── metadata.json              # Breeze metadata exported from the server (npm run model:metadata)
     └── src/app/
@@ -787,6 +789,61 @@ classes, so a misspelt or removed property is a compile error.  `displayNameMeta
 Breeze's display names to the validation metadata, so its messages use them too: `'State' is required`
 reads like `'City' is required`, in the entity editors and in the name editor alike.
 
+#### On the server: validating the database as it will be after the save
+
+A Breeze save bundle holds only what the client changed: the entities it added, modified or
+deleted.  A resource's other addresses, its phone numbers, and the resource itself aren't in it
+unless they changed too.  But a rule about related entities needs them.  "A staffing resource has
+at least one address" reads the resource's addresses (`store('Address')` in the metadata), and a
+save that deletes an address has to be checked against the addresses that remain.
+
+So before it validates, the server loads what the rules read (`SaveValidationStore`, used by
+`TempHirePersistenceManager`):
+
+- **the staffing resources concerned**: the ones in the save, and the ones whose addresses, phone
+  numbers, rates, skills or work experience the save adds, changes, deletes or moves to another
+  resource;
+- **their stored children**, of every child type, so that `store('Address')` sees all of a
+  resource's addresses, not just the ones in the save;
+- **with the save applied on top**: deleted rows are taken out, added and changed ones put in.
+
+The rules then run against **the database as it will be after the save**, not as the client saw it
+when it loaded the data.  That difference matters: another user may have changed or deleted records
+in the meantime.  Say a resource has two addresses, and two users each delete a different one.  On
+each user's screen one address remains, so both saves are valid on the client.  The first save
+goes through.  The second save deletes an address that nobody else touched, so the concurrency
+check below has nothing to catch.  But checked against the database, the resource would be left
+with no address, and the server refuses the save.  Data integrity holds even when no single save
+was wrong on its own (`ARuleBrokenByTwoUsersTogetherIsCaught` in `TempHire.Server.Tests`).
+
+**This isn't something the validation framework does for you.**  It knows the rules, but not the
+model.  To IdeaBlade Validation, `store('Address')` is a name to look up.  Which addresses belong to
+which resource, which entities a save can affect, and how to load them from the database are
+knowledge of TempHire's model, so `SaveValidationStore` is TempHire's own code.  An AI coding
+assistant such as Claude can write and maintain it: it reads the rules in
+`validation.metadata.json`, sees which entities they read (`store(type)`), and works out from the
+model how to load them.  That's how this one was written.  It loads a resource and all of its
+children generically, so a new rule about a resource and its children needs no change.  A rule that
+reads beyond that, such as one comparing a resource with other resources, does.  When the rules
+change, ask the assistant to check that the store still loads everything they read.
+
+#### Concurrency
+
+Every entity the client can save (`AuditEntityBase`) has a `RowVersion`, an EF Core concurrency
+token, as DevForce's `ConcurrencyStrategy.AutoIncrement` was in the original.  A save only updates
+or deletes a row while it still has the version the client loaded.  If another user saved or deleted
+it in the meantime, the whole save fails with a concurrency conflict (409) and nothing is written.
+The client tells the user so, in plain words, rather than showing the database's message: someone
+else changed this data, so click Refresh to load the latest, then make the changes again and save
+(`CONCURRENCY_CONFLICT` in `error-handler.service.ts`).  The lookups (states, address, phone number
+and rate types) have no version: they are read-only, and the server refuses any save that includes
+one.
+
+A concurrency check covers the rows in the save, and validation covers the rules that read rows
+outside it, as in the example above.  Neither serializes two saves that run at exactly the same
+moment: both read the database before either writes.  Closing that gap would take a database
+constraint, or a serializable transaction around validating and writing.
+
 ---
 
 ## Using a different database
@@ -833,8 +890,9 @@ provider, delete them and add a new initial migration (see [The database schema]
   **When you upgrade to a release with the fix**, `breeze-fetch.spec.ts` fails its "without the
   workaround" test; that is the signal to delete `breeze-fetch.ts` and its spec, and to pass
   `httpClientFetch(inject(HttpClient))` to `configureBreeze` directly.
-- **No automated tests beyond a shell smoke test and the workaround above.** The original had none
-  either. `ng test` runs Vitest; the server has no test project.
+- **Few automated tests.** The original had none. `ng test` runs the client's (Vitest), and
+  `dotnet test` the server's (`TempHire.Server.Tests`): saves, concurrency, and the rules checked on
+  save, against an in-memory SQLite database.
 - **Migrations run on startup**, and a database without migration history is dropped; see
   [The database schema](#the-database-schema).
 - **An access token is valid until it expires**, up to 30 minutes, even after signing out: the API

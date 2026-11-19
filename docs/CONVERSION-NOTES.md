@@ -48,7 +48,7 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 
 | Original | Converted |
 |---|---|
-| `DomainModel/EntityBase.cs` (`EntityBase`, `AuditEntityBase`) | `server/TempHire.Model/Entities/EntityBase.cs` + `client/…/model/base-entity.ts` (`BaseEntity`; the audit columns are generated onto each entity that has them) |
+| `DomainModel/EntityBase.cs` (`EntityBase`, `AuditEntityBase`) | `server/TempHire.Model/Entities/AuditEntityBase.cs` (`AuditEntityBase` only; the lookups need no base class) + `client/…/model/base-entity.ts` (`BaseEntity`; the audit columns are generated onto each entity that has them) |
 | `DomainModel/StaffingResource.cs` | `…/Entities/StaffingResource.cs` + `…/model/staffing-resource.ts` |
 | `DomainModel/Address.cs`, `PhoneNumber.cs`, `Rate.cs`, `Skill.cs`, `WorkExperienceItem.cs` | `…/Entities/*.cs` + `…/model/*.ts` |
 | `DomainModel/AddressType.cs`, `PhoneNumberType.cs`, `RateType.cs`, `State.cs` | `…/Entities/*.cs` + `…/model/address-type.ts` etc. (generated, no hand-written code) |

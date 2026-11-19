@@ -16,6 +16,5 @@ export class RateType extends BaseEntity {
   declare id: string;  // @generated
   declare displayName: string;  // @generated
   declare name: string;  // @generated
-  declare rowVersion: number;  // @generated
   declare sequence: number;  // @generated
 }
