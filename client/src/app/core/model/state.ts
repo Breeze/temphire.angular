@@ -15,6 +15,5 @@ import { BaseEntity } from './base-entity'; // @generated
 export class State extends BaseEntity {
   declare id: string;  // @generated
   declare name: string;  // @generated
-  declare rowVersion: number;  // @generated
   declare shortName: string;  // @generated
 }

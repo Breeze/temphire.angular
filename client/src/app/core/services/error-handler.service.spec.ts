@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { MessageService } from '@openng/optimus-ui/api';
+import { ProblemTypes } from 'breeze-client';
 import { vi } from 'vitest';
 
-import { AppErrorHandler } from './error-handler.service';
+import { AppErrorHandler, CONCURRENCY_CONFLICT } from './error-handler.service';
 
 describe('AppErrorHandler', () => {
   let handler: AppErrorHandler;
@@ -24,6 +25,32 @@ describe('AppErrorHandler', () => {
     expect(messages.add).toHaveBeenCalledWith(
       expect.objectContaining({ severity: 'error', detail: 'Something broke' }),
     );
+  });
+
+  // A save that conflicted with someone else's, as the Breeze client reports it: a save error whose
+  // `problemType` is the one the Breeze server sends for a concurrency conflict, carrying the
+  // server's technical message.
+  it('tells the user to refresh after a concurrency conflict, not what the server said', () => {
+    const conflict = Object.assign(
+      new Error('The save failed because 1 record was changed or deleted by another user after it was read.'),
+      { status: 409, problemType: ProblemTypes.concurrencyConflict, entityErrors: [] },
+    );
+
+    handler.handleError(conflict);
+
+    expect(messages.add).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'error', ...CONCURRENCY_CONFLICT }),
+    );
+    expect(CONCURRENCY_CONFLICT.detail).toContain('Click Refresh');
+  });
+
+  it('does not mistake another 409 for a concurrency conflict', () => {
+    const duplicate = Object.assign(new Error('Cannot insert duplicate key.'), {
+      status: 409,
+      problemType: 'https://example.test/problems/duplicate-key',
+    });
+
+    expect(AppErrorHandler.describe(duplicate)).not.toEqual(CONCURRENCY_CONFLICT);
   });
 
   // What provideBrowserGlobalErrorListeners passes on for the browser's ResizeObserver notice.

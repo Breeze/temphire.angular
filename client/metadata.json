@@ -291,20 +291,6 @@
               "name": "maxLength"
             }
           ]
-        },
-        {
-          "dataType": "Int32",
-          "isNullable": false,
-          "concurrencyMode": "Fixed",
-          "nameOnServer": "RowVersion",
-          "validators": [
-            {
-              "name": "required"
-            },
-            {
-              "name": "int32"
-            }
-          ]
         }
       ],
       "navigationProperties": []
@@ -535,20 +521,6 @@
               "name": "maxLength"
             }
           ]
-        },
-        {
-          "dataType": "Int32",
-          "isNullable": false,
-          "concurrencyMode": "Fixed",
-          "nameOnServer": "RowVersion",
-          "validators": [
-            {
-              "name": "required"
-            },
-            {
-              "name": "int32"
-            }
-          ]
         }
       ],
       "navigationProperties": []
@@ -749,20 +721,6 @@
             {
               "maxLength": 50,
               "name": "maxLength"
-            }
-          ]
-        },
-        {
-          "dataType": "Int32",
-          "isNullable": false,
-          "concurrencyMode": "Fixed",
-          "nameOnServer": "RowVersion",
-          "validators": [
-            {
-              "name": "required"
-            },
-            {
-              "name": "int32"
             }
           ]
         },
@@ -1153,20 +1111,6 @@
             {
               "maxLength": 100,
               "name": "maxLength"
-            }
-          ]
-        },
-        {
-          "dataType": "Int32",
-          "isNullable": false,
-          "concurrencyMode": "Fixed",
-          "nameOnServer": "RowVersion",
-          "validators": [
-            {
-              "name": "required"
-            },
-            {
-              "name": "int32"
             }
           ]
         },

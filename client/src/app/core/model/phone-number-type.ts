@@ -16,5 +16,4 @@ export class PhoneNumberType extends BaseEntity {
   declare id: string;  // @generated
   declare default: boolean;  // @generated
   declare name: string;  // @generated
-  declare rowVersion: number;  // @generated
 }

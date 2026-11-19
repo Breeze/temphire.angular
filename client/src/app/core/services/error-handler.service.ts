@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ErrorHandler, Injectable, inject } from '@angular/core';
 import { MessageService } from '@openng/optimus-ui/api';
+import { isConcurrencyError } from 'breeze-client';
 
 /** Shape of the payload Breeze's `GlobalExceptionFilter` sends for an `EntityErrorsException`. */
 interface BreezeEntityErrors {
@@ -22,6 +23,9 @@ interface BreezeEntityErrors {
  * cases show up here: a save that fails validation comes back as HTTP 403 carrying an
  * `EntityErrors` array (thrown by `TempHirePersistenceManager.ValidateSave`), and anything else is
  * an unexpected error.
+ *
+ * A third case is a save that ran into someone else's: a concurrency conflict (see
+ * `CONCURRENCY_CONFLICT`).
  */
 @Injectable({ providedIn: 'root' })
 export class AppErrorHandler implements ErrorHandler {
@@ -69,6 +73,10 @@ export class AppErrorHandler implements ErrorHandler {
 
   static describe(error: unknown): { summary: string; detail: string } {
     const unwrapped = (error as { rejection?: unknown })?.rejection ?? error;
+
+    if (isConcurrencyError(unwrapped)) {
+      return CONCURRENCY_CONFLICT;
+    }
 
     if (unwrapped instanceof HttpErrorResponse) {
       const body = unwrapped.error as BreezeEntityErrors | string | null;
@@ -144,3 +152,19 @@ export class AppErrorHandler implements ErrorHandler {
     return { summary: 'Something went wrong', detail: String(unwrapped) };
   }
 }
+
+/**
+ * What the user is told when a save conflicts with someone else's: another user changed or deleted
+ * a record the save changes or deletes after it was loaded (optimistic concurrency, see
+ * `AuditEntityBase.RowVersion` on the server).  Nothing was saved.  Refresh discards the unsaved
+ * changes and loads the latest data, on which the user can make their changes again.
+ *
+ * Recognized by the problem type the Breeze server sends for a conflict (`isConcurrencyError`), not
+ * by the status code or the message: 409 is also a duplicate key, and the message is EF Core's.
+ */
+export const CONCURRENCY_CONFLICT = {
+  summary: 'Someone else changed this data',
+  detail:
+    'Another user changed or deleted some of this data after you loaded it, so your changes were not ' +
+    'saved. Click Refresh to load the latest data, then make your changes again and save.',
+};

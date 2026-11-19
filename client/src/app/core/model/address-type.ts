@@ -17,5 +17,4 @@ export class AddressType extends BaseEntity {
   declare default: boolean;  // @generated
   declare displayName: string;  // @generated
   declare name: string;  // @generated
-  declare rowVersion: number;  // @generated
 }

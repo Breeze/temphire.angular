@@ -1,19 +1,21 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TempHire.Model
 {
     /// <summary>
-    /// Root of the domain model.  Replaces the DevForce <c>EntityBase</c>, which carried
-    /// <c>[ProvideEntityAspect]</c>, <c>[DataContract]</c> and <c>[RequiresAuthentication]</c>.
+    /// Base for every entity the client is allowed to save.  In DevForce this was expressed with
+    /// <c>[ClientCanSave(true)]</c> combined with <c>SaveInterceptor.DefaultAuthorization == false</c>;
+    /// the Breeze equivalent lives in <c>TempHirePersistenceManager.BeforeSaveEntity</c>, which rejects
+    /// any entity that is not an <see cref="AuditEntityBase"/>.  The lookup types (states, address,
+    /// phone number and rate types) don't derive from it: they are read-only.
     /// <para>
-    /// None of those attributes have a Breeze equivalent on the entity itself:
+    /// The WPF model had a common root, DevForce's <c>EntityBase</c>, for <c>[ProvideEntityAspect]</c>,
+    /// <c>[DataContract]</c>, <c>[RequiresAuthentication]</c>, a virtual <c>Validate</c> and the
+    /// concurrency column.  None of that needs a base class here: the entity aspect lives on the Breeze
+    /// client, serialization is plain JSON.NET, <c>[RequiresAuthentication]</c> is <c>[Authorize]</c> on
+    /// the Breeze controller, the rules beyond the data annotations are validation metadata
+    /// (TempHire.Server/Validation/validation.metadata.json), and the concurrency column is here.
     /// </para>
-    /// <list type="bullet">
-    ///   <item>the entity aspect lives on the Breeze client, not on the server POCO;</item>
-    ///   <item>serialization is plain JSON.NET;</item>
-    ///   <item><c>[RequiresAuthentication]</c> becomes <c>[Authorize]</c> on the Breeze controller.</item>
-    /// </list>
     /// <para>
     /// This class is intentionally *not* an EF Core entity type (it has no key and no
     /// <see cref="Microsoft.EntityFrameworkCore.DbSet{TEntity}"/>).  EF Core therefore treats it as an
@@ -21,30 +23,20 @@ namespace TempHire.Model
     /// the shape the original SQL Compact schema had.
     /// </para>
     /// </summary>
-    public abstract class EntityBase
+    public abstract class AuditEntityBase : ITenantOwned
     {
         /// <summary>
         /// Optimistic concurrency token.  DevForce did this with
-        /// <c>[ConcurrencyStrategy(ConcurrencyStrategy.AutoIncrement)]</c>; here the column is a plain
-        /// int marked as an EF Core concurrency token and incremented by
-        /// <c>TempHirePersistenceManager.BeforeSaveEntitiesAsync</c>.
+        /// <c>[ConcurrencyStrategy(ConcurrencyStrategy.AutoIncrement)]</c>, on every entity; here it is
+        /// on the entities the client can save, the only ones that can conflict.  The column is a
+        /// plain int marked as an EF Core concurrency token: an UPDATE or DELETE only matches the row
+        /// while it still has the version the client loaded, and the Breeze server reports a row it
+        /// didn't match as a concurrency conflict (409).  The Breeze client increments it before a
+        /// save, and <c>TempHirePersistenceManager</c> does too, for any other client.
         /// </summary>
         [ConcurrencyCheck]
         public int RowVersion { get; set; }
 
-        // The DevForce version had a virtual Validate for rules beyond the data annotations.  Those
-        // rules are now validation metadata (TempHire.Server/Validation/validation.metadata.json),
-        // written once for the client and the server; TempHirePersistenceManager checks them on save.
-    }
-
-    /// <summary>
-    /// Base for every entity the client is allowed to save.  In DevForce this was expressed with
-    /// <c>[ClientCanSave(true)]</c> combined with <c>SaveInterceptor.DefaultAuthorization == false</c>;
-    /// the Breeze equivalent lives in <c>TempHirePersistenceManager.BeforeSaveEntity</c>, which rejects
-    /// any entity that is not an <see cref="AuditEntityBase"/>.
-    /// </summary>
-    public abstract class AuditEntityBase : EntityBase, ITenantOwned
-    {
         /// <summary>
         /// The tenant (company) the row belongs to.  The client never sees or sends it: it is left
         /// out of the Breeze metadata and of every JSON payload (<c>[JsonIgnore]</c>).

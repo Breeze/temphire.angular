@@ -190,7 +190,9 @@ namespace TempHire.Model
         /// <list type="bullet">
         ///   <item>an insert gets the current tenant;</item>
         ///   <item>an update or delete must target a row that the current tenant owns in the database,
-        ///         and can never change the row's tenant.</item>
+        ///         and can never change the row's tenant.  One aimed at another tenant's row is refused
+        ///         (403).  One aimed at a row that no longer exists is a concurrency conflict (409):
+        ///         another user deleted it.</item>
         /// </list>
         /// The client's copy carries no tenant at all (<c>TenantId</c> is never sent), so the
         /// database is the only thing consulted.
@@ -216,13 +218,15 @@ namespace TempHire.Model
             foreach (var group in pending.Where(e => e.State != EntityState.Added).GroupBy(e => e.Metadata.ClrType))
             {
                 var ids = group.Select(e => (Guid)e.Property("Id").CurrentValue).ToList();
-                var owned = (HashSet<Guid>)OwnedIdsMethod.MakeGenericMethod(group.Key).Invoke(this, [ids, tenantId]);
+                var tenants = (Dictionary<Guid, Guid>)TenantsOfMethod.MakeGenericMethod(group.Key).Invoke(this, [ids]);
 
                 foreach (var entry in group)
                 {
-                    if (!owned.Contains((Guid)entry.Property("Id").CurrentValue))
+                    // A row that no longer exists, in any tenant, was deleted by someone else after the
+                    // client read it.  It is left to EF Core, whose UPDATE or DELETE then matches no row:
+                    // a concurrency conflict, which the client reports as one.
+                    if (tenants.TryGetValue((Guid)entry.Property("Id").CurrentValue, out var owner) && owner != tenantId)
                     {
-                        // The same answer whether the row belongs to another tenant or does not exist.
                         throw new TenantAccessException($"The {group.Key.Name} being saved was not found.");
                     }
 
@@ -232,17 +236,18 @@ namespace TempHire.Model
             }
         }
 
-        private static readonly MethodInfo OwnedIdsMethod =
-            typeof(TempHireDbContext).GetMethod(nameof(OwnedIds), BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo TenantsOfMethod =
+            typeof(TempHireDbContext).GetMethod(nameof(TenantsOf), BindingFlags.NonPublic | BindingFlags.Instance);
 
-        private HashSet<Guid> OwnedIds<T>(List<Guid> ids, Guid tenantId) where T : class, ITenantOwned
+        /// <summary>The tenant of each row, of those with the given ids that exist in any tenant.</summary>
+        private Dictionary<Guid, Guid> TenantsOf<T>(List<Guid> ids) where T : class, ITenantOwned
         {
             return Set<T>()
                 .IgnoreQueryFilters()
                 .AsNoTracking()
-                .Where(e => e.TenantId == tenantId && ids.Contains(EF.Property<Guid>(e, "Id")))
-                .Select(e => EF.Property<Guid>(e, "Id"))
-                .ToHashSet();
+                .Where(e => ids.Contains(EF.Property<Guid>(e, "Id")))
+                .Select(e => new { Id = EF.Property<Guid>(e, "Id"), e.TenantId })
+                .ToDictionary(e => e.Id, e => e.TenantId);
         }
     }
 

@@ -110,10 +110,6 @@ namespace TempHire.Model.Migrations.TempHire
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.ToTable("AddressTypes", (string)null);
@@ -188,10 +184,6 @@ namespace TempHire.Model.Migrations.TempHire
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.ToTable("PhoneNumberTypes", (string)null);
@@ -257,10 +249,6 @@ namespace TempHire.Model.Migrations.TempHire
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<int>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("int");
 
                     b.Property<short>("Sequence")
                         .HasColumnType("smallint");
@@ -379,10 +367,6 @@ namespace TempHire.Model.Migrations.TempHire
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("RowVersion")
-                        .IsConcurrencyToken()
-                        .HasColumnType("int");
 
                     b.Property<string>("ShortName")
                         .IsRequired()
