@@ -1,6 +1,8 @@
 import { HttpClient, HttpEventType, httpResource } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { lastValueFrom, tap } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter, lastValueFrom, tap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/services/auth.service';
@@ -63,11 +65,23 @@ export const EXAMPLE_QUESTIONS: readonly ExampleQuestion[] = [
  *
  * The agent runs on the server (`AgentController`).  This sends the conversation so far and adds
  * Quinn's answer; the server keeps no chat state.
+ *
+ * The pane closes whenever the route changes - a link in an answer, the toolbar, the browser's
+ * back button - so it never covers the page the user just went to.
  */
 @Injectable()
 export class QuinnService {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
+
+  constructor() {
+    inject(Router)
+      .events.pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.close());
+  }
 
   private nextId = 1;
   private readonly _messages = signal<readonly QuinnMessage[]>([]);
