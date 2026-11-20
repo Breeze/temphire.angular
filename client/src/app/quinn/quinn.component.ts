@@ -103,7 +103,7 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
                 <button
                   type="button"
                   class="quinn-examples__chip"
-                  [disabled]="quinn.busy()"
+                  [disabled]="quinn.busy() || quinn.quotaBlock()"
                   (click)="quinn.ask(example.question)"
                 >
                   {{ example.label }}
@@ -122,6 +122,19 @@ import { EXAMPLE_QUESTIONS, QuinnService } from './quinn.service';
           </div>
         }
       </div>
+
+      <!-- A used-up quota: no questions until it starts over, and how long that is. -->
+      @if (quinn.quotaMessage(); as message) {
+        <div class="quinn-quota" role="status">
+          <i class="pi pi-hourglass quinn-quota__icon" aria-hidden="true"></i>
+          <div>
+            <p class="quinn-quota__text">{{ message }}</p>
+            <button type="button" class="quinn-quota__link" (click)="showUsage()">
+              See your usage
+            </button>
+          </div>
+        </div>
+      }
 
       <form class="quinn-pane__input" [formRoot]="questionForm">
         <div class="quinn-pane__input-row">
@@ -155,7 +168,8 @@ export class QuinnComponent {
   private readonly questionBox = viewChild.required<ElementRef<HTMLTextAreaElement>>('questionBox');
 
   /**
-   * The question box: a Signal Form, disabled while Quinn is answering.
+   * The question box: a Signal Form, disabled while Quinn is answering, and while a used-up quota
+   * stops Quinn from answering at all.
    *
    * The textarea is bound to the field by hand rather than with `[formField]`, because Optimus UI
    * 2.0.2's `pTextarea` cannot sit next to `[formField]`: it subscribes to the `valueChanges` of the
@@ -168,7 +182,7 @@ export class QuinnComponent {
    */
   protected readonly questionForm = form(
     signal({ question: '' }),
-    (path) => disabled(path.question, () => this.quinn.busy()),
+    (path) => disabled(path.question, () => this.quinn.busy() || !!this.quinn.quotaBlock()),
     {
       submission: {
         action: async (field) => {
@@ -229,7 +243,16 @@ export class QuinnComponent {
   }
 
   protected canSend(): boolean {
-    return !this.quinn.busy() && !!this.questionForm.question().value().trim();
+    return (
+      !this.quinn.busy() &&
+      !this.quinn.quotaBlock() &&
+      !!this.questionForm.question().value().trim()
+    );
+  }
+
+  /** Opens the usage page; the pane closes itself on the navigation. */
+  protected showUsage(): void {
+    void this.router.navigate(['/usage']);
   }
 
   /** A click on a link in a message: navigate within the app, or open other sites in a new tab. */

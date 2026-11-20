@@ -47,6 +47,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./resource-mgt/resource-mgt.component').then((m) => m.ResourceMgtComponent),
   },
+  {
+    // Quinn's token usage and quotas, from the user menu; not a workspace in the toolbar.
+    path: 'usage',
+    canActivate: [authGuard],
+    loadComponent: () => import('./usage/usage.component').then((m) => m.UsageComponent),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'home' },
   { path: '**', redirectTo: 'home' },
 ];

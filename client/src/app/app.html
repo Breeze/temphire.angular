@@ -24,7 +24,17 @@
     </nav>
 
     <span class="app-toolbar__spacer"></span>
-    <span class="app-toolbar__user">
+
+    <!-- The signed-in user: opens the user menu (Usage, Logout). -->
+    <button
+      type="button"
+      class="app-toolbar__user"
+      aria-haspopup="menu"
+      [attr.aria-expanded]="userMenuOpen()"
+      aria-controls="user-menu"
+      title="Your account"
+      (click)="userMenu.toggle($event)"
+    >
       <span class="app-toolbar__avatar" aria-hidden="true">{{ initial() }}</span>
       <span class="app-toolbar__who">
         <span class="app-toolbar__name">{{ username() }}</span>
@@ -32,7 +42,18 @@
           <span class="app-toolbar__company">{{ tenantName() }}</span>
         }
       </span>
-    </span>
+      <i class="pi pi-chevron-down app-toolbar__caret" aria-hidden="true"></i>
+    </button>
+    <p-menu
+      #userMenu
+      id="user-menu"
+      [model]="userMenuItems"
+      [popup]="true"
+      appendTo="body"
+      styleClass="app-user-menu"
+      (onShow)="userMenuOpen.set(true)"
+      (onHide)="userMenuOpen.set(false)"
+    />
   </header>
 }
 

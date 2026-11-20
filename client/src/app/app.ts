@@ -1,7 +1,9 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { ButtonDirective } from '@openng/optimus-ui/button';
+import { MenuItem } from '@openng/optimus-ui/api';
 import { DynamicDialogModule } from '@openng/optimus-ui/dynamicdialog';
+import { MenuModule } from '@openng/optimus-ui/menu';
 import { ToastModule } from '@openng/optimus-ui/toast';
 
 import { WORKSPACES } from './app.routes';
@@ -24,7 +26,15 @@ import { QuinnComponent } from './quinn/quinn.component';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ButtonDirective, ToastModule, DynamicDialogModule, QuinnComponent, FrameworkMarkComponent],
+  imports: [
+    RouterOutlet,
+    ButtonDirective,
+    MenuModule,
+    ToastModule,
+    DynamicDialogModule,
+    QuinnComponent,
+    FrameworkMarkComponent,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -41,8 +51,9 @@ export class App {
   readonly initial = computed(() => (this.username() ?? '?').charAt(0).toUpperCase());
 
   /**
-   * Port of `ShellViewModel.StartAsync`: one toolbar group for the workspaces, one for Logout.  Only
-   * the workspaces the user's roles allow are listed; the routes' guards enforce the same rule.
+   * Port of `ShellViewModel.StartAsync`: the toolbar group for the workspaces.  Only the workspaces
+   * the user's roles allow are listed; the routes' guards enforce the same rule.  (The original's
+   * Logout group is in the user menu now.)
    */
   private readonly workspaceGroup = computed<ToolbarGroup>(() => ({
     level: 0,
@@ -56,10 +67,22 @@ export class App {
       })),
   }));
 
-  private readonly logoutGroup: ToolbarGroup = {
-    level: 100,
-    actions: [{ label: 'Logout', icon: 'pi pi-sign-out', execute: () => void this.logout() }],
-  };
+  /**
+   * The user menu, opened from the signed-in user in the top right corner: things about the user
+   * rather than the workspace they are in.
+   */
+  protected readonly userMenuItems: MenuItem[] = [
+    {
+      label: 'Usage',
+      icon: 'pi pi-chart-bar',
+      command: () => void this.router.navigate(['/usage']),
+    },
+    { separator: true },
+    { label: 'Logout', icon: 'pi pi-sign-out', command: () => void this.logout() },
+  ];
+
+  /** Whether the user menu is open, for the button's `aria-expanded`. */
+  protected readonly userMenuOpen = signal(false);
 
   /**
    * The toolbar: the shell's own groups plus whatever the active screen contributed, and nothing
@@ -68,9 +91,7 @@ export class App {
    * so there is nothing to keep in step.
    */
   readonly actions = computed(() =>
-    this.isLoggedIn()
-      ? toolbarActions([this.workspaceGroup(), this.logoutGroup, ...this.toolbar.groups()])
-      : [],
+    this.isLoggedIn() ? toolbarActions([this.workspaceGroup(), ...this.toolbar.groups()]) : [],
   );
 
   /**
