@@ -80,7 +80,11 @@ export class App {
    * end-session endpoint, which comes back to the sign-in page.
    */
   async logout(): Promise<void> {
-    if (await this.router.navigate(['/home'])) {
+    // On Home there is nothing to leave.  Navigating there would be skipped, as it is already the
+    // current URL, and resolve `false` - just as when a page keeps the user for unsaved edits - so
+    // Logout would do nothing.
+    const onHome = this.router.url.split(/[?#]/)[0] === '/home';
+    if (onHome || (await this.router.navigate(['/home']))) {
       this.auth.logout();
     }
   }
