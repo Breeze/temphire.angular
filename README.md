@@ -23,6 +23,7 @@ one model, authentication, and entity classes generated from the server's model.
   - [Building for production](#building-for-production)
 - [Entity classes are generated](#entity-classes-are-generated)
 - [Quinn, the assistant](#quinn-the-assistant)
+  - [Budgets and the usage page](#budgets-and-the-usage-page)
 - [Signing in](#signing-in)
 - [The server](#the-server)
 - [Layout](#layout)
@@ -242,11 +243,33 @@ On the client (`client/src/app/quinn/`):
   `resource` input (the router binds query parameters to inputs), opens the person, with the usual
   prompt if there are unsaved edits, and searches for them.
 
+### Budgets and the usage page
+
+Quinn's answers from a paid model cost money, so the server gives each user and each company a
+**budget in dollars** per day, week and month, for each model: as shipped, $0.50 a day per user and
+$10 a month per company for Claude, about 38 and 770 questions; Ollama is free and unlimited.  The
+server explains the budgets, what they buy and how to change them in
+[Budgets: usage and quotas](https://github.com/Breeze/temphire.server#budgets-usage-and-quotas).
+
+- **The user menu.**  The signed-in user in the top right corner opens a menu with **Usage** and
+  **Logout**.
+- **The usage page** (`client/src/app/usage/`, route `/usage`) shows, per model, what Quinn's
+  answers cost the user and their company today, this week and this month, against the budgets,
+  with the tokens they took: the model Quinn uses now first.  The bars turn amber at 80% and red when
+  a budget is used up; an unlimited model shows its tokens without bars.  The page reads
+  `GET /api/usage` when it opens and on Refresh.
+- **Quinn's pane** reads the same usage when it opens and after every answer.  While a budget of the
+  model Quinn uses is used up, it says which one and how long until it starts over, counting down,
+  and disables the question box, Send and the example questions until midnight UTC brings the budget
+  back.  The server refuses such a question anyway (429); the pane only says so before the user
+  asks.  A budget can be overrun slightly: the question that crosses it is answered in full.
+
 The server's README explains the rest:
 [how Quinn works](https://github.com/Breeze/temphire.server#how-it-works),
 [Ollama or Claude](https://github.com/Breeze/temphire.server#ollama-or-claude),
-[setting up Ollama](https://github.com/Breeze/temphire.server#setting-up-ollama) and
-[setting up Claude](https://github.com/Breeze/temphire.server#setting-up-claude).
+[setting up Ollama](https://github.com/Breeze/temphire.server#setting-up-ollama),
+[setting up Claude](https://github.com/Breeze/temphire.server#setting-up-claude) and
+[budgets](https://github.com/Breeze/temphire.server#budgets-usage-and-quotas).
 
 ---
 
@@ -299,7 +322,8 @@ The sections of its README:
   [how it works](https://github.com/Breeze/temphire.server#how-it-works),
   [Ollama or Claude](https://github.com/Breeze/temphire.server#ollama-or-claude),
   [setting up Ollama](https://github.com/Breeze/temphire.server#setting-up-ollama),
-  [setting up Claude](https://github.com/Breeze/temphire.server#setting-up-claude)
+  [setting up Claude](https://github.com/Breeze/temphire.server#setting-up-claude),
+  [budgets](https://github.com/Breeze/temphire.server#budgets-usage-and-quotas)
 - [Multi-tenancy](https://github.com/Breeze/temphire.server#multi-tenancy)
 - [Users and sign-in](https://github.com/Breeze/temphire.server#users-and-sign-in):
   [using TempHire's MCP server from Claude Code](https://github.com/Breeze/temphire.server#using-temphires-mcp-server-from-claude-code),
@@ -346,6 +370,7 @@ temphire.angular/
         ├── resource-mgt/          # ← ViewModels/StaffingResource/
         │   └── sections/          # the four detail tabs
         ├── quinn/                 # Quinn's launcher button and chat pane
+        ├── usage/                 # Quinn's usage and budgets, from the user menu
         ├── app.ts / app.html      # ← Views/ShellView.Wpf.xaml
         └── app.routes.ts          # ← Punch workspaces + INavigator
 ```
@@ -531,7 +556,7 @@ changed this data, so click Refresh to load the latest, then make the changes ag
 
 | Setting | Where | Notes |
 |---|---|---|
-| `breezeApiRoot` / `accountApiRoot` / `agentApiRoot` / `authority` | `client/src/environments/` | `environment.ts` is the **production** file; `environment.development.ts` replaces it during `ng serve` |
+| `breezeApiRoot` / `accountApiRoot` / `agentApiRoot` / `usageApiRoot` / `authority` | `client/src/environments/` | `environment.ts` is the **production** file; `environment.development.ts` replaces it during `ng serve` |
 
 The server's settings - connection strings, signing keys, allowed client origins, Quinn's model -
 are in [its README](https://github.com/Breeze/temphire.server#configuration).

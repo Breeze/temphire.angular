@@ -1,5 +1,5 @@
 import { HttpClient, HttpEventType, httpResource } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, lastValueFrom, tap } from 'rxjs';
@@ -7,6 +7,7 @@ import { filter, lastValueFrom, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/services/auth.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';
+import { UsageDto, quotaBlock, quotaBlockMessage } from '../usage/usage.model';
 import { MentionedPerson, mergePeople } from './link-people';
 
 /** One message in the conversation.  `content` is Markdown, as Quinn wrote it. */
@@ -81,6 +82,9 @@ export class QuinnService {
         takeUntilDestroyed(),
       )
       .subscribe(() => this.close());
+
+    const clock = setInterval(() => this.tick(), 30_000);
+    inject(DestroyRef).onDestroy(() => clearInterval(clock));
   }
 
   private nextId = 1;
@@ -103,6 +107,46 @@ export class QuinnService {
   /** Quinn's name and model, loaded once from the server. */
   readonly info = httpResource<AgentInfo>(() => `${environment.agentApiRoot}/info`);
 
+  // ------------------------------------------------------------------------------------------
+  // Quotas
+  //
+  // The server refuses a question while a quota of the model Quinn uses is used up (429, with a
+  // message saying which and for how long).  The pane says so before the user asks: it reads the
+  // usage when it opens and after every answer, and while a quota stops Quinn it disables the
+  // question box and counts down to the moment the quota starts over.
+  // ------------------------------------------------------------------------------------------
+
+  /** Set once the pane has opened: the usage is read only for users who use Quinn. */
+  private readonly usageWanted = signal(false);
+
+  /** `GET api/usage`: the user's and company's usage and quotas, per model. */
+  readonly usage = httpResource<UsageDto>(() =>
+    this.usageWanted() ? environment.usageApiRoot : undefined,
+  );
+
+  /** The time, updated every half minute: for the countdown, and to notice a quota starting over. */
+  private readonly now = signal(new Date());
+
+  /** The used-up quota that stops Quinn now, if any. */
+  readonly quotaBlock = computed(() =>
+    quotaBlock(this.usage.hasValue() ? this.usage.value() : undefined, this.now()),
+  );
+
+  /** What the pane says while a quota stops Quinn, with how long until it starts over. */
+  readonly quotaMessage = computed(() => {
+    const block = this.quotaBlock();
+    return block ? quotaBlockMessage(block, this.now()) : null;
+  });
+
+  /** Ticks the clock, and reads the usage again once a blocking quota has started over. */
+  private tick(): void {
+    const block = this.quotaBlock();
+    this.now.set(new Date());
+    if (block && this.now() >= block.resetsAt) {
+      this.usage.reload();
+    }
+  }
+
   readonly companyName = computed(
     () => this.auth.tenantName() ?? (this.info.hasValue() ? this.info.value().companyName : null),
   );
@@ -112,6 +156,15 @@ export class QuinnService {
     if (this._messages().length === 0) {
       this.add('assistant', this.introduction(), { intro: true });
     }
+
+    // Where the quotas stand: read the first time, and again each time the pane opens, since the
+    // user may have asked elsewhere - another tab - meanwhile.
+    if (this.usageWanted()) {
+      this.usage.reload();
+    } else {
+      this.usageWanted.set(true);
+    }
+    this.now.set(new Date());
     this.isOpen.set(true);
   }
 
@@ -131,7 +184,7 @@ export class QuinnService {
    */
   async ask(question: string): Promise<void> {
     const text = question.trim();
-    if (!text || this.busy()) {
+    if (!text || this.busy() || this.quotaBlock()) {
       return;
     }
 
@@ -217,6 +270,11 @@ export class QuinnService {
       }
       this.knownPeople = people;
       this.busy.set(false);
+
+      // The answer used tokens, and may have used up a quota; a refusal (429) means one is.
+      if (this.usageWanted()) {
+        this.usage.reload();
+      }
     }
   }
 

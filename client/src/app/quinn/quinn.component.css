@@ -319,3 +319,38 @@
 :host ::ng-deep .quinn-md a[href^='/resourcemgt'] {
   font-weight: 600;
 }
+
+/* A used-up quota: shown above the question box, which is disabled until the quota starts over. */
+.quinn-quota {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0 0.75rem 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  color: #78350f;
+  background: #fffbeb;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.quinn-quota__icon {
+  margin-top: 0.15rem;
+  color: #d97706;
+}
+
+.quinn-quota__text {
+  margin: 0 0 0.25rem;
+}
+
+.quinn-quota__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--temphire-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}

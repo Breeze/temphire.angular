@@ -7,6 +7,7 @@ export const environment = {
   validationApiRoot: 'http://localhost:5000/api/validation',
   accountApiRoot: 'http://localhost:5000/api/account',
   agentApiRoot: 'http://localhost:5000/api/agent',
+  usageApiRoot: 'http://localhost:5000/api/usage',
   /**
    * The OAuth authorization server: TempHire.Server itself.  The browser goes there to sign in
    * (the sample users are offered on its sign-in page), and the app gets its tokens from there.
