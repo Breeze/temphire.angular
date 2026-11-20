@@ -161,15 +161,15 @@ Everything below is a conscious departure from the original.
   and not acceptable today. Users now live in **ASP.NET Core Identity**, in a database of their own
   (`TempHireIdentity`): Identity stores salted PBKDF2 hashes, and `SignInManager` checks passwords
   and locks an account for five minutes after five failed attempts. The `Admin` user is gone: users
-  sign in with an email address, whose domain picks their company (see "Multi-tenancy" in the
-  README), and the seeded users share the password `password`. Identity also keeps external logins,
-  so a provider such as Microsoft Entra ID can be added later (see "Users and sign-in" in the
-  README).
+  sign in with an email address, whose domain picks their company (see [Multi-tenancy](https://github.com/Breeze/temphire.server#multi-tenancy) in the
+  server's README), and the seeded users share the password `password`. Identity also keeps external logins,
+  so a provider such as Microsoft Entra ID can be added later (see [Users and sign-in](https://github.com/Breeze/temphire.server#users-and-sign-in) in the
+  server's README).
 - *Session.* OAuth 2.1 replaces the DevForce server session: the server is its own authorization
   server (OpenIddict), and the app signs in with the Authorization Code flow and PKCE.  The access
   token (30 minutes) and refresh token live in `sessionStorage`; `auth.interceptor.ts` attaches the
   access token and `AuthService` renews it.  An access token cannot be revoked before it expires.
-  See "Users and sign-in" in the README.
+  See [Users and sign-in](https://github.com/Breeze/temphire.server#users-and-sign-in) in the server's README.
 - *Metadata requires authentication*, matching `[RequiresAuthentication]` on the DevForce
   `EntityBase`. This is why `AuthService.completeSignIn` calls `EntityManagerProvider.prepare()`
   as soon as it has the tokens — the same place `LoginViewModel` called `IGlobalCache.LoadAsync()`.

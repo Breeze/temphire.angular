@@ -1,0 +1,4 @@
+[submodule "server"]
+	url = ../temphire.server.git
+	branch = main
+	path = server
