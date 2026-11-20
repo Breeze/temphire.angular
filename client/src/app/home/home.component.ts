@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonDirective } from '@openng/optimus-ui/button';
 
+import { FrameworkMarkComponent } from '../core/framework-mark.component';
+
 /**
  * Port of `ViewModels/HomeViewModel.cs` + `Views/HomeView.xaml`.
  *
@@ -13,7 +15,7 @@ import { ButtonDirective } from '@openng/optimus-ui/button';
  */
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, ButtonDirective],
+  imports: [RouterLink, ButtonDirective, FrameworkMarkComponent],
   template: `
     <div class="home">
       <section class="hero">
@@ -30,7 +32,7 @@ import { ButtonDirective } from '@openng/optimus-ui/button';
           </a>
         </div>
         <div class="hero__art" aria-hidden="true">
-          <span class="hero__orb hero__orb--large temphire-orb">T</span>
+          <span class="hero__orb hero__orb--large temphire-orb">T<app-framework-mark /></span>
           <span class="hero__orb hero__orb--small temphire-orb"></span>
         </div>
       </section>

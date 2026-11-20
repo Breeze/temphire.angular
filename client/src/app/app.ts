@@ -7,6 +7,7 @@ import { ToastModule } from '@openng/optimus-ui/toast';
 import { WORKSPACES } from './app.routes';
 import { AuthService } from './core/services/auth.service';
 import { ToolbarGroup, ToolbarService, toolbarActions } from './core/services/toolbar.service';
+import { FrameworkMarkComponent } from './core/framework-mark.component';
 import { QuinnComponent } from './quinn/quinn.component';
 
 /**
@@ -23,7 +24,7 @@ import { QuinnComponent } from './quinn/quinn.component';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ButtonDirective, ToastModule, DynamicDialogModule, QuinnComponent],
+  imports: [RouterOutlet, ButtonDirective, ToastModule, DynamicDialogModule, QuinnComponent, FrameworkMarkComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
