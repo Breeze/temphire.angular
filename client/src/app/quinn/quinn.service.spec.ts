@@ -1,11 +1,15 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/services/auth.service';
 import { QuinnService } from './quinn.service';
+
+@Component({ template: '' })
+class PageStub {}
 
 describe('QuinnService', () => {
   let quinn: QuinnService;
@@ -32,6 +36,10 @@ describe('QuinnService', () => {
         QuinnService,
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([
+          { path: 'home', component: PageStub },
+          { path: 'resourcemgt', component: PageStub },
+        ]),
         {
           provide: AuthService,
           useValue: { username: signal('anna@harbor.test'), tenantName: signal('Harbor Staffing') },
@@ -40,6 +48,20 @@ describe('QuinnService', () => {
     });
     quinn = TestBed.inject(QuinnService);
     http = TestBed.inject(HttpTestingController);
+  });
+
+  it('closes the pane whenever the route changes', async () => {
+    const router = TestBed.inject(Router);
+    await router.navigateByUrl('/home');
+
+    quinn.open();
+    await router.navigateByUrl('/resourcemgt');
+    expect(quinn.isOpen()).toBe(false);
+
+    // A person link from an answer only changes the query.
+    quinn.open();
+    await router.navigateByUrl('/resourcemgt?resource=m1');
+    expect(quinn.isOpen()).toBe(false);
   });
 
   it('streams the text of an answer, with the people it can mention', async () => {
