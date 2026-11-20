@@ -143,7 +143,7 @@ application:
 - **The agent calls those tools as the user**, with the user's own access token.  Nothing the
   model asks for can reach another company's data or more than the user may see.
 - **The model is a setting**: a small local model through Ollama, running on a laptop with 4 GB of
-  video memory, or Claude through the Anthropic API.  The README compares the two honestly: the
+  video memory, or Claude through the Anthropic API.  The [server's README](https://github.com/Breeze/temphire.server#ollama-or-claude) compares the two honestly: the
   small model is good enough to demonstrate, Claude is good enough to rely on.
 - **Answers stream** as the model writes them, and **links are made by the client from the people
   the tools returned**, never from text the model writes - so a link always opens the right record,
@@ -200,7 +200,7 @@ TempHire's server is now its own **OAuth 2.1 authorization server**, built with
 
 The last step closes the circle with the AI work: the application's data is available to the
 user's own AI tools, safely, through open standards.  And with OAuth in place, signing in with
-**Microsoft Entra ID** is a button on the sign-in page, not a redesign; the README describes how.
+**Microsoft Entra ID** is a button on the sign-in page, not a redesign; the [server's README](https://github.com/Breeze/temphire.server#adding-an-external-provider-such-as-microsoft-entra-id) describes how.
 
 ---
 
