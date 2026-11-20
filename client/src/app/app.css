@@ -44,6 +44,7 @@
 }
 
 .app-toolbar__badge {
+  position: relative;
   width: 2.1rem;
   height: 2.1rem;
   font-size: 1.05rem;
@@ -129,4 +130,12 @@
 .app-content {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/* The toolbar's orb is small, so the framework logo it wears is a little larger in proportion. */
+.app-toolbar__badge app-framework-mark {
+  right: -22%;
+  bottom: -22%;
+  width: 66%;
+  height: 66%;
 }
