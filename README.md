@@ -21,6 +21,7 @@ one model, authentication, and entity classes generated from the server's model.
 - [Prerequisites](#prerequisites)
 - [Running it](#running-it)
   - [Building for production](#building-for-production)
+  - [Running in Docker](#running-in-docker)
 - [Entity classes are generated](#entity-classes-are-generated)
 - [Quinn, the assistant](#quinn-the-assistant)
   - [Budgets and the usage page](#budgets-and-the-usage-page)
@@ -178,7 +179,22 @@ dotnet run --environment Production
 ```
 
 `Program.cs` already serves static files and falls back to `index.html`, so the whole app is then
-available from the server's own origin and no CORS is involved.
+available from the server's own origin and no CORS is involved.  Outside Development the server
+also needs HTTPS and certificate files for its OAuth keys (`OAuth:SigningCertificate`,
+`OAuth:EncryptionCertificate`); the Docker setup below shows a complete configuration.
+
+### Running in Docker
+
+`Dockerfile` builds one image with the server and the client, and `compose.yaml` runs it next to
+SQL Server, in the Production environment over HTTPS:
+
+```powershell
+.\docker\New-TempHireSecrets.ps1    # .env and the certificates; not committed
+docker compose up --build -d        # then https://localhost:8443
+```
+
+[docker/README.md](docker/README.md) has the details: what the script creates, Quinn with Ollama or
+Claude, the volumes, and what to change for a real deployment.
 
 ---
 

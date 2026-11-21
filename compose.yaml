@@ -1,0 +1,66 @@
+# TempHire, Angular client, in Docker: the app at https://localhost:8443, and SQL Server.
+# Secrets and certificates come from docker/New-TempHireSecrets.ps1 (.env and docker/certs/,
+# neither committed).  See docker/README.md.
+name: temphire-angular
+
+services:
+  sql:
+    # SQL Server 2022, Developer edition: free, for development and testing, not production.
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Run docker/New-TempHireSecrets.ps1 first}
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 15s
+
+  app:
+    build: .
+    image: temphire-angular
+    depends_on:
+      sql:
+        condition: service_healthy
+    ports:
+      - "8443:8443"
+    environment:
+      # HTTPS: the ASP.NET Core development certificate, which Windows already trusts.
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /certs/https.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${HTTPS_CERT_PASSWORD:?Run docker/New-TempHireSecrets.ps1 first}
+      # ...which the container has to trust as well: Quinn calls the server's own /mcp at
+      # https://localhost:8443.  .NET reads trusted roots from every folder in SSL_CERT_DIR, so this
+      # adds the certificate to the system's CAs (still needed, for Claude's API).  With a
+      # certificate from a public CA, drop this line.
+      SSL_CERT_DIR: /etc/ssl/certs:/certs/trusted
+
+      # The databases, in the sql container.  The server creates and seeds them on first start.
+      ConnectionStrings__TempHire: Server=sql;Database=TempHire;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True
+      ConnectionStrings__TempHireIdentity: Server=sql;Database=TempHireIdentity;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=True
+
+      # OAuth: the public origin names the issuer and token audiences, and the client app's
+      # redirect URIs; OpenIddict's keys come from certificate files (Auth/OAuthCertificates.cs).
+      OAuth__Origins__0: https://localhost:8443
+      AllowedClientOrigins__0: https://localhost:8443
+      AllowedClientOrigins__1: https://localhost:8443
+      OAuth__SigningCertificate__Path: /certs/signing.pfx
+      OAuth__SigningCertificate__Password: ${OAUTH_CERT_PASSWORD:?Run docker/New-TempHireSecrets.ps1 first}
+      OAuth__EncryptionCertificate__Path: /certs/encryption.pfx
+      OAuth__EncryptionCertificate__Password: ${OAUTH_CERT_PASSWORD}
+
+      # Quinn: Ollama on this machine by default; set QUINN_PROVIDER=Claude and CLAUDE_API_KEY in .env
+      # for Claude.
+      Agent__Provider: ${QUINN_PROVIDER:-Ollama}
+      Agent__Ollama__Endpoint: http://host.docker.internal:11434
+      Agent__Claude__ApiKey: ${CLAUDE_API_KEY:-}
+    volumes:
+      - ./docker/certs:/certs:ro
+      - dataprotection:/home/app/.aspnet/DataProtection-Keys
+
+volumes:
+  sqldata:
+  dataprotection:

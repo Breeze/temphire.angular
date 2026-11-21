@@ -14,3 +14,7 @@ npm-debug.log*
 # Local config
 appsettings.Local.json
 *.local.json
+
+# Docker: secrets and certificates (docker/New-TempHireSecrets.ps1)
+.env
+docker/certs/

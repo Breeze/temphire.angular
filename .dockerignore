@@ -1,0 +1,13 @@
+.git
+**/.git
+**/node_modules
+**/dist
+**/.angular
+**/bin
+**/obj
+**/.vs
+**/*.user
+server/TempHire.Server/wwwroot
+docs
+.env
+docker/certs
