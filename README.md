@@ -194,7 +194,7 @@ EF Core model ──► client/metadata.json ──► client/src/app/core/model
 ```
 
 1. **Export the metadata.** `npm run model:metadata` runs the server with `--export-metadata`, which
-   writes exactly what `GET /api/breeze/Metadata` serves to `client/metadata.json` and exits. It
+   writes exactly what `GET /api/model/Metadata` serves to `client/metadata.json` and exits. It
    reads the EF Core model only, so it needs no database and no login. The file is checked in, so a
    schema change shows up in review as a metadata diff next to the class diff it causes.
 2. **Generate the classes.** `npm run model:generate` writes one class per entity type, each
@@ -583,7 +583,7 @@ changed this data, so click Refresh to load the latest, then make the changes ag
 
 | Setting | Where | Notes |
 |---|---|---|
-| `breezeApiRoot` / `accountApiRoot` / `agentApiRoot` / `usageApiRoot` / `authority` | `client/src/environments/` | `environment.ts` is the **production** file; `environment.development.ts` replaces it during `ng serve` |
+| `modelApiRoot` / `lookupsApiRoot` / `resourceMgtApiRoot` / `validationApiRoot` / `accountApiRoot` / `agentApiRoot` / `usageApiRoot` / `authority` | `client/src/environments/` | `environment.ts` is the **production** file; `environment.development.ts` replaces it during `ng serve` |
 
 The server's settings - connection strings, signing keys, allowed client origins, Quinn's model -
 are in [its README](https://github.com/Breeze/temphire.server#configuration).

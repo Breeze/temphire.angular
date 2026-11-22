@@ -3,7 +3,9 @@ export const environment = {
   // The Angular dev server runs on 4200 and TempHire.Server on 5000 (see launchSettings.json),
   // so during development the client talks to the API cross-origin.  The server's CORS policy
   // allows http://localhost:4200.
-  breezeApiRoot: 'http://localhost:5000/api/breeze',
+  modelApiRoot: 'http://localhost:5000/api/model',
+  lookupsApiRoot: 'http://localhost:5000/api/lookups',
+  resourceMgtApiRoot: 'http://localhost:5000/api/resourcemgt',
   validationApiRoot: 'http://localhost:5000/api/validation',
   accountApiRoot: 'http://localhost:5000/api/account',
   agentApiRoot: 'http://localhost:5000/api/agent',

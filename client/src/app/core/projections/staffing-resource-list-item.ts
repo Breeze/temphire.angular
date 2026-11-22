@@ -2,7 +2,7 @@
  * Read-only row in the search grid.
  *
  * Ported from `DomainModel/Projections/StaffingResourceListItem.cs`.  It is *not* a Breeze entity -
- * the server returns it as a plain DTO from `BreezeController.StaffingResourceListItems` - which
+ * the server returns it as a plain DTO from `ResourceMgtController.StaffingResourceListItems` - which
  * matches the original, where the projection implemented DevForce's `IKnownType` rather than being
  * a mapped entity.
  */

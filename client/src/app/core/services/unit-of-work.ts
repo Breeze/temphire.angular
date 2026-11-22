@@ -1,7 +1,7 @@
 import { Signal, computed, signal } from '@angular/core';
 import { NotifyingEntityStore } from '@ideablade/validation';
 import { breezeEntityStore } from '@ideablade/validation/breeze';
-import { Entity, EntityManager, InitialValues, SaveOptions } from 'breeze-client';
+import { DataService, Entity, EntityManager, InitialValues, SaveOptions } from 'breeze-client';
 
 import { EntityManagerProvider } from './entity-manager-provider';
 import { EntityCtor, IRepository, Repository } from './repository';
@@ -72,14 +72,17 @@ export class UnitOfWork {
   });
 
   /**
+   * @param dataService the server controller of the workspace this unit of work belongs to: its
+   *   queries and its saves go there, and nowhere else.
    * @param onCommitted called after every successful save, so the owner can publish it.  This is
    *   the replacement for Punch's `SavedMessage`; see `UnitOfWorkManager.saves`.
    */
   constructor(
     protected readonly emProvider: EntityManagerProvider,
+    dataService: DataService,
     private readonly onCommitted: () => void = () => {},
   ) {
-    this.manager = emProvider.newManager();
+    this.manager = emProvider.newManager(dataService);
     this.entityStore = breezeEntityStore(this.manager);
 
     const bump = () => this.changeCount.update((count) => count + 1);

@@ -1,5 +1,6 @@
-import { EntityManager } from 'breeze-client';
+import { DataService, EntityManager } from 'breeze-client';
 
+import { environment } from '../../../environments/environment';
 import {
   Address,
   AddressType,
@@ -19,10 +20,21 @@ import { StaffingResourceSearchService } from './staffing-resource-search-servic
 import { IEntityFactory, UnitOfWork } from './unit-of-work';
 
 /**
+ * The Resource Management workspace's controller on the server, `ResourceMgtController`: every
+ * query and save of this unit of work goes there.  No server metadata of its own: the model's is
+ * loaded at sign-in (`EntityManagerProvider`).
+ */
+const resourceMgtService = new DataService({
+  serviceName: environment.resourceMgtApiRoot,
+  hasServerMetadata: false,
+});
+
+/**
  * Port of `DomainServices/IResourceMgtUnitOfWork.cs` + `ResourceMgtUnitOfWork.cs`.
  *
  * The lookup repositories pass `isCached = true`, which is the Breeze equivalent of DevForce's
- * `QueryStrategy.CacheOnly` on a `GlobalCacheRepository`.
+ * `QueryStrategy.CacheOnly` on a `GlobalCacheRepository`: they read the lookups loaded at sign-in
+ * and never query the server.
  */
 export class ResourceMgtUnitOfWork extends UnitOfWork {
   /**
@@ -54,7 +66,7 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
   readonly search: StaffingResourceSearchService;
 
   constructor(emProvider: EntityManagerProvider, onCommitted?: () => void) {
-    super(emProvider, onCommitted);
+    super(emProvider, resourceMgtService, onCommitted);
 
     this.staffingResources = new StaffingResourceRepository(this.manager);
     this.addresses = this.createRepository(Address);

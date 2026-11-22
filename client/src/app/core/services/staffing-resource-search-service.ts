@@ -7,7 +7,7 @@ import { StaffingResourceListItem } from '../projections/staffing-resource-list-
  * offers as its `search` service, as `IResourceMgtUnitOfWork.Search` did.
  *
  * The predicate and the projection now live on the server (see
- * `BreezeController.StaffingResourceListItems`); the client passes the search text through as a
+ * `ResourceMgtController.StaffingResourceListItems`); the client passes the search text through as a
  * query parameter.  The results are `StaffingResourceListItem` DTOs, not entities, which is why the
  * service queries the unit of work's manager rather than going through a repository.
  */
