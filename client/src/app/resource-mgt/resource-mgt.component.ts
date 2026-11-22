@@ -11,9 +11,10 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { ErrorVisibility, ValidationService } from '@ideablade/validation';
+import { ErrorVisibility, type ValidationError, ValidationService } from '@ideablade/validation';
 import { provideErrorVisibility, provideValidationScope } from '@ideablade/validation/angular';
 import { breezeIsNew } from '@ideablade/validation/breeze';
+import { firstValueFrom } from 'rxjs';
 
 import { CanComponentDeactivate } from '../app.routes';
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
@@ -375,6 +376,22 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     await this.loadDetail(id, 'edit');
   }
 
+  /**
+   * The unit of work's validation errors as it is now, sync and async, for deciding whether to save.
+   *
+   * Not `validationResult`: the continuous validation catches up with an edit a moment later, once
+   * the change has been coalesced (a `setTimeout`), and until then it still holds the result from
+   * before the edit, not pending.  A Save clicked right after an edit decided on that: it counted
+   * too few problems ("One problem needs fixing" with two on screen), and with no problems before the
+   * edit it would have saved one it had not seen, leaving Breeze and the server to refuse it.
+   * Validating once here also waits for async rules, which the continuous result may still be
+   * running.  The fields and the tab marks keep following the continuous result.
+   */
+  private async currentErrors(unitOfWork: ResourceMgtUnitOfWork): Promise<ValidationError[]> {
+    const result = await firstValueFrom(this.validation.validateEntityStoreOneTime(unitOfWork.entityStore));
+    return result.validationErrors;
+  }
+
   /** Port of `ResourceMgtViewModel.Save`. */
   async save(): Promise<void> {
     const id = this.staffingResourceId();
@@ -383,7 +400,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       return;
     }
 
-    const errors = this.validationResult()?.validationErrors ?? [];
+    const errors = await this.currentErrors(unitOfWork);
     if (errors.length > 0) {
       // Nothing is saved while a rule is broken: show every error, including those a new resource
       // has kept hidden so far, and say why nothing happened.
@@ -573,7 +590,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     );
 
     if (answer === 'yes') {
-      const errors = this.validationResult()?.validationErrors ?? [];
+      const errors = await this.currentErrors(unitOfWork);
       if (errors.length > 0) {
         // As with Save: show every error and keep the user here, with their edits.
         this.errorVisibility.revealAll();
