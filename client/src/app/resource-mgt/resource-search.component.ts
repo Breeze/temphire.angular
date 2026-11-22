@@ -59,18 +59,9 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
           placeholder="Search staffing resources"
           aria-label="Search staffing resources"
           [formField]="searchForm.text"
+          (input)="onInput($event)"
         />
-        <button pButton type="submit" [disabled]="!canSearch()">Search</button>
-        <button
-          pButton
-          type="button"
-          severity="secondary"
-          [outlined]="true"
-          [disabled]="!canClear()"
-          (click)="clear()"
-        >
-          Clear
-        </button>
+        <button pButton type="submit">Search</button>
         @if (results.isLoading()) {
           <p-progress-spinner
             styleClass="search__spinner"
@@ -255,10 +246,6 @@ export class ResourceSearchComponent {
 
   private readonly injector = inject(Injector);
 
-  /** Port of `CanSearch` / `CanClear`. */
-  readonly canSearch = computed(() => !!this.searchForm.text().value().trim());
-  readonly canClear = this.canSearch;
-
   constructor() {
     // Port of the last line of `Search(Guid selection)`:
     // `CurrentStaffingResource = Items.FirstOrDefault(r => r.Id == selection) ?? Items.FirstOrDefault()`.
@@ -301,10 +288,20 @@ export class ResourceSearchComponent {
     this.search();
   }
 
-  /** Port of `StaffingResourceSearchViewModel.Clear`. */
-  clear(): void {
-    this.searchForm.text().value.set('');
-    this.search();
+  /**
+   * The user changed the text.  Emptying the box - the X in it, Escape, or deleting the text -
+   * while a search is filtering the list shows the full list again.
+   *
+   * This replaces the original's Clear button, which the box's own X made redundant.  Its
+   * `CanSearch` / `CanClear` also both required text in the box, so once the user emptied it
+   * after a search, both buttons were disabled and the full list could only come back by typing
+   * something and clicking Clear.  Search is now always enabled: an empty search lists everyone.
+   */
+  protected onInput(event: Event): void {
+    if (!(event.target as HTMLInputElement).value && this.query()) {
+      this.searchForm.text().value.set('');
+      this.search();
+    }
   }
 
   /**
@@ -316,7 +313,9 @@ export class ResourceSearchComponent {
    */
   onSelect(item: StaffingResourceListItem | null): void {
     this.tableSelection.set(item);
-    afterNextRender(() => this.tableSelection.set(this.selectedItem()), { injector: this.injector });
+    afterNextRender(() => this.tableSelection.set(this.selectedItem()), {
+      injector: this.injector,
+    });
     if (item) {
       this.selectionChange.emit(item);
     }
