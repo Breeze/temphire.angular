@@ -15,11 +15,16 @@ import { ResourceSearchComponent } from './resource-search.component';
  * without asking.  Clicking the open resource's own row cleared its highlight too.
  */
 describe('ResourceSearchComponent', () => {
-  const rows = ['Ann', 'Ben', 'Cal'].map((name, i) => ({ id: `id-${i}`, fullName: name }) as StaffingResourceListItem);
+  const rows = ['Ann', 'Ben', 'Cal'].map(
+    (name, i) => ({ id: `id-${i}`, fullName: name }) as StaffingResourceListItem,
+  );
 
   @Component({
     imports: [ResourceSearchComponent],
-    template: `<app-resource-search [selectedId]="selectedId()" (selectionChange)="chosen.push($event)" />`,
+    template: `<app-resource-search
+      [selectedId]="selectedId()"
+      (selectionChange)="chosen.push($event)"
+    />`,
   })
   class Host {
     /** The workspace: it opened Ben, and refuses every change (it never updates `selectedId`). */
@@ -27,13 +32,25 @@ describe('ResourceSearchComponent', () => {
     readonly chosen: (StaffingResourceListItem | null)[] = [];
   }
 
+  /** The text of every search the grid ran. */
+  let searches: string[];
+
   async function setUp() {
+    searches = [];
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         {
           provide: UnitOfWorkManager,
-          useValue: { saves: signal(0), get: () => ({ search: async () => rows }) },
+          useValue: {
+            saves: signal(0),
+            get: () => ({
+              search: async (text: string) => {
+                searches.push(text);
+                return rows;
+              },
+            }),
+          },
         },
       ],
     });
@@ -42,12 +59,29 @@ describe('ResourceSearchComponent', () => {
     const element = fixture.nativeElement as HTMLElement;
     const row = (i: number) => element.querySelectorAll('tbody tr')[i] as HTMLElement;
     const highlighted = () =>
-      [...element.querySelectorAll('tbody tr')].flatMap((r, i) => (r.classList.contains('p-datatable-row-selected') ? [i] : []));
+      [...element.querySelectorAll('tbody tr')].flatMap((r, i) =>
+        r.classList.contains('p-datatable-row-selected') ? [i] : [],
+      );
     const click = async (i: number) => {
       (row(i).querySelector('td') as HTMLElement).click();
       await fixture.whenStable();
     };
-    return { host: fixture.componentInstance, fixture, highlighted, click };
+    const box = element.querySelector('input') as HTMLInputElement;
+    const button = (label: string) =>
+      [...element.querySelectorAll('button')].find(
+        (b) => b.textContent?.trim() === label,
+      ) as HTMLButtonElement;
+    /** Types into the search box: `value` replaces its text, as the X or deleting it would. */
+    const type = async (value: string) => {
+      box.value = value;
+      box.dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+    };
+    const press = async (label: string) => {
+      button(label).click();
+      await fixture.whenStable();
+    };
+    return { host: fixture.componentInstance, fixture, highlighted, click, type, press, button };
   }
 
   it('highlights the open resource', async () => {
@@ -68,7 +102,7 @@ describe('ResourceSearchComponent', () => {
     expect(highlighted()).toEqual([1]);
   });
 
-  it("keeps the open resource highlighted when its own row is clicked", async () => {
+  it('keeps the open resource highlighted when its own row is clicked', async () => {
     const { host, highlighted, click } = await setUp();
     await click(1);
     expect(highlighted()).toEqual([1]);
@@ -81,5 +115,37 @@ describe('ResourceSearchComponent', () => {
     host.selectedId.set('id-0');
     await fixture.whenStable();
     expect(highlighted()).toEqual([0]);
+  });
+
+  describe('the search box', () => {
+    it('shows the full list again when the box is emptied after a search', async () => {
+      const { type, press } = await setUp();
+      await type('Cal');
+      await press('Search');
+      expect(searches).toEqual(['', 'Cal']);
+
+      // The X in the box, Escape, or deleting the text: all leave it empty.
+      await type('');
+      expect(searches).toEqual(['', 'Cal', '']);
+    });
+
+    it('does not search again when the box is emptied while nothing is filtered', async () => {
+      const { type } = await setUp();
+      await type('Cal');
+      await type('');
+      expect(searches).toEqual(['']);
+    });
+
+    it('runs an empty search, which lists everyone', async () => {
+      const { press, button } = await setUp();
+      expect(button('Search').disabled).toBe(false);
+      await press('Search');
+      expect(searches).toEqual(['', '']);
+    });
+
+    it('has no Clear button: the X in the box clears it', async () => {
+      const { button } = await setUp();
+      expect(button('Clear')).toBeUndefined();
+    });
   });
 });
