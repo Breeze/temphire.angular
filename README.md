@@ -511,7 +511,8 @@ The forms add no rules of their own; they show the verdict:
   validates the unit of work again when Save is clicked (`validateEntityStoreOneTime`), since the
   continuous result catches up with an edit a moment later and a Save clicked right after an edit
   would otherwise miss it.  Nothing is saved while any rule is broken, async ones included: the
-  handler shows every error and says why.
+  handler shows every error and says why.  After a save (or a deletion, `commit`) it drops the
+  shared unit of work's cache, so the read-only views re-read what was saved.
 - **A new resource is not all red at once.**  The screen's `ErrorVisibility`
   (`provideErrorVisibility({ isNew: breezeIsNew, watchEntityStore: true })` in
   `ResourceMgtComponent`) decides which errors to show; validation itself is unchanged.  Loaded

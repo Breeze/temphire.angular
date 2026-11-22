@@ -401,15 +401,8 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
         // Rules are broken: the handler has shown them and said why nothing was saved.
         return;
       }
+      // The handler has dropped the shared cache, so the view-mode load below re-reads the saved graph.
       this.unitOfWorkManager.releaseIfClean(id);
-
-      // The save happened in the *sandbox* manager, so the shared manager still holds whatever it
-      // last loaded - including children that were just deleted.  A Breeze query merge never
-      // detaches cached entities the server omitted, so re-querying would not remove them; the
-      // shared cache has to be dropped and re-seeded.  DevForce's shared EntityManager was
-      // refreshed for the same reason.
-      this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
-
       await this.loadDetail(id, 'view');
     });
   }
@@ -464,15 +457,15 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     await this.run(async () => {
       try {
         resource.delete();
-        await unitOfWork.commit();
+        // Not validated: a record that breaks a rule can still be deleted.  The handler drops the
+        // shared cache, so the deleted graph goes with it.
+        await this.saveHandler.commit(unitOfWork);
       } catch (error) {
         unitOfWork.rollback();
         throw error;
       }
 
       this.unitOfWorkManager.remove(id);
-      // Same reasoning as in `save()`: drop the shared cache so the deleted graph goes with it.
-      this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
       // The save reloads the search list; with nothing selected, it selects the first row.
       this.clearDetail();
     });
@@ -582,9 +575,8 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
         // As with Save: the handler has shown every error; keep the user here, with their edits.
         throw new DialogCancelledError();
       }
-      // The search list reloads itself off `UnitOfWorkManager.saves`; only the shared cache needs
-      // dropping so the next view-mode load re-reads the saved graph.
-      this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
+      // The search list reloads itself off `UnitOfWorkManager.saves`, and the handler has dropped
+      // the shared cache, so the next view-mode load re-reads the saved graph.
     } else {
       unitOfWork.rollback();
     }
