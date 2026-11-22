@@ -26,7 +26,7 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
  *    the conventional r&eacute;sum&eacute; order and was agreed for the conversion.
  *  - The view model's `IsPending` flag (and its "Loading..." panel) tracked DevForce's lazily
  *    faulted `RelatedEntityList<WorkExperienceItem>`.  Breeze eager-loads the children via `expand`
- *    in `ResourceMgtUnitOfWork.loadStaffingResource`, so there is nothing to wait for and the flag
+ *    in `StaffingResourceRepository.withId`, so there is nothing to wait for and the flag
  *    is dropped.  `IsEmpty` survives as the placeholder below.
  *  - The original also subscribed to `SavedMessage` to re-sort after a save.  Here
  *    `sortedWorkExperience` is a `computed` over the unit of work's `changes` signal, so it re-sorts

@@ -273,7 +273,7 @@ export class ResourceSearchComponent {
   readonly results = resource({
     params: () => ({ searchText: this.query(), saves: this.unitOfWorkManager.saves() }),
     loader: ({ params }) =>
-      this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).search(params.searchText),
+      this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).search.simple(params.searchText),
   });
 
   /**

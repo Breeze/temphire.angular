@@ -24,7 +24,7 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
  *
  *  - The original's `IsPending` flag - and the "Loading..." panel it drove - existed because
  *    DevForce faulted `StaffingResource.Rates` in lazily through a `RelatedEntityList<Rate>`.
- *    Breeze has no lazy loading; `ResourceMgtUnitOfWork.loadStaffingResource` pulls the children in
+ *    Breeze has no lazy loading; `StaffingResourceRepository.withId` pulls the children in
  *    with `expand`, so by the time this component has a resource the rates are already there.  The
  *    flag has no equivalent and is dropped.  `IsEmpty` survives as the placeholder below.
  *  - `Add` fetched the rate types with `RateTypes.AllAsync(...)` before showing the selector.  The

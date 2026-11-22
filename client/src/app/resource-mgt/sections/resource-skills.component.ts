@@ -20,7 +20,7 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
  *
  *  - `IsPending` and its "Loading..." panel reflected DevForce faulting `StaffingResource.Skills`
  *    lazily through a `RelatedEntityList<Skill>`.  Breeze has no lazy loading - the skills arrive
- *    with the resource via `expand` in `ResourceMgtUnitOfWork.loadStaffingResource` - so the flag
+ *    with the resource via `expand` in `StaffingResourceRepository.withId` - so the flag
  *    has no equivalent and is dropped.  `IsEmpty` survives as the placeholder below.
  *  - The view model handled `SavedMessage` purely to re-raise `SkillsSorted` after a save.  Here
  *    `sortedSkills` is a `computed` over the unit of work's `changes` signal, so it re-sorts
