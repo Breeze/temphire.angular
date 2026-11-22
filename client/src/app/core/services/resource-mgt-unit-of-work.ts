@@ -22,8 +22,8 @@ import { EntityFactory, UnitOfWork } from './unit-of-work';
  *
  * The original pre-populated a new resource with a default (primary) address and phone number, so
  * that the "must have at least one of each" rule was satisfied the moment the entity existed.  This
- * one creates the resource alone: the rule is in the validation metadata, so the user sees it
- * broken - and Save disabled - until they add an address and a phone number.
+ * one creates the resource alone: the rule is in the validation metadata, so the resource breaks it,
+ * and nothing is saved, until the user adds an address and a phone number.
  */
 export class StaffingResourceFactory extends EntityFactory<StaffingResource> {
   constructor(manager: EntityManager) {

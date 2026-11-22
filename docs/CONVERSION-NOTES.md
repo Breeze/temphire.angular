@@ -236,11 +236,13 @@ Everything below is a conscious departure from the original.
   `pInputText`, which shows its red border at once, and binding `[invalid]` yourself next to
   `[formField]` is a compile error (NG8022).  `app.config.ts` therefore adds a
   `signal-form-untouched` class through `provideSignalFormsConfig`, and `styles.css` holds back the
-  invalid border on those fields until they have been touched.  Entity fields are not held back:
-  a Breeze error shows at once.
+  invalid border on those fields until they have been touched.  Entity fields follow the library's
+  error visibility instead (`provideErrorVisibility` in `ResourceMgtComponent`): a loaded entity's
+  errors show at once, a new entity's first errors once the user edits or leaves the field, or
+  tries to save.
 - **Adding an editable entity field** means binding it with `name="property"` and `[(ngModel)]`
-  inside an `ngForm [validationModel]="entity"` element, plus `#field="ngModel"
-  [invalid]="field.invalid"`, in a component that imports `ValidationFormsDirectives` and
+  inside an `ngForm [validationModel]="entity"` element, plus `#field="fieldErrors"
+  [invalid]="field.invalid()"`, in a component that imports `ValidationFormsDirectives` and
   `FieldErrorsDirective`.  Without them the field still works, but its errors reach neither the
   form nor Optimus UI.  Validation rules belong on the
   server - a data annotation on the entity, or a rule in `Validation/validation.metadata.json` -
