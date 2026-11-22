@@ -28,6 +28,7 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
 import { ResourceDetailComponent } from './resource-detail.component';
 import { ResourceNameEditorComponent, ResourceName } from './resource-name-editor.component';
 import { ResourceSearchComponent } from './resource-search.component';
+import { describeProblems } from './resource-tabs';
 
 import { MessageService } from '@openng/optimus-ui/api';
 import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
@@ -390,10 +391,8 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       this.messages.add({
         severity: 'warn',
         summary: 'Not saved',
-        detail:
-          errors.length === 1
-            ? 'One problem needs fixing. It is highlighted.'
-            : `${errors.length} problems need fixing. They are highlighted.`,
+        // Which tabs to look on, too: the tabs are marked, but the user is on one of them.
+        detail: describeProblems(errors),
         life: 6000,
       });
       return;
@@ -574,13 +573,14 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     );
 
     if (answer === 'yes') {
-      if ((this.validationResult()?.validationErrors.length ?? 0) > 0) {
+      const errors = this.validationResult()?.validationErrors ?? [];
+      if (errors.length > 0) {
         // As with Save: show every error and keep the user here, with their edits.
         this.errorVisibility.revealAll();
         this.messages.add({
           severity: 'warn',
           summary: 'Not saved',
-          detail: 'Some problems need fixing. They are highlighted.',
+          detail: describeProblems(errors),
           life: 6000,
         });
         throw new DialogCancelledError();

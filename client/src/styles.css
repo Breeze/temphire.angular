@@ -161,3 +161,16 @@ body {
   margin-top: 0.15rem;
   display: block;
 }
+
+/* Text for screen readers only, such as the error count of a tab (its badge is hidden from them). */
+.temphire-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

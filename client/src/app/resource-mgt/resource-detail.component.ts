@@ -1,4 +1,7 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ValidationService } from '@ideablade/validation';
+import { injectErrorVisibility } from '@ideablade/validation/angular';
 import { TabsModule } from '@openng/optimus-ui/tabs';
 
 import { StaffingResource } from '../core/model';
@@ -8,6 +11,7 @@ import { ResourceRatesComponent } from './sections/resource-rates.component';
 import { ResourceSkillsComponent } from './sections/resource-skills.component';
 import { ResourceWorkExperienceComponent } from './sections/resource-work-experience.component';
 import { ResourceSummaryComponent } from './resource-summary.component';
+import { RESOURCE_TABS, countByTab } from './resource-tabs';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceDetailViewModel.cs` +
@@ -43,10 +47,17 @@ import { ResourceSummaryComponent } from './resource-summary.component';
 
       <p-tabs [(value)]="activeTab" class="detail__tabs temphire-card">
         <p-tablist>
-          <p-tab value="contact">Contact Information</p-tab>
-          <p-tab value="rates">Rates</p-tab>
-          <p-tab value="work">Work Experience</p-tab>
-          <p-tab value="skills">Skills</p-tab>
+          @for (tab of tabs; track tab.value) {
+            <p-tab [value]="tab.value">
+              {{ tab.label }}
+              @if (errorCounts()[tab.value]; as count) {
+                <span class="detail__tab-errors" aria-hidden="true">
+                  <i class="pi pi-exclamation-circle"></i>{{ count }}
+                </span>
+                <span class="temphire-visually-hidden">({{ count === 1 ? '1 error' : count + ' errors' }})</span>
+              }
+            </p-tab>
+          }
         </p-tablist>
 
         <p-tabpanels>
@@ -148,6 +159,24 @@ import { ResourceSummaryComponent } from './resource-summary.component';
         box-shadow: 0 -2px 8px rgba(15, 47, 77, 0.08);
       }
 
+      /* A tab with errors to show: a red count after its label, on the active tab too. */
+      .detail__tab-errors {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        margin-left: 0.45rem;
+        padding: 0.05rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        line-height: 1.4;
+        color: #ffffff;
+        background: var(--p-red-500, #e24c4c);
+      }
+
+      .detail__tab-errors .pi {
+        font-size: 0.75rem;
+      }
+
       :host ::ng-deep .detail__tabs .p-tabpanels {
         display: block;
         padding: 1.25rem 1.4rem 1.5rem;
@@ -169,4 +198,21 @@ export class ResourceDetailComponent {
   readonly staffingResource = input.required<StaffingResource>();
   readonly readOnly = input.required<boolean>();
   readonly unitOfWork = input.required<ResourceMgtUnitOfWork>();
+
+  readonly tabs = RESOURCE_TABS;
+
+  /**
+   * How many errors each tab has to show, so a tab with a problem is marked before the user opens
+   * it.  They come from the continuous validation of the route's unit of work, which the Save
+   * button and the address and phone lists use too, not from the fields: the deferred tabs have
+   * none until they are opened.  Only the errors the screen shows count (`ErrorVisibility`), so
+   * a new resource's tabs are not marked until the user breaks a rule or tries to save.
+   */
+  readonly errorCounts = computed(() => {
+    const errors = this.validationResult()?.validationErrors ?? [];
+    return countByTab(errors.filter((error) => this.visibility.isShown(error.model, error)));
+  });
+
+  private readonly visibility = injectErrorVisibility();
+  private readonly validationResult = toSignal(inject(ValidationService).validateEntityStore());
 }

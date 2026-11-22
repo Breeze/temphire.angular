@@ -250,15 +250,18 @@ Everything below is a conscious departure from the original.
 - **One `MetadataStore` for the page.** Breeze binds each registered entity class to a single
   store, so `EntityManagerProvider` keeps one store across logout and login and registers the
   classes once.  Creating a new store per login made the second login in a page fail.
-- **Adding a detail tab** means editing `resource-detail.component.ts`. The original got this for
-  free from MEF's `[ImportMany] IEnumerable<IStaffingResourceDetailSection>` ordered by `Index`.
+- **Adding a detail tab** means editing `resource-detail.component.ts`, and adding the tab to
+  `RESOURCE_TABS` in `resource-tabs.ts` with the entity types whose errors it shows, so that it
+  is marked when they have errors.  The original got the tab for free from MEF's
+  `[ImportMany] IEnumerable<IStaffingResourceDetailSection>` ordered by `Index`.
 - **Adding a workspace** means adding a route in `app.routes.ts` and an entry in `WORKSPACES`.
 - **Adding an entity type** means: POCO + `DbSet` on the server, a `[HttpGet]` action returning
   `IQueryable<T>` on `BreezeController`, then `npm run model` in `client/` to export the metadata
   and generate the TypeScript class (registration is generated too), and a repository on
   `ResourceMgtUnitOfWork` (`this.createRepository(MyEntity)`). Repositories query the entity
   type's `defaultResourceName` from the metadata, which is the `DbSet` name, so the controller
-  action must be named after the `DbSet`.
+  action must be named after the `DbSet`.  Place the type in `TAB_OF_ENTITY_TYPE`
+  (`resource-mgt/resource-tabs.ts`) too: `resource-tabs.spec.ts` fails until it is.
 - **Breeze's `EntityErrorsException` returns HTTP 403**, not 400. `auth.interceptor.ts` deliberately
   does *not* treat 403 as an authentication failure — doing so would log the user out whenever a
   save failed validation.
