@@ -84,6 +84,25 @@ describe('the server validation rules on the client', () => {
     expect(ids(new Date(2030, 0, 1))).toEqual([]);
   });
 
+  it('wants a plausible date of birth: not in the future, not more than 123 years ago', () => {
+    const { resource, addAddress, addPhoneNumber, ruleIds } = setUp();
+    addAddress();
+    addPhoneNumber();
+    const today = new Date();
+    const yearsAgo = (years: number, days = 0) =>
+      new Date(today.getFullYear() - years, today.getMonth(), today.getDate() - days);
+    const idsFor = (dateOfBirth: Date) => {
+      resource.setProperty('dateOfBirth', dateOfBirth);
+      return ruleIds();
+    };
+
+    expect(idsFor(yearsAgo(0, -1))).toEqual(['PLAUSIBLE_DATE_OF_BIRTH']); // tomorrow
+    expect(idsFor(yearsAgo(0))).toEqual([]); // today
+    expect(idsFor(yearsAgo(40))).toEqual([]);
+    expect(idsFor(yearsAgo(123))).toEqual([]); // the oldest still plausible
+    expect(idsFor(yearsAgo(123, 1))).toEqual(['PLAUSIBLE_DATE_OF_BIRTH']);
+  });
+
   it('wants a new resource to have an address and a phone number', () => {
     const { addAddress, addPhoneNumber, ruleIds } = setUp();
     expect(ruleIds()).toEqual(['ADDRESS_REQUIRED', 'PHONE_NUMBER_REQUIRED']);
