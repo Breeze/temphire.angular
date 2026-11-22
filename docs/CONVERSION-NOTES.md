@@ -295,6 +295,16 @@ Everything below is a conscious departure from the original.
   says why nothing was saved, and drops the shared cache after a save.  Don't call
   `unitOfWork.commit()` yourself, and don't decide on the continuous `validateEntityStore()`
   result; it lags an edit by a moment.
+- **Never reach for the `EntityManager`.** Components and services work with data only through
+  the unit of work: its repositories (queries and loads), factories (new entities), services
+  (searches and other queries) and `commit()` / `rollback()`, and the validation entity store.
+  The manager is the unit of work's own (`protected`), created by `EntityManagerProvider`.  If a
+  screen needs something none of them offers, add it to the unit of work as one of those parts;
+  don't expose the manager.  The conversion had an `entityManager` getter on
+  `ResourceMgtUnitOfWork` "so the detail screens can create entities directly"; nothing ever used
+  it, and it is gone.  An entity's own methods (`StaffingResource.addAddress`, `delete`) are the
+  one exception: like the original's, they create and delete their children through their own
+  `entityAspect`.
 - **One controller per workspace.** Each workspace's unit of work queries and saves through its
   own controller on the server (`ResourceMgtUnitOfWork` → `ResourceMgtController`, `api/resourcemgt`),
   passed to the unit of work as a Breeze `DataService`. What every workspace needs has a controller
