@@ -25,7 +25,7 @@ export interface IRepository<T extends Entity> {
  * name.  Passing the class to `EntityQuery.from` and `fetchEntityByKey` is what makes them typed -
  * `EntityQuery<StaffingResource>`, `QueryResult<StaffingResource>` - and the resource to query
  * ("StaffingResources") comes from the entity type's `defaultResourceName` in the metadata, which
- * matches the action names on `BreezeController`.
+ * matches the action names on the workspace's controller (`ResourceMgtController`).
  */
 export class Repository<T extends Entity> implements IRepository<T> {
   protected readonly defaultFetchStrategy: FetchStrategy;

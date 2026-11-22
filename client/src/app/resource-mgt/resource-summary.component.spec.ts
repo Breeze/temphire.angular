@@ -26,7 +26,7 @@ describe('ResourceSummaryComponent', () => {
     const metadataStore = new MetadataStore();
     metadataStore.importMetadata(metadata);
     const manager = new EntityManager({
-      dataService: new DataService({ serviceName: 'api/breeze', hasServerMetadata: false }),
+      dataService: new DataService({ serviceName: 'api/resourcemgt', hasServerMetadata: false }),
       metadataStore,
     });
 

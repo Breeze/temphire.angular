@@ -38,7 +38,7 @@ everything it needs with a single `expand`
 `EntityQuery.from(StaffingResource).where(...)`, but `[BreezeQueryFilter]` applies it server-side
 to an `IQueryable<T>`. Where the original composed a LINQ predicate on the client and shipped it
 (`StaffingResourceSearchService.Simple`), the predicate now lives in
-`BreezeController.StaffingResourceListItems` and the client passes a search string.
+`ResourceMgtController.StaffingResourceListItems` and the client passes a search string.
 
 ---
 
@@ -55,7 +55,7 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 | `DomainModel/Projections/StaffingResourceListItem.cs` | `…/Projections/StaffingResourceListItem.cs` + `client/…/projections/staffing-resource-list-item.ts` |
 | `DomainModel/TempHireDbContext.cs` (EF6) | `…/TempHireDbContext.cs` (EF Core 10, fluent config) |
 | `DomainModel/TempHireEntities.cs` (`EntityManager` subclass) | *gone* — the EntityManager is a client concept now |
-| `DomainModel/TempHireEntities.ibmmx` (IdeaBlade model file) | *gone* — metadata is generated from the EF Core model at `GET /api/breeze/Metadata`, and exported to `client/metadata.json`, from which `breeze-gen-entities` (`npm run model`) writes the client classes |
+| `DomainModel/TempHireEntities.ibmmx` (IdeaBlade model file) | *gone* — metadata is generated from the EF Core model at `GET /api/model/Metadata`, and exported to `client/metadata.json`, from which `breeze-gen-entities` (`npm run model`) writes the client classes |
 | `DomainModel/SaveInterceptor.cs` | `server/TempHire.Server/Persistence/TempHirePersistenceManager.cs` |
 | `Security/User.cs`, `LoginManager.cs`, `CryptoHelper.cs` | ASP.NET Core Identity: `…/Identity/TempHireUser.cs` + OAuth 2.1 with OpenIddict: `Controllers/SignInController.cs` (sign-in page), `Controllers/AuthorizationController.cs` + `Auth/TokenClaims.cs` (tokens) + `Auth/TenantResolver.cs` |
 | `Security/SecurityDbContext.cs` | `…/Identity/TempHireIdentityDbContext.cs` (the `TempHireIdentity` database) |
@@ -67,7 +67,7 @@ to an `IQueryable<T>`. Where the original composed a LINQ predicate on the clien
 |---|---|
 | `[ProvideEntityAspect]` | Breeze attaches `entityAspect` at runtime when the type is registered with the `MetadataStore` |
 | `[DataContract(IsReference = true)]` | Json.NET with `TypeNameHandling.Objects` + `$id`/`$ref`, configured by `JsonSerializationFns.UpdateWithDefaults` |
-| `[RequiresAuthentication]` on `EntityBase` | `[Authorize]` on `BreezeController` |
+| `[RequiresAuthentication]` on `EntityBase` | `[Authorize]` on the Breeze controllers (`ModelController`, `LookupsController`, `ResourceMgtController`) |
 | `[ClientCanSave(true)]` on `AuditEntityBase` + `DefaultAuthorization = false` | `TempHirePersistenceManager.BeforeSaveEntity` rejects anything that is not an `AuditEntityBase`. Same effect: the four lookup types are read-only to the client |
 | `[ClientCanQuery(false)]` on `User` | `User` is not exposed by any controller and lives in a separate DbContext, so it never reaches the client metadata |
 | `[ConcurrencyStrategy(ConcurrencyStrategy.AutoIncrement)]` | `[ConcurrencyCheck]` on `RowVersion`; incremented in `BeforeSaveEntitiesAsync` |
@@ -263,15 +263,23 @@ Everything below is a conscious departure from the original.
   says why nothing was saved, and drops the shared cache after a save.  Don't call
   `unitOfWork.commit()` yourself, and don't decide on the continuous `validateEntityStore()`
   result; it lags an edit by a moment.
+- **One controller per workspace.** Each workspace's unit of work queries and saves through its
+  own controller on the server (`ResourceMgtUnitOfWork` → `ResourceMgtController`, `api/resourcemgt`),
+  passed to the unit of work as a Breeze `DataService`. What every workspace needs has a controller
+  of its own: the model's metadata (`ModelController`) and the lookups loaded at sign-in
+  (`LookupsController`, whose `AllTypes` returns every lookup table in one bundle). A new workspace
+  gets a new controller and data service; a lookup only one workspace uses goes in that
+  workspace's controller, not in `AllTypes`.
 - **Adding an entity type** means: POCO + `DbSet` on the server, a `[HttpGet]` action returning
-  `IQueryable<T>` on `BreezeController`, then `npm run model` in `client/` to export the metadata
-  and generate the TypeScript class (registration is generated too), and a repository on
-  `ResourceMgtUnitOfWork` (`this.createRepository(MyEntity)`). If loading the entity should bring
-  related entities with it, subclass `Repository` and override `withId`, as
-  `StaffingResourceRepository` does, so no caller has to know what to expand. Repositories query the entity
-  type's `defaultResourceName` from the metadata, which is the `DbSet` name, so the controller
-  action must be named after the `DbSet`.  Place the type in `TAB_OF_ENTITY_TYPE`
-  (`resource-mgt/resource-tabs.ts`) too: `resource-tabs.spec.ts` fails until it is.
+  `IQueryable<T>` on the controller of the workspace that uses it, then `npm run model` in
+  `client/` to export the metadata and generate the TypeScript class (registration is generated
+  too), and a repository on that workspace's unit of work (`this.createRepository(MyEntity)`). If
+  loading the entity should bring related entities with it, subclass `Repository` and override
+  `withId`, as `StaffingResourceRepository` does, so no caller has to know what to expand.
+  Repositories query the entity type's `defaultResourceName` from the metadata, which is the
+  `DbSet` name, so the controller action must be named after the `DbSet`.  Place the type in
+  `TAB_OF_ENTITY_TYPE` (`resource-mgt/resource-tabs.ts`) too: `resource-tabs.spec.ts` fails until
+  it is.
 - **Breeze's `EntityErrorsException` returns HTTP 403**, not 400. `auth.interceptor.ts` deliberately
   does *not* treat 403 as an authentication failure — doing so would log the user out whenever a
   save failed validation.

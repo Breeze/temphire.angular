@@ -31,7 +31,7 @@ describe('the server validation rules on the client', () => {
       Object.entries(rules).filter(([key]) => !key.startsWith('$')),
     ) as ModelValidationMetadataMap;
     const manager = new EntityManager({
-      dataService: new DataService({ serviceName: 'api/breeze', hasServerMetadata: false }),
+      dataService: new DataService({ serviceName: 'api/resourcemgt', hasServerMetadata: false }),
       metadataStore,
     });
 

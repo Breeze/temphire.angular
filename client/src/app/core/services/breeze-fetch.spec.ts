@@ -29,7 +29,7 @@ describe('emptyBodyAsNull (breeze-client 3.0.0 workaround)', () => {
   function query() {
     // `hasServerMetadata: false` lets the query run without a metadata round trip.
     const dataService = new DataService({
-      serviceName: 'http://localhost/api/breeze',
+      serviceName: 'http://localhost/api/resourcemgt',
       hasServerMetadata: false,
     });
     const manager = new EntityManager({ dataService });
@@ -87,7 +87,7 @@ describe('emptyBodyAsNull (breeze-client 3.0.0 workaround)', () => {
     const pending = query();
     const request = await vi.waitFor(() =>
       httpTesting.expectOne((req) =>
-        req.url.startsWith('http://localhost/api/breeze/StaffingResources'),
+        req.url.startsWith('http://localhost/api/resourcemgt/StaffingResources'),
       ),
     );
     request.flush(null, { status: 204, statusText: 'No Content' });
@@ -100,6 +100,6 @@ describe('emptyBodyAsNull (breeze-client 3.0.0 workaround)', () => {
     const notFound = new Response(null, { status: 404 });
     const fetchFn = emptyBodyAsNull(async () => notFound);
 
-    expect(await fetchFn('http://localhost/api/breeze/StaffingResources')).toBe(notFound);
+    expect(await fetchFn('http://localhost/api/resourcemgt/StaffingResources')).toBe(notFound);
   });
 });

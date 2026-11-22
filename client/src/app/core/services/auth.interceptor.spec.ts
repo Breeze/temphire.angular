@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 
 describe('authInterceptor', () => {
   const unauthorized = { status: 401, statusText: 'Unauthorized' };
-  const resourcesUrl = `${environment.breezeApiRoot}/StaffingResources`;
+  const resourcesUrl = `${environment.resourceMgtApiRoot}/StaffingResources`;
   const tokenUrl = `${environment.authority || window.location.origin}/connect/token`;
 
   /** Signs in with stored tokens whose access token expires in `expiresInMs`. */

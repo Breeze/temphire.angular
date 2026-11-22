@@ -1,7 +1,11 @@
 export const environment = {
   production: true,
-  /** Root of the Breeze controller - see `BreezeController`'s `[Route("api/breeze/[action]")]`. */
-  breezeApiRoot: '/api/breeze',
+  /** The Breeze model's metadata, loaded at sign-in - see `ModelController`. */
+  modelApiRoot: '/api/model',
+  /** The lookups, loaded at sign-in for every unit of work - see `LookupsController`. */
+  lookupsApiRoot: '/api/lookups',
+  /** The Resource Management workspace's queries and saves - see `ResourceMgtController`. */
+  resourceMgtApiRoot: '/api/resourcemgt',
   /** Root of the validation controller: the validation metadata, see `ValidationController`. */
   validationApiRoot: '/api/validation',
   /** Root of the account controller: who the signed-in user is. */
