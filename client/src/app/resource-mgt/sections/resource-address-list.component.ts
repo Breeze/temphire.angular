@@ -12,7 +12,7 @@ import { Address, AddressType, StaffingResource } from '../../core/model';
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
-import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives, injectErrorVisibility } from '@ideablade/validation/angular';
 
 import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
@@ -80,8 +80,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   name="address1"
                   [readOnly]="readOnly()"
                   [(ngModel)]="address.address1"
-                  #address1="ngModel"
-                  [invalid]="address1.invalid"
+                  #address1="fieldErrors"
+                  [invalid]="address1.invalid()"
                 />
 
                 <label [for]="'address2-' + address.id">Address 2:</label>
@@ -91,8 +91,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   name="address2"
                   [readOnly]="readOnly()"
                   [(ngModel)]="address.address2"
-                  #address2="ngModel"
-                  [invalid]="address2.invalid"
+                  #address2="fieldErrors"
+                  [invalid]="address2.invalid()"
                 />
 
                 <label [for]="'city-' + address.id">City:</label>
@@ -102,8 +102,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   name="city"
                   [readOnly]="readOnly()"
                   [(ngModel)]="address.city"
-                  #city="ngModel"
-                  [invalid]="city.invalid"
+                  #city="fieldErrors"
+                  [invalid]="city.invalid()"
                 />
 
                 <label [for]="'state-' + address.id">State:</label>
@@ -115,8 +115,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   name="stateId"
                   [disabled]="readOnly()"
                   [(ngModel)]="address.stateId"
-                  #stateId="ngModel"
-                  [invalid]="stateId.invalid"
+                  #stateId="fieldErrors"
+                  [invalid]="stateId.invalid()"
                   appendTo="body"
                   styleClass="address__state"
                 />
@@ -129,8 +129,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   name="zipcode"
                   [readOnly]="readOnly()"
                   [(ngModel)]="address.zipcode"
-                  #zipcode="ngModel"
-                  [invalid]="zipcode.invalid"
+                  #zipcode="fieldErrors"
+                  [invalid]="zipcode.invalid()"
                 />
               </div>
 
@@ -269,11 +269,18 @@ export class ResourceAddressListComponent {
    * validation of the route's unit of work, which the Save button reacts to too
    * (`ResourceMgtComponent`): the route's validation service shares it.
    */
-  readonly ruleErrors = computed(() =>
-    (this.validationResult()?.validationErrors ?? []).filter(
-      (error) => error.model === this.staffingResource() && error.id === 'ADDRESS_REQUIRED',
-    ),
-  );
+  readonly ruleErrors = computed(() => {
+    const resource = this.staffingResource();
+    const errors = (this.validationResult()?.validationErrors ?? []).filter(
+      (error) => error.model === resource && error.id === 'ADDRESS_REQUIRED',
+    );
+    // On a new resource, the rule is broken from the start: it shows once the user breaks it again
+    // (deletes the last one) or tries to save.  See `ErrorVisibility`.
+    // `shown` follows the visibility (a save attempt, say); without one, it returns them all.
+    return this.visibility.shown(resource, errors);
+  });
+
+  private readonly visibility = injectErrorVisibility();
 
   private readonly validationResult = toSignal(inject(ValidationService).validateEntityStore());
 

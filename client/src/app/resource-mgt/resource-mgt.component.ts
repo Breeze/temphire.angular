@@ -11,8 +11,9 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { ValidationService } from '@ideablade/validation';
-import { provideValidationScope } from '@ideablade/validation/angular';
+import { ErrorVisibility, ValidationService } from '@ideablade/validation';
+import { provideErrorVisibility, provideValidationScope } from '@ideablade/validation/angular';
+import { breezeIsNew } from '@ideablade/validation/breeze';
 
 import { CanComponentDeactivate } from '../app.routes';
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
@@ -28,6 +29,7 @@ import { ResourceDetailComponent } from './resource-detail.component';
 import { ResourceNameEditorComponent, ResourceName } from './resource-name-editor.component';
 import { ResourceSearchComponent } from './resource-search.component';
 
+import { MessageService } from '@openng/optimus-ui/api';
 import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
 
 type EditMode = 'view' | 'edit';
@@ -56,7 +58,14 @@ type EditMode = 'view' | 'edit';
   selector: 'app-resource-mgt',
   imports: [ResourceSearchComponent, ResourceDetailComponent, ProgressSpinnerModule],
   // The route's own validation service, for the scope of its unit of work: see the constructor.
-  providers: [BusyService, provideValidationScope()],
+  // `ErrorVisibility`: which errors the screen shows, so a new resource is not all red at once.  Only
+  // added entities count as new; it also follows the continuous validation of the unit of work, so
+  // the resource's own rules (at least one address, one phone number) have a baseline too.
+  providers: [
+    BusyService,
+    provideValidationScope(),
+    provideErrorVisibility({ isNew: breezeIsNew, watchEntityStore: true }),
+  ],
   templateUrl: './resource-mgt.component.html',
   styleUrl: './resource-mgt.component.css',
 })
@@ -97,6 +106,10 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
    */
   private readonly validationResult = toSignal(this.validation.validateEntityStore());
 
+  /** Which errors the screen shows: see `ErrorVisibility`. */
+  private readonly errorVisibility = inject(ErrorVisibility);
+  private readonly messages = inject(MessageService);
+
   /**
    * The `resource` query parameter: a staffing resource to open, from a link in Quinn's answers.
    * Bound by the router (`withComponentInputBinding`).
@@ -131,11 +144,11 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     const validation = this.validationResult();
     return (
       unitOfWork.hasChanges() &&
-      // The fields with errors are highlighted; Save waits until they are fixed, and until the
-      // async rules, if any, have answered.
+      // Save waits until the async rules, if any, have answered.  It stays enabled while there are
+      // errors: a new resource's errors are hidden until the user has seen the field, so a disabled
+      // Save would give no reason.  Clicking it shows them all instead (`save()`).
       !!validation &&
       !validation.pending &&
-      validation.validationErrors.length === 0 &&
       !resource.entityAspect.entityState.isDeleted()
     );
   });
@@ -369,6 +382,23 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       return;
     }
 
+    const errors = this.validationResult()?.validationErrors ?? [];
+    if (errors.length > 0) {
+      // Nothing is saved while a rule is broken: show every error, including those a new resource
+      // has kept hidden so far, and say why nothing happened.
+      this.errorVisibility.revealAll();
+      this.messages.add({
+        severity: 'warn',
+        summary: 'Not saved',
+        detail:
+          errors.length === 1
+            ? 'One problem needs fixing. It is highlighted.'
+            : `${errors.length} problems need fixing. They are highlighted.`,
+        life: 6000,
+      });
+      return;
+    }
+
     await this.run(async () => {
       // Select the row before saving.  The save reloads the search list (it watches
       // `UnitOfWorkManager.saves`), and the list keeps the selected row selected if it is there -
@@ -510,6 +540,8 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     resource: StaffingResource,
     editMode: EditMode,
   ): void {
+    // Another resource, or the same one reloaded after a save or in another mode: start over.
+    this.errorVisibility.reset();
     this.unitOfWork.set(unitOfWork);
     this.staffingResource.set(resource);
     this.staffingResourceId.set(resource.id);
@@ -517,6 +549,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   }
 
   private clearDetail(): void {
+    this.errorVisibility.reset();
     this.staffingResource.set(null);
     this.staffingResourceId.set(null);
     this.unitOfWork.set(null);
@@ -541,6 +574,17 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     );
 
     if (answer === 'yes') {
+      if ((this.validationResult()?.validationErrors.length ?? 0) > 0) {
+        // As with Save: show every error and keep the user here, with their edits.
+        this.errorVisibility.revealAll();
+        this.messages.add({
+          severity: 'warn',
+          summary: 'Not saved',
+          detail: 'Some problems need fixing. They are highlighted.',
+          life: 6000,
+        });
+        throw new DialogCancelledError();
+      }
       try {
         await this.busy.run(unitOfWork.commit());
         // The search list reloads itself off `UnitOfWorkManager.saves`; only the shared cache needs
