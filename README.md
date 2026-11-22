@@ -515,7 +515,7 @@ The forms add no rules of their own; they show the verdict:
   one - starts with its first errors hidden: a field's show once the user edits or leaves it, and
   an error the user causes shows at once, on every field it is about, touched or not.  Save stays
   enabled while rules are broken: clicking it shows every error, and a "Not saved" message says
-  why nothing happened.  An entity added after that starts with its errors hidden again.  The
+  why nothing happened and which tabs to look on.  An entity added after that starts with its errors hidden again.  The
   library's [Showing errors](https://github.com/Breeze/ideablade-validation/blob/main/docs/concepts.md#showing-errors-error-visibility)
   describes the rules.
 - **Rules about a whole entity**, such as "at least one address", have no field.  Validating the
@@ -525,6 +525,13 @@ The forms add no rules of their own; they show the verdict:
   messages show on a save attempt, or when the user deletes the last address or phone number.  A
   new resource starts without an address or a phone number, and the last one of each can be
   deleted, so the rule is the user's to satisfy.
+- **Tabs with errors are marked.**  Each detail tab shows a red count of the errors it has to show,
+  so a problem on a tab the user is not looking at does not have to be hunted for.  The counts come
+  from the same validation of the unit of work, not from the fields - the deferred tabs have none
+  until they are opened - and follow the error visibility (`injectErrorVisibility()` in
+  `ResourceDetailComponent`): a new resource's tabs are marked once the user breaks a rule or tries
+  to save.  `resource-tabs.ts` places each error on a tab by the type of its entity, and the
+  resource's own rules by their id; its test fails for an entity type or a rule nobody has placed.
 - **The name editor**, a Signal Form over names for a `StaffingResource`, validates a
   `ResourceName` view model with `validateWithMetadata`.  Its properties inherit the
   `StaffingResource` properties' Breeze rules with `from` (`core/validation/client-validation-metadata.ts`,
