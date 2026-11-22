@@ -1,5 +1,7 @@
 import {
   Component,
+  Injector,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -87,7 +89,7 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
         [scrollable]="true"
         scrollHeight="14rem"
         selectionMode="single"
-        [selection]="selectedItem()"
+        [selection]="tableSelection()"
         (selectionChange)="onSelect($event)"
         dataKey="id"
         styleClass="p-datatable-sm search__table"
@@ -238,6 +240,21 @@ export class ResourceSearchComponent {
     return id ? (this.items().find((item) => item.id === id) ?? null) : null;
   });
 
+  /**
+   * What the table shows as selected: the open resource (`selectedItem`), except for the moment
+   * after a click, see `onSelect`.
+   *
+   * The highlight follows the resource the workspace has open, not the last click.  Optimus UI's
+   * table moves its own selection on a click, and unselects a row that is clicked again.  Bound
+   * straight to `selectedItem()`, the table kept the clicked row highlighted when the workspace
+   * refused the change (Cancel in the unsaved-changes prompt): `selectedId` didn't change, so
+   * nothing told the table.  Clicking that row again "unselected" it without asking, and clicking
+   * the open resource's own row cleared its highlight.
+   */
+  readonly tableSelection = linkedSignal(() => this.selectedItem());
+
+  private readonly injector = inject(Injector);
+
   /** Port of `CanSearch` / `CanClear`. */
   readonly canSearch = computed(() => !!this.searchForm.text().value().trim());
   readonly canClear = this.canSearch;
@@ -290,8 +307,19 @@ export class ResourceSearchComponent {
     this.search();
   }
 
+  /**
+   * A click.  The table has already moved its selection: record that (the table ignores the next
+   * change of its `selection` input after a click, expecting it to echo the click), then put the
+   * open resource back after that render.  If the workspace accepts the change, `selectedId`
+   * moves and the highlight with it; if it refuses, nothing more is needed.  A click on the
+   * selected row unselects it in the table (`null`): there is nothing to ask the workspace.
+   */
   onSelect(item: StaffingResourceListItem | null): void {
-    this.selectionChange.emit(item);
+    this.tableSelection.set(item);
+    afterNextRender(() => this.tableSelection.set(this.selectedItem()), { injector: this.injector });
+    if (item) {
+      this.selectionChange.emit(item);
+    }
   }
 
   protected describe(error: unknown): string {

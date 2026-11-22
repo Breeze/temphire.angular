@@ -269,9 +269,8 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     }
 
     if (!(await this.confirmDiscardPendingChanges())) {
-      // Put the grid selection back where it was - `SearchPane.CurrentStaffingResource = null`
-      // in the original, which then reselected the active resource.
-      this.selectedId.set(this.staffingResourceId());
+      // Stay.  The grid keeps its highlight on `selectedId`, which hasn't changed, so it is already
+      // back on this resource (`SearchPane.CurrentStaffingResource = null` in the original).
       return;
     }
 
