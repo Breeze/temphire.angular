@@ -352,7 +352,7 @@ temphire.angular/
 │   ├── TempHire.sln
 │   ├── TempHire.Model/            # entities, DbContexts, migrations, sample data
 │   ├── TempHire.Server/           # Breeze, validation, OAuth, Quinn and MCP
-│   └── TempHire.Server.Tests/     # dotnet test
+│   └── TempHire.Server.Tests/     # saves, rules, sample data, queries, who may call what
 ├── packages/                      # the @ideablade/validation preview
 └── client/
     ├── metadata.json              # Breeze metadata exported from the server (npm run model:metadata)
@@ -604,8 +604,18 @@ are in [its README](https://github.com/Breeze/temphire.server#configuration).
   **When you upgrade to a release with the fix**, `breeze-fetch.spec.ts` fails its "without the
   workaround" test; that is the signal to delete `breeze-fetch.ts` and its spec, and to pass
   `httpClientFetch(inject(HttpClient))` to `configureBreeze` directly.
-- **Few automated tests.** The original had none. `ng test` runs the client's (Vitest), and
-  `dotnet test` in `server/` the server's.
+- **No end-to-end tests.** The original had no tests at all; the conversion has unit tests on both
+  tiers, over 100 in the client (`ng test`, Vitest) and over 60 on the server (`dotnet test` in
+  `server/`).  The client's cover:
+  - the services: the sign-in guard and token handling, Breeze's fetch, the dialogs, the global
+    error handler, the save handler and the staffing resource repository;
+  - validation: the server's rules as the client runs them, the field bindings and display names;
+  - Resource Management: the search box, the grid's selection, the summary, the address list, the
+    tabs' error marks and the "Not saved" message;
+  - Quinn's links to people, and the usage page.
+
+  The server's are listed in [its README](https://github.com/Breeze/temphire.server#tests).  The
+  screens themselves were checked by hand in a browser.
 
 The server's own known gaps are in [its README](https://github.com/Breeze/temphire.server#known-gaps).
 
