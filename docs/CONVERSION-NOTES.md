@@ -26,7 +26,8 @@ is C#, the client is TypeScript. The behaviour is therefore written twice —
 the shape: the client's property declarations are generated from the server's metadata
 (`npm run model`), so only the behaviour is written by hand on the client. The
 `[Required]`/`[StringLength]` annotations *do* still cross the wire, because Breeze reads them off
-the EF Core model and publishes them in the metadata as validators.
+the EF Core model and publishes them in the metadata as validators. The validation rules are not
+written twice either: see **d**.
 
 **b. There is no lazy loading.** DevForce's `RelatedEntityList<T>` faulted child collections in on
 first access, which is why the WPF view models had `IsPending` flags and
@@ -39,6 +40,32 @@ everything it needs with a single `expand`
 to an `IQueryable<T>`. Where the original composed a LINQ predicate on the client and shipped it
 (`StaffingResourceSearchService.Simple`), the predicate now lives in
 `ResourceMgtController.StaffingResourceListItems` and the client passes a search string.
+
+**d. The rules become data, read by both tiers.** In the original, the rules were spread over
+several places, and none of them listed them all:
+
+- the verifiers DevForce generated from the model's attributes (required, string lengths);
+- `StaffingResource.Validate`, which wanted at least one address and one phone number;
+- `SaveInterceptor.ValidateSave`, which rebuilt the graph to run those checks on save;
+- the views, which enforced rules by not letting the user break them: a new resource always got an
+  address and a phone number, the last one couldn't be deleted, and a masked editor kept a rate
+  from going negative.
+
+DevForce's shared assembly ran the entity rules on both tiers. Without it, every rule would have to
+be written twice, in C# for the server and in TypeScript for the client, and the copies would drift.
+Instead they are declarations in one file, `server/TempHire.Server/Validation/validation.metadata.json`,
+which IdeaBlade Validation reads on both tiers: the client checks them as the user edits, the
+server checks them again on every save. The data annotations join them through the global
+`breeze` validator. So the file is also the one place to read what the rules *are*, and to change
+them: a rule added there runs in both clients and on the server at once. The rules the original
+enforced invisibly are now visible errors, and the conversion added the ones it lacked: U.S.
+addresses and phone numbers, a rate that isn't negative, 18 or older when hired, and a plausible
+date of birth. A test (`SampleDataTests` on the server) validates all the sample data with them.
+
+This matters most for an application that was never client/server. A desktop application that
+talks to its database directly keeps all its rules in the client. On the web the server has to
+enforce them, because a hand-made request skips the client; without one set of rules that both
+tiers read, every rule of the desktop application would be written twice.
 
 ---
 
@@ -249,6 +276,11 @@ Everything below is a conscious departure from the original.
   form nor Optimus UI.  Validation rules belong on the
   server - a data annotation on the entity, or a rule in `Validation/validation.metadata.json` -
   not in the form.
+- **Adding a validation rule** means a rule in `Validation/validation.metadata.json`: a built-in
+  validator where one fits (`range`, `pattern`, `date`, ...), an `expression` otherwise, and a
+  validator registered on both tiers for what neither can state.  It then runs in both clients and
+  on the server, with no code.  Test it in `server-rules.spec.ts` (the client) and
+  `SaveRulesTests` (the server); `SampleDataTests` fails if the sample data breaks it.
 - **One `MetadataStore` for the page.** Breeze binds each registered entity class to a single
   store, so `EntityManagerProvider` keeps one store across logout and login and registers the
   classes once.  Creating a new store per login made the second login in a page fail.

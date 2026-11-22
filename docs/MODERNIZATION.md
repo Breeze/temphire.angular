@@ -11,12 +11,13 @@ own.  The work went in two steps:
 
 1. **Convert** it to a modern stack, faithfully: same screens, same behaviour, same data model,
    on technology with a future.
-2. **Modernize** it on that new foundation: an AI assistant, multi-tenancy, a fresh UI, and
-   security to today's standards.
+2. **Modernize** it on that new foundation: an AI assistant, multi-tenancy, a fresh UI, security
+   to today's standards, and validation rules that live in one place and hold on both tiers.
 
 Both steps were done with AI: Claude Code wrote the code, a developer decided what to build and
-reviewed every change.  The fourteen pull requests, from the conversion to OAuth, were merged
-within five days.
+reviewed every change.  The fourteen pull requests from the conversion to OAuth were merged within
+five days; validation rules shared by client and server, a second client in React and a review of
+the conversion followed in the next week.
 
 The [README](../README.md) describes the application as it is now, and
 [CONVERSION-NOTES.md](CONVERSION-NOTES.md) maps the original's architecture onto the new one, file
@@ -202,6 +203,85 @@ The last step closes the circle with the AI work: the application's data is avai
 user's own AI tools, safely, through open standards.  And with OAuth in place, signing in with
 **Microsoft Entra ID** is a button on the sign-in page, not a redesign; the [server's README](https://github.com/Breeze/temphire.server#adding-an-external-provider-such-as-microsoft-entra-id) describes how.
 
+### Validation rules you can see, enforced on both tiers
+
+**[#94](https://github.com/Breeze/temphire.angular/pull/94)-[#97](https://github.com/Breeze/temphire.angular/pull/97),
+then [#109](https://github.com/Breeze/temphire.angular/pull/109)-[#116](https://github.com/Breeze/temphire.angular/pull/116).**
+Ask who knows all the rules of a line-of-business application, and the honest answer is often
+nobody.  The original's were spread over the model's attributes, an entity's `Validate` method, a
+save interceptor, and the screens themselves, which enforced some rules simply by not letting the
+user break them: a new person always got an address and a phone number, and the last one couldn't
+be deleted.  None of those places listed the rest.
+
+TempHire now declares its rules in one file,
+[`validation.metadata.json`](https://github.com/Breeze/temphire.server/blob/main/TempHire.Server/Validation/validation.metadata.json),
+read by [IdeaBlade Validation](https://github.com/Breeze/ideablade-validation) on both tiers:
+
+- **The rules are visible.**  "A person has at least one address and one phone number", "is at
+  least 18 years old when hired", "a date of birth is neither in the future nor more than 123 years
+  ago", "a ZIP code is a U.S. ZIP code": each is a few lines of JSON, with its message, that a
+  developer or an analyst can read, review and change.  The rules the original enforced invisibly
+  are now errors the user can see and fix.
+- **The rules are enforced everywhere, written once.**  The browser checks them as the user types;
+  the server checks the same file again on every save, against the database as it will be after
+  the save, because a request made by hand never passes through the browser.  The original shared
+  its rules between client and server by compiling one .NET assembly into both, which a web
+  application can't do.  Without a rules file, every rule would be written twice, in C# and in
+  TypeScript, and the two copies would drift.
+- **That matters most for desktop applications that were never client/server.**  A desktop
+  application that talks to its database directly keeps every rule in the client.  Moved to the
+  web, the same rules have to hold on the server too.  Extracting them into one file is what makes
+  that free instead of a second implementation.
+- **New rules are cheap.**  The plausible date of birth was one entry in the file, with a test on
+  each tier; both clients and the server enforce it, and a test checks that all the sample data
+  still passes every rule.
+
+The library grew with the application: rules that read other entities, error messages that stay
+hidden on a new record until the user gets to a field, tabs marked when they hold errors, and a
+Save that checks the data as it is when clicked.  Its previews were built and tested in TempHire
+first.
+
+### A second client: React
+
+**[temphire.react](https://github.com/Breeze/temphire.react).**  The same application, written a
+second time in **React 19** with Mantine, against the same server: the server moved into
+[its own repository](https://github.com/Breeze/temphire.server), shared by both clients as a git
+submodule ([#99](https://github.com/Breeze/temphire.angular/pull/99)).  Everything that isn't the
+UI carried over: the Breeze model, the units of work, the save handler, and the validation rules,
+which both clients read from the same file.  A rule changed there changes in both.
+
+### Quinn on a budget
+
+**[#107](https://github.com/Breeze/temphire.angular/pull/107),
+[#108](https://github.com/Breeze/temphire.angular/pull/108).**  An AI assistant costs money per
+question.  Quinn now has budgets per user and per company, for each model, in dollars; a usage
+page shows each user where they stand; and once a budget is used up, Quinn's pane says which one
+and for how long.  With Claude, the prompt is cached, and cached tokens are charged at their lower
+price.
+
+### A second look at the conversion
+
+**[#117](https://github.com/Breeze/temphire.angular/pull/117)-[#124](https://github.com/Breeze/temphire.angular/pull/124).**
+A faithful conversion still deserves a review by someone who knows the original's architecture.
+Reading the converted code against Punch's patterns found places where the conversion had taken a
+shortcut:
+
+- **Dialogs return answers.**  The conversion copied the original's dialogs, which threw an
+  exception when the user cancelled, so every caller needed a try/catch.  Cancelling is now an
+  answer, and real failures reach one global error handler.
+- **The unit of work keeps its parts.**  A search had become a method on the unit of work, and
+  loading a person with everything the screen needs another one.  They are back where the original
+  had them: a search service, and a repository whose `withId` loads the whole graph.
+- **The server returns what the client asks for**, and loads related collections with one query
+  each instead of one query that multiplies the rows.
+- **One controller per workspace**, plus one for the lookups loaded at sign-in and one for the
+  model's metadata, instead of one controller for everything.
+- **Current code**: no deprecated APIs, no dead code, and current C# syntax throughout the
+  server.
+
+None of these changed what the user sees much.  They keep the code the shape of the original, and
+ready to grow.
+
 ---
 
 ## How the work was done
@@ -236,6 +316,10 @@ that work:
 | Nov 14 | [#80](https://github.com/Breeze/temphire.angular/pull/80)-[#86](https://github.com/Breeze/temphire.angular/pull/86) | Streaming answers, reliable links to people, a better prompt for small models; the new look |
 | Nov 15 | [#87](https://github.com/Breeze/temphire.angular/pull/87), [#89](https://github.com/Breeze/temphire.angular/pull/89) | A save fix; ASP.NET Core Identity; Editor and Reader roles |
 | Nov 16 | [#90](https://github.com/Breeze/temphire.angular/pull/90) | OAuth 2.1 for the app and the MCP server |
+| Nov 19 | [#94](https://github.com/Breeze/temphire.angular/pull/94)-[#98](https://github.com/Breeze/temphire.angular/pull/98) | Validation rules in one file, checked on client and server with IdeaBlade Validation; the React client |
+| Nov 20 | [#99](https://github.com/Breeze/temphire.angular/pull/99)-[#108](https://github.com/Breeze/temphire.angular/pull/108) | The server in its own repository, shared by both clients; Quinn's budgets and usage page |
+| Nov 21-22 | [#109](https://github.com/Breeze/temphire.angular/pull/109)-[#116](https://github.com/Breeze/temphire.angular/pull/116) | Errors shown when the user gets to them, tabs marked, Save checks the data as it is |
+| Nov 22 | [#117](https://github.com/Breeze/temphire.angular/pull/117)-[#124](https://github.com/Breeze/temphire.angular/pull/124) | A second look at the conversion: dialogs, the unit of work, per-workspace controllers, current code |
 
 ---
 
@@ -252,6 +336,11 @@ that work:
   a server-side filter so the AI could never see more than the user, and standard authentication
   so outside AI tools could connect.  None of that was available on the original stack; all of it
   came naturally after the conversion.
+- **Make the rules data.**  A legacy application's rules are spread through its code, and some are
+  only implied by its screens.  Extracting them into one file that both tiers read makes them
+  visible, reviewable and changeable in one place, and enforced on the server as well as the
+  client without writing them twice.  For a desktop application that was never client/server, this
+  is what saves duplicating its validation logic on the way to the web.
 - **Security is part of modernization.**  The original's reversibly encrypted passwords would be
   unacceptable today.  Identity, roles and OAuth 2.1 bring the application to the standard any
   security review expects, and make enterprise sign-in a configuration step.
