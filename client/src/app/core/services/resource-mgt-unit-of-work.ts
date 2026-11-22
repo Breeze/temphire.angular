@@ -1,5 +1,3 @@
-import { EntityManager } from 'breeze-client';
-
 import { environment } from '../../../environments/environment';
 import {
   Address,
@@ -74,10 +72,5 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
     this.staffingResourceFactory = this.createFactory(StaffingResource);
 
     this.search = new StaffingResourceSearchService(this.manager);
-  }
-
-  /** Exposes the manager so the detail screens can create entities directly. */
-  get entityManager(): EntityManager {
-    return this.manager;
   }
 }
