@@ -1,4 +1,4 @@
-import { DataService, EntityManager } from 'breeze-client';
+import { EntityManager } from 'breeze-client';
 
 import { environment } from '../../../environments/environment';
 import {
@@ -18,16 +18,6 @@ import { IRepository } from './repository';
 import { StaffingResourceRepository } from './staffing-resource-repository';
 import { StaffingResourceSearchService } from './staffing-resource-search-service';
 import { IEntityFactory, UnitOfWork } from './unit-of-work';
-
-/**
- * The Resource Management workspace's controller on the server, `ResourceMgtController`: every
- * query and save of this unit of work goes there.  No server metadata of its own: the model's is
- * loaded at sign-in (`EntityManagerProvider`).
- */
-const resourceMgtService = new DataService({
-  serviceName: environment.resourceMgtApiRoot,
-  hasServerMetadata: false,
-});
 
 /**
  * Port of `DomainServices/IResourceMgtUnitOfWork.cs` + `ResourceMgtUnitOfWork.cs`.
@@ -66,7 +56,8 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
   readonly search: StaffingResourceSearchService;
 
   constructor(emProvider: EntityManagerProvider, onCommitted?: () => void) {
-    super(emProvider, resourceMgtService, onCommitted);
+    // Every query and save of this unit of work goes to `ResourceMgtController`.
+    super(emProvider, environment.resourceMgtApiRoot, onCommitted);
 
     this.staffingResources = new StaffingResourceRepository(this.manager);
     this.addresses = this.createRepository(Address);

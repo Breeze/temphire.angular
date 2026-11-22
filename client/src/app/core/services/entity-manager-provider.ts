@@ -48,10 +48,16 @@ export class EntityManagerProvider {
    * manager queries it; each unit of work then talks to its own workspace's controller (see
    * `newManager`).  No server metadata of its own: the model's is loaded first.
    */
-  private readonly lookupsService = new DataService({
-    serviceName: environment.lookupsApiRoot,
-    hasServerMetadata: false,
-  });
+  private readonly lookupsService = this.workspaceService(environment.lookupsApiRoot);
+
+  /**
+   * A data service for a controller that queries and saves but serves no metadata of its own: the
+   * model's is loaded first, from `modelService`.  Without `hasServerMetadata: false`, Breeze would
+   * ask each controller for its own `/Metadata` before the first query.
+   */
+  private workspaceService(serviceName: string): DataService {
+    return new DataService({ serviceName, hasServerMetadata: false });
+  }
 
   /**
    * The one `MetadataStore` for the life of the page.  Breeze binds each registered entity class to
@@ -151,17 +157,20 @@ export class EntityManagerProvider {
   }
 
   /**
-   * Creates a fresh manager pre-seeded with the lookup entities, which queries and saves through
-   * `dataService`: the controller of the workspace the unit of work belongs to, such as
-   * `ResourceMgtController`.
+   * Creates a fresh manager pre-seeded with the lookup entities, which queries and saves through the
+   * server controller at `serviceName`: the controller of the workspace the unit of work belongs to,
+   * such as `ResourceMgtController` (`environment.resourceMgtApiRoot`).
+   *
+   * How the manager is configured stays in here: the unit of work names the controller and nothing
+   * else.  Should one ever need a different setting, add an options parameter after `serviceName`.
    */
-  newManager(dataService: DataService): EntityManager {
+  newManager(serviceName: string): EntityManager {
     if (!this.masterManager) {
       throw new Error('EntityManagerProvider.prepare() must complete before a manager is created.');
     }
 
     const manager = this.masterManager.createEmptyCopy();
-    manager.setProperties({ dataService });
+    manager.setProperties({ dataService: this.workspaceService(serviceName) });
     this.seed(manager);
 
     return manager;
