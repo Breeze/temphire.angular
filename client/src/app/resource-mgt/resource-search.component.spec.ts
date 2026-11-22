@@ -81,7 +81,19 @@ describe('ResourceSearchComponent', () => {
       button(label).click();
       await fixture.whenStable();
     };
-    return { host: fixture.componentInstance, fixture, highlighted, click, type, press, button };
+    const clearButton = () =>
+      element.querySelector('[aria-label="Clear search"]') as HTMLButtonElement | null;
+    return {
+      host: fixture.componentInstance,
+      fixture,
+      highlighted,
+      click,
+      type,
+      press,
+      button,
+      box,
+      clearButton,
+    };
   }
 
   it('highlights the open resource', async () => {
@@ -143,9 +155,44 @@ describe('ResourceSearchComponent', () => {
       expect(searches).toEqual(['', '']);
     });
 
-    it('has no Clear button: the X in the box clears it', async () => {
+    it('has no Clear button', async () => {
       const { button } = await setUp();
       expect(button('Clear')).toBeUndefined();
+    });
+  });
+
+  /** The box draws its own X rather than the browser's, so it looks the same in every browser. */
+  describe('the X in the box', () => {
+    it('is there only while the box has text', async () => {
+      const { type, clearButton } = await setUp();
+      expect(clearButton()).toBeNull();
+      await type('Cal');
+      expect(clearButton()).not.toBeNull();
+      await type('');
+      expect(clearButton()).toBeNull();
+    });
+
+    it('empties the box and shows the full list again after a search', async () => {
+      const { fixture, type, press, box, clearButton } = await setUp();
+      await type('Cal');
+      await press('Search');
+      expect(searches).toEqual(['', 'Cal']);
+
+      clearButton()!.click();
+      await fixture.whenStable();
+      expect(searches).toEqual(['', 'Cal', '']);
+      expect(box.value).toBe('');
+      expect(document.activeElement).toBe(box);
+      expect(clearButton()).toBeNull();
+    });
+
+    it('only empties the box while nothing is filtered', async () => {
+      const { fixture, type, box, clearButton } = await setUp();
+      await type('Cal');
+      clearButton()!.click();
+      await fixture.whenStable();
+      expect(searches).toEqual(['']);
+      expect(box.value).toBe('');
     });
   });
 });
