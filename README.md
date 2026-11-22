@@ -443,7 +443,7 @@ The client is meant to show current Angular, not just to run on it:
 
 ### Validation comes from the server
 
-> **Preview.**  Validation uses a preview of IdeaBlade Validation (`0.1.0-preview.5`), which
+> **Preview.**  Validation uses a preview of IdeaBlade Validation (`0.1.0-preview.7`), which
 > isn't published to NuGet or npm yet: the builds are in `packages/` and `server/packages/`,
 > where `client/package.json` and the server's `nuget.config` find them (`packages/README.md`
 > explains how to update them).  The framework's API may still change before its first release,
