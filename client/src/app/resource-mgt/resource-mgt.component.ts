@@ -23,6 +23,7 @@ import { AuthService } from '../core/services/auth.service';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
+import { SaveHandler, type SaveOptions } from '../core/services/save-handler';
 import { ToolbarGroup, registerToolbarGroup } from '../core/services/toolbar.service';
 import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/unit-of-work-manager';
 import { ResourceDetailComponent } from './resource-detail.component';
@@ -30,7 +31,6 @@ import { ResourceNameEditorComponent, ResourceName } from './resource-name-edito
 import { ResourceSearchComponent } from './resource-search.component';
 import { describeProblems } from './resource-tabs';
 
-import { MessageService } from '@openng/optimus-ui/api';
 import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
 
 type EditMode = 'view' | 'edit';
@@ -109,7 +109,6 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
 
   /** Which errors the screen shows: see `ErrorVisibility`. */
   private readonly errorVisibility = inject(ErrorVisibility);
-  private readonly messages = inject(MessageService);
 
   /**
    * The `resource` query parameter: a staffing resource to open, from a link in Quinn's answers.
@@ -375,6 +374,16 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     await this.loadDetail(id, 'edit');
   }
 
+  /**
+   * How this screen saves (`SaveHandler`): with its validation scope, showing every error through
+   * its error visibility, and saying which tabs to look on, since the tabs are marked but the user
+   * is on one of them.
+   */
+  private readonly saveHandler = inject(SaveHandler);
+  private saveOptions(beforeCommit?: () => void): SaveOptions {
+    return { visibility: this.errorVisibility, describe: describeProblems, beforeCommit };
+  }
+
   /** Port of `ResourceMgtViewModel.Save`. */
   async save(): Promise<void> {
     const id = this.staffingResourceId();
@@ -383,37 +392,17 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       return;
     }
 
-    const errors = this.validationResult()?.validationErrors ?? [];
-    if (errors.length > 0) {
-      // Nothing is saved while a rule is broken: show every error, including those a new resource
-      // has kept hidden so far, and say why nothing happened.
-      this.errorVisibility.revealAll();
-      this.messages.add({
-        severity: 'warn',
-        summary: 'Not saved',
-        // Which tabs to look on, too: the tabs are marked, but the user is on one of them.
-        detail: describeProblems(errors),
-        life: 6000,
-      });
-      return;
-    }
-
     await this.run(async () => {
       // Select the row before saving.  The save reloads the search list (it watches
       // `UnitOfWorkManager.saves`), and the list keeps the selected row selected if it is there -
       // which, for a newly added resource, it only is from this save on.
-      this.selectedId.set(id);
-
-      await unitOfWork.commit();
+      const saved = await this.saveHandler.save(unitOfWork, this.validation, this.saveOptions(() => this.selectedId.set(id)));
+      if (!saved) {
+        // Rules are broken: the handler has shown them and said why nothing was saved.
+        return;
+      }
+      // The handler has dropped the shared cache, so the view-mode load below re-reads the saved graph.
       this.unitOfWorkManager.releaseIfClean(id);
-
-      // The save happened in the *sandbox* manager, so the shared manager still holds whatever it
-      // last loaded - including children that were just deleted.  A Breeze query merge never
-      // detaches cached entities the server omitted, so re-querying would not remove them; the
-      // shared cache has to be dropped and re-seeded.  DevForce's shared EntityManager was
-      // refreshed for the same reason.
-      this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
-
       await this.loadDetail(id, 'view');
     });
   }
@@ -468,15 +457,15 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     await this.run(async () => {
       try {
         resource.delete();
-        await unitOfWork.commit();
+        // Not validated: a record that breaks a rule can still be deleted.  The handler drops the
+        // shared cache, so the deleted graph goes with it.
+        await this.saveHandler.commit(unitOfWork);
       } catch (error) {
         unitOfWork.rollback();
         throw error;
       }
 
       this.unitOfWorkManager.remove(id);
-      // Same reasoning as in `save()`: drop the shared cache so the deleted graph goes with it.
-      this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
       // The save reloads the search list; with nothing selected, it selects the first row.
       this.clearDetail();
     });
@@ -573,29 +562,21 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     );
 
     if (answer === 'yes') {
-      const errors = this.validationResult()?.validationErrors ?? [];
-      if (errors.length > 0) {
-        // As with Save: show every error and keep the user here, with their edits.
-        this.errorVisibility.revealAll();
-        this.messages.add({
-          severity: 'warn',
-          summary: 'Not saved',
-          detail: describeProblems(errors),
-          life: 6000,
-        });
-        throw new DialogCancelledError();
-      }
+      let saved: boolean;
       try {
-        await this.busy.run(unitOfWork.commit());
-        // The search list reloads itself off `UnitOfWorkManager.saves`; only the shared cache needs
-        // dropping so the next view-mode load re-reads the saved graph.
-        this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
+        saved = await this.busy.run(this.saveHandler.save(unitOfWork, this.validation, this.saveOptions()));
       } catch (error) {
         // The save failed (most likely validation).  Show why, and keep the user on this resource
         // with their edits intact rather than letting them navigate away and lose them.
         this.errorHandler.show(error);
         throw new DialogCancelledError();
       }
+      if (!saved) {
+        // As with Save: the handler has shown every error; keep the user here, with their edits.
+        throw new DialogCancelledError();
+      }
+      // The search list reloads itself off `UnitOfWorkManager.saves`, and the handler has dropped
+      // the shared cache, so the next view-mode load re-reads the saved graph.
     } else {
       unitOfWork.rollback();
     }
