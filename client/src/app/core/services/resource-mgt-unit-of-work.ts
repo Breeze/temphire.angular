@@ -15,21 +15,7 @@ import {
 import { StaffingResourceListItem } from '../projections/staffing-resource-list-item';
 import { EntityManagerProvider } from './entity-manager-provider';
 import { IRepository } from './repository';
-import { EntityFactory, UnitOfWork } from './unit-of-work';
-
-/**
- * Port of `DomainServices/Factories/StaffingResourceFactory.cs`.
- *
- * The original pre-populated a new resource with a default (primary) address and phone number, so
- * that the "must have at least one of each" rule was satisfied the moment the entity existed.  This
- * one creates the resource alone: the rule is in the validation metadata, so the resource breaks it,
- * and nothing is saved, until the user adds an address and a phone number.
- */
-export class StaffingResourceFactory extends EntityFactory<StaffingResource> {
-  constructor(manager: EntityManager) {
-    super(StaffingResource, manager);
-  }
-}
+import { IEntityFactory, UnitOfWork } from './unit-of-work';
 
 /**
  * Port of `DomainServices/IResourceMgtUnitOfWork.cs` + `ResourceMgtUnitOfWork.cs`.
@@ -50,7 +36,14 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
   readonly rateTypes: IRepository<RateType>;
   readonly states: IRepository<State>;
 
-  readonly staffingResourceFactory: StaffingResourceFactory;
+  /**
+   * Port of `DomainServices/Factories/StaffingResourceFactory.cs`, now the generic factory.  The
+   * original pre-populated a new resource with a default (primary) address and phone number, so that
+   * the "must have at least one of each" rule was satisfied the moment the entity existed.  Here the
+   * resource is created alone: the rule is in the validation metadata, so the resource breaks it, and
+   * nothing is saved, until the user adds an address and a phone number.
+   */
+  readonly staffingResourceFactory: IEntityFactory<StaffingResource>;
 
   constructor(emProvider: EntityManagerProvider, onCommitted?: () => void) {
     super(emProvider, onCommitted);
@@ -67,7 +60,7 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
     this.rateTypes = this.createRepository(RateType, true);
     this.states = this.createRepository(State, true);
 
-    this.staffingResourceFactory = new StaffingResourceFactory(this.manager);
+    this.staffingResourceFactory = this.createFactory(StaffingResource);
   }
 
   /**

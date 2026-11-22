@@ -92,6 +92,11 @@ export class UnitOfWork {
     return this.manager.getChanges();
   }
 
+  /** True when the given entity lives in this unit of work - port of `IUnitOfWork.HasEntity`. */
+  hasEntity(entity: Entity): boolean {
+    return !!entity && entity.entityAspect?.entityManager === this.manager;
+  }
+
   /** Port of `IUnitOfWork.CommitAsync`. */
   async commit(): Promise<Entity[]> {
     const saveOptions = new SaveOptions({ resourceName: 'SaveChanges' });
@@ -117,5 +122,9 @@ export class UnitOfWork {
     isCached = false,
   ): IRepository<T> {
     return new Repository(this.manager, entityCtor, isCached);
+  }
+
+  protected createFactory<T extends Entity>(entityCtor: EntityCtor<T>): IEntityFactory<T> {
+    return new EntityFactory(entityCtor, this.manager);
   }
 }
