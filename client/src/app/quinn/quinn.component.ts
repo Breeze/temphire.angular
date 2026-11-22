@@ -182,7 +182,7 @@ export class QuinnComponent {
    */
   protected readonly questionForm = form(
     signal({ question: '' }),
-    (path) => disabled(path.question, () => this.quinn.busy() || !!this.quinn.quotaBlock()),
+    (path) => disabled(path.question, { when: () => this.quinn.busy() || !!this.quinn.quotaBlock() }),
     {
       submission: {
         action: async (field) => {

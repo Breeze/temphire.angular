@@ -76,7 +76,7 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   [showIcon]="true"
                   appendTo="body"
                   dateFormat="mm/dd/yy"
-                  styleClass="work__control"
+                  class="work__control"
                 />
               </label>
 
@@ -91,7 +91,7 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   [showIcon]="true"
                   appendTo="body"
                   dateFormat="mm/dd/yy"
-                  styleClass="work__control"
+                  class="work__control"
                 />
               </label>
 

@@ -89,7 +89,7 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
         <button pButton type="submit">Search</button>
         @if (results.isLoading()) {
           <p-progress-spinner
-            styleClass="search__spinner"
+            class="search__spinner"
             strokeWidth="4"
             ariaLabel="Please wait"
           />
@@ -108,7 +108,7 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
         [selection]="tableSelection()"
         (selectionChange)="onSelect($event)"
         dataKey="id"
-        styleClass="p-datatable-sm search__table"
+        class="p-datatable-sm search__table"
       >
         <ng-template #header>
           <tr>

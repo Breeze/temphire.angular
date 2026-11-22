@@ -85,7 +85,7 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 | `IUnitOfWork` | `unit-of-work.ts` | Owns one `EntityManager` |
 | `IUnitOfWorkManager<T>` | `unit-of-work-manager.ts` | Keyed cache. `Guid.Empty` → `SHARED_UNIT_OF_WORK_KEY` |
 | `IRepository<T>` | `repository.ts` | |
-| `IFactory<T>` / `StaffingResourceFactory` | `EntityFactory` / `StaffingResourceFactory` in `resource-mgt-unit-of-work.ts` | |
+| `IFactory<T>` / `StaffingResourceFactory` | `IEntityFactory` / `EntityFactory` in `unit-of-work.ts`; `createFactory(StaffingResource)` in `resource-mgt-unit-of-work.ts` | The original factory also added a default address and phone number; a new resource now starts without them, so the generic factory is all it needs |
 | `IDialogManager`, `DialogResult`, `DialogButtons` | `dialog.service.ts` + `core/dialogs/message-box.component.ts` | Every dialog returns what the user chose: a message box its button's `DialogResult` (closing it counts as its cancel answer), a component dialog its result or `undefined`. The first port kept Punch's shape, where cancelling rejected the task with `TaskCanceledException`, as a thrown `DialogCancelledError`; every caller then needed a try/catch, and real failures were reported by hand. Cancelling is an answer, not an error. Optimus UI's two-button `p-confirmDialog` cannot express Yes/No/Cancel, so the buttons are data |
 | `IBusyWatcher` / `Busy.GetTicket()` | `busy.service.ts` — `await busy.run(promise)` | |
 | `IToolbarManager`, `ToolbarAction`, `ToolbarGroup` | `toolbar.service.ts` | `CanExecute` was found by reflecting for a `Can<Method>` property; it is now an explicit `canExecute` thunk reading signals |

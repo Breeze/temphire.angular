@@ -34,7 +34,7 @@ export interface ItemSelectorData<T = Record<string, unknown>> {
         [optionLabel]="data.displayProperty"
         placeholder="Select..."
         appendTo="body"
-        styleClass="item-selector__select"
+        class="item-selector__select"
       />
 
       <div class="item-selector__buttons">
