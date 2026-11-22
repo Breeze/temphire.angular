@@ -515,7 +515,7 @@ The forms add no rules of their own; they show the verdict:
   one - starts with its first errors hidden: a field's show once the user edits or leaves it, and
   an error the user causes shows at once, on every field it is about, touched or not.  Save stays
   enabled while rules are broken: clicking it shows every error, and a "Not saved" message says
-  why nothing happened and which tabs to look on.  An entity added after that starts with its errors hidden again.  The
+  why nothing happened and where to look.  An entity added after that starts with its errors hidden again.  The
   library's [Showing errors](https://github.com/Breeze/ideablade-validation/blob/main/docs/concepts.md#showing-errors-error-visibility)
   describes the rules.
 - **Rules about a whole entity**, such as "at least one address", have no field.  Validating the

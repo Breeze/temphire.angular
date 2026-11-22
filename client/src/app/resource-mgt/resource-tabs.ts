@@ -73,18 +73,34 @@ export function countByTab(errors: readonly ValidationError[]): Record<ResourceT
 }
 
 /**
- * The "Not saved" message for `errors`: how many problems, and which tabs to look on.  The errors
- * above the tabs are in view anyway, so they are counted but not located.
+ * The "Not saved" message for `errors`: how many problems, and where.
+ *
+ * - All on one tab: "3 problems need fixing, on the Rates tab."
+ * - In more than one place, each with its count, so the numbers add up: "6 problems need fixing:
+ *   1 above the tabs, 4 on the Contact Information tab and 1 on the Work Experience tab."  The
+ *   first version named only the tabs, which read as if all six were on them.
+ * - All above the tabs (the resource's own fields, always in view): no place.
  */
 export function describeProblems(errors: readonly ValidationError[]): string {
   const counts = countByTab(errors);
-  const tabs = RESOURCE_TABS.filter((tab) => counts[tab.value] > 0).map((tab) => tab.label);
+  const onTabs = RESOURCE_TABS.filter((tab) => counts[tab.value] > 0).map((tab) => ({
+    count: counts[tab.value],
+    place: `on the ${tab.label} tab`,
+  }));
+  const aboveTabs = errors.length - onTabs.reduce((sum, p) => sum + p.count, 0);
+  const places = [...(aboveTabs > 0 ? [{ count: aboveTabs, place: 'above the tabs' }] : []), ...onTabs];
+
   const problems = errors.length === 1 ? 'One problem needs fixing' : `${errors.length} problems need fixing`;
   const where =
-    tabs.length === 0
-      ? ''
-      : tabs.length === 1
-        ? `, on the ${tabs[0]} tab`
-        : `, on the ${tabs.slice(0, -1).join(', ')} and ${tabs[tabs.length - 1]} tabs`;
+    places.length > 1
+      ? `: ${joinAnd(places.map((p) => `${p.count} ${p.place}`))}`
+      : onTabs.length === 1
+        ? `, ${onTabs[0].place}`
+        : '';
   return `${problems}${where}. ${errors.length === 1 ? 'It is' : 'They are'} highlighted.`;
+}
+
+/** "a", "a and b", "a, b and c". */
+function joinAnd(items: readonly string[]): string {
+  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 }
