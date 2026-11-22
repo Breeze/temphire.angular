@@ -1,4 +1,4 @@
-import { EntityManager, EntityQuery, FilterQueryOp } from 'breeze-client';
+import { EntityManager } from 'breeze-client';
 
 import {
   Address,
@@ -12,9 +12,10 @@ import {
   State,
   WorkExperienceItem,
 } from '../model';
-import { StaffingResourceListItem } from '../projections/staffing-resource-list-item';
 import { EntityManagerProvider } from './entity-manager-provider';
 import { IRepository } from './repository';
+import { StaffingResourceRepository } from './staffing-resource-repository';
+import { StaffingResourceSearchService } from './staffing-resource-search-service';
 import { IEntityFactory, UnitOfWork } from './unit-of-work';
 
 /**
@@ -24,7 +25,11 @@ import { IEntityFactory, UnitOfWork } from './unit-of-work';
  * `QueryStrategy.CacheOnly` on a `GlobalCacheRepository`.
  */
 export class ResourceMgtUnitOfWork extends UnitOfWork {
-  readonly staffingResources: IRepository<StaffingResource>;
+  /**
+   * Its `withId` loads a resource with all of its children: what the detail screens expect of any
+   * resource they show.
+   */
+  readonly staffingResources: StaffingResourceRepository;
   readonly addresses: IRepository<Address>;
   readonly phoneNumbers: IRepository<PhoneNumber>;
   readonly rates: IRepository<Rate>;
@@ -45,10 +50,13 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
    */
   readonly staffingResourceFactory: IEntityFactory<StaffingResource>;
 
+  /** Port of `IResourceMgtUnitOfWork.Search`: the search pane's query. */
+  readonly search: StaffingResourceSearchService;
+
   constructor(emProvider: EntityManagerProvider, onCommitted?: () => void) {
     super(emProvider, onCommitted);
 
-    this.staffingResources = this.createRepository(StaffingResource);
+    this.staffingResources = new StaffingResourceRepository(this.manager);
     this.addresses = this.createRepository(Address);
     this.phoneNumbers = this.createRepository(PhoneNumber);
     this.rates = this.createRepository(Rate);
@@ -61,44 +69,8 @@ export class ResourceMgtUnitOfWork extends UnitOfWork {
     this.states = this.createRepository(State, true);
 
     this.staffingResourceFactory = this.createFactory(StaffingResource);
-  }
 
-  /**
-   * Port of `DomainServices/Services/StaffingResourceSearchService.Simple`.
-   *
-   * The predicate itself now lives on the server (see `BreezeController.StaffingResourceListItems`);
-   * the client just passes the search text through as a query parameter.  The result is a plain DTO
-   * array rather than entities, which is why it bypasses the repositories.
-   */
-  async search(searchText?: string): Promise<StaffingResourceListItem[]> {
-    // A DTO has no entity class to pass, so the type argument here is an assertion rather than
-    // something Breeze checks against the metadata.
-    const query = EntityQuery.from<StaffingResourceListItem>(
-      'StaffingResourceListItems',
-    ).withParameters({
-      searchText: searchText ?? '',
-    });
-
-    const data = await this.manager.executeQuery(query);
-
-    return data.results;
-  }
-
-  /**
-   * Loads a resource with everything the detail screen needs.  The original relied on DevForce's
-   * `RelatedEntityList<T>` to fault the children in lazily; Breeze has no lazy loading, so the
-   * child collections are requested up front with `expand`.
-   */
-  async loadStaffingResource(id: string): Promise<StaffingResource | null> {
-    // `from(StaffingResource)` makes this an `EntityQuery<StaffingResource>`: the resource name
-    // comes from the metadata, and `data.results` is `StaffingResource[]` with no cast.
-    const query = EntityQuery.from(StaffingResource)
-      .where('id', FilterQueryOp.Equals, id)
-      .expand(['addresses', 'phoneNumbers', 'rates', 'skills', 'workExperience'].join(','));
-
-    const data = await this.manager.executeQuery(query);
-
-    return data.results[0] ?? null;
+    this.search = new StaffingResourceSearchService(this.manager);
   }
 
   /** Exposes the manager so the detail screens can create entities directly. */

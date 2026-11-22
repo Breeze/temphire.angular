@@ -470,7 +470,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     await this.run(async () => {
       const key = editMode === 'view' ? SHARED_UNIT_OF_WORK_KEY : id;
       const unitOfWork = this.unitOfWorkManager.get(key);
-      const resource = await unitOfWork.loadStaffingResource(id);
+      const resource = await unitOfWork.staffingResources.withId(id);
 
       if (!resource) {
         this.clearDetail();

@@ -32,7 +32,7 @@ the EF Core model and publishes them in the metadata as validators.
 first access, which is why the WPF view models had `IsPending` flags and
 `PendingEntityListResolved` events. Breeze has no equivalent, so the detail screen eager-loads
 everything it needs with a single `expand`
-(`ResourceMgtUnitOfWork.loadStaffingResource`). The `IsPending` flags are gone; `IsEmpty` survives.
+(`StaffingResourceRepository.withId`). The `IsPending` flags are gone; `IsEmpty` survives.
 
 **c. Queries travel as JSON, not expression trees.** The client still writes
 `EntityQuery.from(StaffingResource).where(...)`, but `[BreezeQueryFilter]` applies it server-side
@@ -85,6 +85,8 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 | `IUnitOfWork` | `unit-of-work.ts` | Owns one `EntityManager` |
 | `IUnitOfWorkManager<T>` | `unit-of-work-manager.ts` | Keyed cache. `Guid.Empty` → `SHARED_UNIT_OF_WORK_KEY` |
 | `IRepository<T>` | `repository.ts` | |
+| `StaffingResourceRepository` | `staffing-resource-repository.ts` | A subclass of the generic repository whose `withId` loads a resource with all of its children, as the original's `GetKeyQuery` included its addresses and phone numbers. Every caller gets a complete resource |
+| `IStaffingResourceSearchService` / `StaffingResourceSearchService` | `staffing-resource-search-service.ts`, the unit of work's `search` | `simple(text)`; the predicate now lives on the server |
 | `IFactory<T>` / `StaffingResourceFactory` | `IEntityFactory` / `EntityFactory` in `unit-of-work.ts`; `createFactory(StaffingResource)` in `resource-mgt-unit-of-work.ts` | The original factory also added a default address and phone number; a new resource now starts without them, so the generic factory is all it needs |
 | `IDialogManager`, `DialogResult`, `DialogButtons` | `dialog.service.ts` + `core/dialogs/message-box.component.ts` | Every dialog returns what the user chose: a message box its button's `DialogResult` (closing it counts as its cancel answer), a component dialog its result or `undefined`. The first port kept Punch's shape, where cancelling rejected the task with `TaskCanceledException`, as a thrown `DialogCancelledError`; every caller then needed a try/catch, and real failures were reported by hand. Cancelling is an answer, not an error. Optimus UI's two-button `p-confirmDialog` cannot express Yes/No/Cancel, so the buttons are data |
 | `IBusyWatcher` / `Busy.GetTicket()` | `busy.service.ts` — `await busy.run(promise)` | |
@@ -264,7 +266,9 @@ Everything below is a conscious departure from the original.
 - **Adding an entity type** means: POCO + `DbSet` on the server, a `[HttpGet]` action returning
   `IQueryable<T>` on `BreezeController`, then `npm run model` in `client/` to export the metadata
   and generate the TypeScript class (registration is generated too), and a repository on
-  `ResourceMgtUnitOfWork` (`this.createRepository(MyEntity)`). Repositories query the entity
+  `ResourceMgtUnitOfWork` (`this.createRepository(MyEntity)`). If loading the entity should bring
+  related entities with it, subclass `Repository` and override `withId`, as
+  `StaffingResourceRepository` does, so no caller has to know what to expand. Repositories query the entity
   type's `defaultResourceName` from the metadata, which is the `DbSet` name, so the controller
   action must be named after the `DbSet`.  Place the type in `TAB_OF_ENTITY_TYPE`
   (`resource-mgt/resource-tabs.ts`) too: `resource-tabs.spec.ts` fails until it is.
