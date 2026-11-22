@@ -11,9 +11,8 @@ import { PhoneNumber, PhoneNumberType, StaffingResource } from '../../core/model
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
-import { ValidationFormsDirectives, trackVisibility } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives, injectErrorVisibility } from '@ideablade/validation/angular';
 
-import { ErrorVisibility } from '@ideablade/validation';
 import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
 /**
@@ -186,15 +185,11 @@ export class ResourcePhoneListComponent {
     );
     // On a new resource, the rule is broken from the start: it shows once the user breaks it again
     // (deletes the last one) or tries to save.  See `ErrorVisibility`.
-    if (!this.visibility) {
-      return errors;
-    }
-    // The visibility is not a signal: this makes the computed follow it (a save attempt, say).
-    trackVisibility(this.visibility);
+    // `shown` follows the visibility (a save attempt, say); without one, it returns them all.
     return this.visibility.shown(resource, errors);
   });
 
-  private readonly visibility = inject(ErrorVisibility, { optional: true });
+  private readonly visibility = injectErrorVisibility();
 
   private readonly validationResult = toSignal(inject(ValidationService).validateEntityStore());
 

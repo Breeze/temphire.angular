@@ -8,9 +8,8 @@ import { StaffingResource } from '../core/model';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { ResourceName, ResourceNameEditorComponent } from './resource-name-editor.component';
-import { ValidationFormsDirectives, trackVisibility } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives, injectErrorVisibility } from '@ideablade/validation/angular';
 
-import { ErrorVisibility } from '@ideablade/validation';
 import { FieldErrorsDirective } from '../core/validation/field-errors.directive';
 
 /**
@@ -269,15 +268,12 @@ export class ResourceSummaryComponent {
   protected datesMessages(errors: readonly ValidationError[]): string[] {
     const about = errors.filter((e) => e.isFor('dateOfBirth') || e.isFor('hireDate'));
     // The same errors the date fields show: on a new resource, not until the user can see them.
-    if (this.visibility) {
-      // The visibility is not a signal: this makes the template follow it.
-      trackVisibility(this.visibility);
-    }
-    const shown = this.visibility ? this.visibility.shown(this.staffingResource(), about) : about;
+    // `shown` makes the template follow the visibility; without one, it returns them all.
+    const shown = this.visibility.shown(this.staffingResource(), about);
     return [...new Set(shown.map((e) => e.errorMessage))];
   }
 
-  private readonly visibility = inject(ErrorVisibility, { optional: true });
+  private readonly visibility = injectErrorVisibility();
 
   /** Port of `StaffingResourceSummaryViewModel.EditName`. */
   async editName(): Promise<void> {
