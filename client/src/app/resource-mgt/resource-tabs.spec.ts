@@ -73,13 +73,34 @@ describe('resource tabs', () => {
     expect(counts).toEqual({ contact: 2, rates: 1, work: 0, skills: 0 });
   });
 
-  it('says which tabs to look on', () => {
+  it('says where to look', () => {
+    // All on one tab.
     expect(describeProblems([error('Rate')])).toBe('One problem needs fixing, on the Rates tab. It is highlighted.');
-    expect(describeProblems([error('Skill'), error('Address'), error('Rate')])).toBe(
-      '3 problems need fixing, on the Contact Information, Rates and Skills tabs. They are highlighted.',
+    expect(describeProblems([error('Address'), error('StaffingResource', 'PHONE_NUMBER_REQUIRED')])).toBe(
+      '2 problems need fixing, on the Contact Information tab. They are highlighted.',
     );
+    // All above the tabs, in view.
     expect(describeProblems([error('StaffingResource', 'ADULT_WHEN_HIRED'), error('StaffingResource')])).toBe(
       '2 problems need fixing. They are highlighted.',
+    );
+  });
+
+  it('gives each place its count when there are several, so the numbers add up', () => {
+    // A new resource after Save: the summary, the address and phone rules, and a work experience item.
+    expect(
+      describeProblems([
+        error('StaffingResource', 'required_summary'),
+        error('StaffingResource', 'ADDRESS_REQUIRED'),
+        error('StaffingResource', 'PHONE_NUMBER_REQUIRED'),
+        error('Address'),
+        error('Address'),
+        error('WorkExperienceItem'),
+      ]),
+    ).toBe(
+      '6 problems need fixing: 1 above the tabs, 4 on the Contact Information tab and 1 on the Work Experience tab. They are highlighted.',
+    );
+    expect(describeProblems([error('Skill'), error('Address'), error('Rate')])).toBe(
+      '3 problems need fixing: 1 on the Contact Information tab, 1 on the Rates tab and 1 on the Skills tab. They are highlighted.',
     );
   });
 });
