@@ -5,7 +5,7 @@ import { ButtonDirective } from '@openng/optimus-ui/button';
 import { InputNumberModule } from '@openng/optimus-ui/inputnumber';
 
 import { Rate, RateType, StaffingResource } from '../../core/model';
-import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
+import { AppDialogService } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent, ItemSelectorData } from '../item-selector.component';
 import { ValidationFormsDirectives } from '@ideablade/validation/angular';
@@ -190,26 +190,22 @@ export class ResourceRatesComponent {
     // Cache-only lookup, so no await: see the class comment.
     const items = this.unitOfWork().rateTypes.allInCache('displayName');
 
-    try {
-      const rateType = await this.dialogs.open<RateType>(ItemSelectorComponent, {
-        header: 'Add a rate',
-        width: '24rem',
-        data: {
-          prompt: 'Select type:',
-          // camelCase on the client - Breeze is configured with NamingConvention.camelCase, so the
-          // original's "DisplayName" is "displayName" here.
-          displayProperty: 'displayName',
-          items,
-        } satisfies ItemSelectorData<RateType>,
-      });
-
-      this.staffingResource().addRate(rateType);
-    } catch (error) {
-      // Punch's dialog manager cancelled its task; ours throws - see `AppDialogService`.
-      if (!(error instanceof DialogCancelledError)) {
-        throw error;
-      }
+    const rateType = await this.dialogs.open<RateType>(ItemSelectorComponent, {
+      header: 'Add a rate',
+      width: '24rem',
+      data: {
+        prompt: 'Select type:',
+        // camelCase on the client - Breeze is configured with NamingConvention.camelCase, so the
+        // original's "DisplayName" is "displayName" here.
+        displayProperty: 'displayName',
+        items,
+      } satisfies ItemSelectorData<RateType>,
+    });
+    if (!rateType) {
+      return; // cancelled
     }
+
+    this.staffingResource().addRate(rateType);
   }
 
   /** Port of `StaffingResourceRatesViewModel.Delete`. */

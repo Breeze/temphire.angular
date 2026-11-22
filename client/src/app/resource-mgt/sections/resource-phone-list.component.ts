@@ -8,7 +8,7 @@ import { MessageModule } from '@openng/optimus-ui/message';
 import { RadioButtonModule } from '@openng/optimus-ui/radiobutton';
 
 import { PhoneNumber, PhoneNumberType, StaffingResource } from '../../core/model';
-import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
+import { AppDialogService } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
 import { ValidationFormsDirectives, injectErrorVisibility } from '@ideablade/validation/angular';
@@ -228,23 +228,17 @@ export class ResourcePhoneListComponent {
       return;
     }
 
-    let phoneNumberType: PhoneNumberType;
-
-    try {
-      phoneNumberType = await this.dialogs.open<PhoneNumberType>(ItemSelectorComponent, {
-        header: 'Add a phone number',
-        width: '24rem',
-        data: {
-          prompt: 'Select type:',
-          displayProperty: 'name',
-          items: this.unitOfWork().phoneNumberTypes.allInCache('name'),
-        },
-      });
-    } catch (error) {
-      if (error instanceof DialogCancelledError) {
-        return;
-      }
-      throw error;
+    const phoneNumberType = await this.dialogs.open<PhoneNumberType>(ItemSelectorComponent, {
+      header: 'Add a phone number',
+      width: '24rem',
+      data: {
+        prompt: 'Select type:',
+        displayProperty: 'name',
+        items: this.unitOfWork().phoneNumberTypes.allInCache('name'),
+      },
+    });
+    if (!phoneNumberType) {
+      return; // cancelled
     }
 
     this.staffingResource().addPhoneNumber(phoneNumberType);

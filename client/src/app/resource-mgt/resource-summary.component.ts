@@ -5,7 +5,7 @@ import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 
 import { StaffingResource } from '../core/model';
-import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
+import { AppDialogService } from '../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { ResourceName, ResourceNameEditorComponent } from './resource-name-editor.component';
 import { ValidationFormsDirectives, injectErrorVisibility } from '@ideablade/validation/angular';
@@ -283,24 +283,21 @@ export class ResourceSummaryComponent {
 
     const resource = this.staffingResource();
 
-    try {
-      const name = await this.dialogs.open<ResourceName>(ResourceNameEditorComponent, {
-        header: 'Edit name',
-        width: '26rem',
-        data: {
-          firstName: resource.firstName ?? '',
-          middleName: resource.middleName ?? '',
-          lastName: resource.lastName ?? '',
-        },
-      });
-
-      resource.firstName = name.firstName;
-      resource.middleName = name.middleName;
-      resource.lastName = name.lastName;
-    } catch (error) {
-      if (!(error instanceof DialogCancelledError)) {
-        throw error;
-      }
+    const name = await this.dialogs.open<ResourceName>(ResourceNameEditorComponent, {
+      header: 'Edit name',
+      width: '26rem',
+      data: {
+        firstName: resource.firstName ?? '',
+        middleName: resource.middleName ?? '',
+        lastName: resource.lastName ?? '',
+      },
+    });
+    if (!name) {
+      return; // cancelled
     }
+
+    resource.firstName = name.firstName;
+    resource.middleName = name.middleName;
+    resource.lastName = name.lastName;
   }
 }

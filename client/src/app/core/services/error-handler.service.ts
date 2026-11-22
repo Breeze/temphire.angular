@@ -48,11 +48,6 @@ export class AppErrorHandler implements ErrorHandler {
     console.error(error);
   }
 
-  /** Shows an error without routing it through Angular's global handler. */
-  show(error: unknown): void {
-    this.handleError(error);
-  }
-
   /**
    * Browser notices that arrive as errors but mean nothing is wrong, so the user is not shown them.
    *

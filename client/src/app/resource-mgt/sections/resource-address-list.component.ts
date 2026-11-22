@@ -9,7 +9,7 @@ import { RadioButtonModule } from '@openng/optimus-ui/radiobutton';
 import { SelectModule } from '@openng/optimus-ui/select';
 
 import { Address, AddressType, StaffingResource } from '../../core/model';
-import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
+import { AppDialogService } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
 import { ValidationFormsDirectives, injectErrorVisibility } from '@ideablade/validation/angular';
@@ -312,32 +312,25 @@ export class ResourceAddressListComponent {
    * Port of `StaffingResourceAddressListViewModel.Add`: pick a type, then create the address.
    *
    * The original passed the address types to `ItemSelectorViewModel.Start` as a query callback; the
-   * dialog here takes the already-cached entities.  Cancelling throws `DialogCancelledError` where
-   * Punch's `ShowDialogAsync` threw `TaskCanceledException`, which is why the add is abandoned in
-   * a catch rather than by testing a result.
+   * dialog here takes the already-cached entities.  Cancelling returns no type, and the add is
+   * abandoned.
    */
   async add(): Promise<void> {
     if (this.readOnly()) {
       return;
     }
 
-    let addressType: AddressType;
-
-    try {
-      addressType = await this.dialogs.open<AddressType>(ItemSelectorComponent, {
-        header: 'Add an address',
-        width: '24rem',
-        data: {
-          prompt: 'Select type:',
-          displayProperty: 'displayName',
-          items: this.unitOfWork().addressTypes.allInCache('displayName'),
-        },
-      });
-    } catch (error) {
-      if (error instanceof DialogCancelledError) {
-        return;
-      }
-      throw error;
+    const addressType = await this.dialogs.open<AddressType>(ItemSelectorComponent, {
+      header: 'Add an address',
+      width: '24rem',
+      data: {
+        prompt: 'Select type:',
+        displayProperty: 'displayName',
+        items: this.unitOfWork().addressTypes.allInCache('displayName'),
+      },
+    });
+    if (!addressType) {
+      return; // cancelled
     }
 
     this.staffingResource().addAddress(addressType);
