@@ -86,12 +86,12 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 | `IUnitOfWorkManager<T>` | `unit-of-work-manager.ts` | Keyed cache. `Guid.Empty` → `SHARED_UNIT_OF_WORK_KEY` |
 | `IRepository<T>` | `repository.ts` | |
 | `IFactory<T>` / `StaffingResourceFactory` | `EntityFactory` / `StaffingResourceFactory` in `resource-mgt-unit-of-work.ts` | |
-| `IDialogManager`, `DialogResult`, `DialogButtons` | `dialog.service.ts` + `core/dialogs/message-box.component.ts` | Cancellation still surfaces as a thrown error (`DialogCancelledError`) so the ported control flow reads like the original's `catch (TaskCanceledException)`. Optimus UI's two-button `p-confirmDialog` cannot express Yes/No/Cancel, so the buttons are data |
+| `IDialogManager`, `DialogResult`, `DialogButtons` | `dialog.service.ts` + `core/dialogs/message-box.component.ts` | Every dialog returns what the user chose: a message box its button's `DialogResult` (closing it counts as its cancel answer), a component dialog its result or `undefined`. The first port kept Punch's shape, where cancelling rejected the task with `TaskCanceledException`, as a thrown `DialogCancelledError`; every caller then needed a try/catch, and real failures were reported by hand. Cancelling is an answer, not an error. Optimus UI's two-button `p-confirmDialog` cannot express Yes/No/Cancel, so the buttons are data |
 | `IBusyWatcher` / `Busy.GetTicket()` | `busy.service.ts` — `await busy.run(promise)` | |
 | `IToolbarManager`, `ToolbarAction`, `ToolbarGroup` | `toolbar.service.ts` | `CanExecute` was found by reflecting for a `Can<Method>` property; it is now an explicit `canExecute` thunk reading signals |
 | `IAuthenticationService`, `LoggedInMessage`, `LoggedOutMessage` | `auth.service.ts` (+ `auth.interceptor.ts`, `auth.guard.ts`) | The two messages become one `isLoggedIn` signal |
 | `INavigator` | Angular router (`app.routes.ts`) | |
-| `IErrorHandler`, `ValidationErrorHandler` | `error-handler.service.ts` | |
+| `IErrorHandler`, `ValidationErrorHandler` | `error-handler.service.ts` | Angular's global `ErrorHandler`. `provideBrowserGlobalErrorListeners()` passes it window errors and unhandled rejections, so a command that fails (called from a click) is reported without a try/catch in the component. A component catches only an error it acts on, such as rolling back a failed delete |
 | `IWorkspace` (`[ImportMany]` via MEF) | `WORKSPACES` array in `app.routes.ts` | Angular has no ambient discovery; the list is explicit |
 | `IMessageProcessor`, `EntityChangedMessage`, `SavedMessage` | `UnitOfWork.changes` / `UnitOfWork.hasChanges` and `UnitOfWorkManager.saves` signals | `EntityChangedMessage` becomes a counter signal bumped from the manager's `entityChanged` event; `SavedMessage` a save counter that the search list's `resource()` reads, so it reloads after any save |
 

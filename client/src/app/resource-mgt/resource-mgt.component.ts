@@ -1,6 +1,7 @@
 import {
   Component,
   DestroyRef,
+  ErrorHandler,
   computed,
   effect,
   inject,
@@ -20,8 +21,7 @@ import { StaffingResourceListItem } from '../core/projections/staffing-resource-
 import { StaffingResource } from '../core/model';
 import { BusyService } from '../core/services/busy.service';
 import { AuthService } from '../core/services/auth.service';
-import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
-import { AppErrorHandler } from '../core/services/error-handler.service';
+import { AppDialogService } from '../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { SaveHandler, type SaveOptions } from '../core/services/save-handler';
 import { ToolbarGroup, registerToolbarGroup } from '../core/services/toolbar.service';
@@ -73,7 +73,8 @@ type EditMode = 'view' | 'edit';
 export class ResourceMgtComponent implements CanComponentDeactivate {
   private readonly unitOfWorkManager = inject(UnitOfWorkManager);
   private readonly dialogs = inject(AppDialogService);
-  private readonly errorHandler = inject(AppErrorHandler);
+  /** The app's global handler (`AppErrorHandler`), for the one failure this screen catches: see `confirmDiscardPendingChanges`. */
+  private readonly errorHandler = inject(ErrorHandler);
   private readonly router = inject(Router);
 
   /** Only editors may add, change or delete; readers see the same screens read-only. */
@@ -246,18 +247,8 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
    * `pendingChangesGuard` on the route so the same prompt appears when the toolbar navigates to
    * another workspace.  Returning false keeps the user where they are.
    */
-  async canDeactivate(): Promise<boolean> {
-    try {
-      await this.confirmDiscardPendingChanges();
-      return true;
-    } catch (error) {
-      if (error instanceof DialogCancelledError) {
-        return false;
-      }
-
-      this.errorHandler.show(error);
-      return false;
-    }
+  canDeactivate(): Promise<boolean> {
+    return this.confirmDiscardPendingChanges();
   }
 
   // ------------------------------------------------------------------------------------------
@@ -277,16 +268,10 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       return;
     }
 
-    try {
-      await this.confirmDiscardPendingChanges();
-    } catch (error) {
-      if (error instanceof DialogCancelledError) {
-        // Put the grid selection back where it was - `SearchPane.CurrentStaffingResource = null`
-        // in the original, which then reselected the active resource.
-        this.selectedId.set(this.staffingResourceId());
-        return;
-      }
-      throw error;
+    if (!(await this.confirmDiscardPendingChanges())) {
+      // Stay.  The grid keeps its highlight on `selectedId`, which hasn't changed, so it is already
+      // back on this resource (`SearchPane.CurrentStaffingResource = null` in the original).
+      return;
     }
 
     this.selectedId.set(item.id);
@@ -307,12 +292,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     });
 
     if (this.staffingResourceId() !== id || !this.isReadOnly()) {
-      try {
-        await this.confirmDiscardPendingChanges();
-      } catch (error) {
-        if (!(error instanceof DialogCancelledError)) {
-          this.errorHandler.show(error);
-        }
+      if (!(await this.confirmDiscardPendingChanges())) {
         return;
       }
 
@@ -332,18 +312,12 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
 
   /** Port of `ResourceMgtViewModel.Add`. */
   async add(): Promise<void> {
-    let name: ResourceName;
-
-    try {
-      name = await this.dialogs.open<ResourceName>(ResourceNameEditorComponent, {
-        header: 'Add a staffing resource',
-        width: '26rem',
-      });
-    } catch (error) {
-      if (error instanceof DialogCancelledError) {
-        return;
-      }
-      throw error;
+    const name = await this.dialogs.open<ResourceName>(ResourceNameEditorComponent, {
+      header: 'Add a staffing resource',
+      width: '26rem',
+    });
+    if (!name) {
+      return; // cancelled
     }
 
     await this.run(async () => {
@@ -439,19 +413,9 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       return;
     }
 
-    try {
-      const answer = await this.dialogs.confirmYesNo(
-        `Are you sure you want to delete ${resource.fullName}?`,
-      );
-
-      if (answer !== 'yes') {
-        return;
-      }
-    } catch (error) {
-      if (error instanceof DialogCancelledError) {
-        return;
-      }
-      throw error;
+    const answer = await this.dialogs.confirmYesNo(`Are you sure you want to delete ${resource.fullName}?`);
+    if (answer !== 'yes') {
+      return;
     }
 
     await this.run(async () => {
@@ -479,17 +443,11 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       return;
     }
 
-    if (unitOfWork.hasChanges()) {
-      try {
-        await this.dialogs.confirm(
-          'There are unsaved changes. Refreshing the data will discard all unsaved changes.',
-        );
-      } catch (error) {
-        if (error instanceof DialogCancelledError) {
-          return;
-        }
-        throw error;
-      }
+    if (
+      unitOfWork.hasChanges() &&
+      (await this.dialogs.confirm('There are unsaved changes. Refreshing the data will discard all unsaved changes.')) !== 'ok'
+    ) {
+      return;
     }
 
     await this.run(async () => {
@@ -548,32 +506,40 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   /**
    * Port of `StaffingResourceDetailViewModel.CanClose`: offer to save, discard or stay put when
    * navigating away from a resource with pending edits.
+   *
+   * @returns true when the user may leave: nothing to save, saved, or discarded. False to stay:
+   * Cancel, or a save that didn't happen.
    */
-  private async confirmDiscardPendingChanges(): Promise<void> {
+  private async confirmDiscardPendingChanges(): Promise<boolean> {
     const unitOfWork = this.unitOfWork();
     const id = this.staffingResourceId();
 
     if (!unitOfWork || !id || !unitOfWork.hasChanges()) {
-      return;
+      return true;
     }
 
     const answer = await this.dialogs.confirmYesNoCancel(
       'There are unsaved changes. Would you like to save your changes?',
     );
 
+    if (answer === 'cancel') {
+      return false;
+    }
+
     if (answer === 'yes') {
       let saved: boolean;
       try {
         saved = await this.busy.run(this.saveHandler.save(unitOfWork, this.validation, this.saveOptions()));
       } catch (error) {
-        // The save failed (most likely validation).  Show why, and keep the user on this resource
-        // with their edits intact rather than letting them navigate away and lose them.
-        this.errorHandler.show(error);
-        throw new DialogCancelledError();
+        // The one failure this screen catches, because it acts on it: the user stays on this
+        // resource with their edits instead of leaving and losing them.  Reporting it is still the
+        // global handler's job.
+        this.errorHandler.handleError(error);
+        return false;
       }
       if (!saved) {
         // As with Save: the handler has shown every error; keep the user here, with their edits.
-        throw new DialogCancelledError();
+        return false;
       }
       // The search list reloads itself off `UnitOfWorkManager.saves`, and the handler has dropped
       // the shared cache, so the next view-mode load re-reads the saved graph.
@@ -582,16 +548,15 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     }
 
     this.unitOfWorkManager.releaseIfClean(id);
+    return true;
   }
 
-  /** Runs an operation with the busy indicator up, reporting failures through the toast handler. */
-  private async run(operation: () => Promise<void>): Promise<void> {
-    try {
-      await this.busy.run(operation());
-    } catch (error) {
-      if (!(error instanceof DialogCancelledError)) {
-        this.errorHandler.show(error);
-      }
-    }
+  /**
+   * Runs an operation with the busy indicator up.  A failure propagates: the command is called
+   * from a click, so it reaches the global `ErrorHandler` (`AppErrorHandler`), which reports it.
+   * This screen can't do anything about it.
+   */
+  private run(operation: () => Promise<void>): Promise<void> {
+    return this.busy.run(operation());
   }
 }
