@@ -3,7 +3,7 @@
 A build of [ideablade-validation](https://github.com/Breeze/ideablade-validation) that the client
 uses until the library is published to npm:
 
-- `ideablade-validation-0.1.0-preview.8.tgz` - the client's `@ideablade/validation`, a `file:`
+- `ideablade-validation-0.1.0-preview.9.tgz` - the client's `@ideablade/validation`, a `file:`
   dependency in `client/package.json`.
 
 The server takes the matching NuGet package, `IdeaBlade.Validation`, from its own `packages`
@@ -16,7 +16,7 @@ twice, so the server's NuGet package and this one keep matching versions:
 ```
 cd ideablade-validation/js
 npm run build
-npm version 0.1.0-preview.9 --no-git-tag-version
+npm version 0.1.0-preview.10 --no-git-tag-version
 npm pack --pack-destination <this folder>
 git checkout -- package.json package-lock.json
 ```
