@@ -484,11 +484,12 @@ The forms add no rules of their own; they show the verdict:
   [validationModel]`; a field's property is its `name`, and the model type comes from the entity
   (`breezeModelType`).  A field runs its property's rules - Breeze's own included, through
   `breeze` - on the value being typed, and its control is invalid when one fails.
-  `FieldErrorsDirective` (`core/validation`) shows the messages as the field's tooltip.
+  `FieldErrorsDirective` (`core/validation`) shows the errors the screen shows (below): their
+  messages as the field's tooltip, `aria-invalid`, and through `invalid()`, PrimeNG's red border.
 
   ```html
   <div ngForm [validationModel]="address">
-    <input pInputText name="city" [(ngModel)]="address.city" #city="ngModel" [invalid]="city.invalid" />
+    <input pInputText name="city" [(ngModel)]="address.city" #city="fieldErrors" [invalid]="city.invalid()" />
   </div>
   ```
 
@@ -498,25 +499,39 @@ The forms add no rules of their own; they show the verdict:
 - **A form validates the whole entity** whenever a field changes, so a rule about two fields shows
   on both: "at least 18 years old when hired" names both dates (`propertyNames` in the
   metadata), and changing either one re-checks the other.  The summary card shows its message once,
-  under the dates.
+  under the dates, when the fields show it (below).
 - **The route has its own validation service** (`provideValidationScope` in
   `ResourceMgtComponent`), whose entity store is the unit of work being shown.  Its forms see that
   unit of work's entities in `store(type)`, and re-validate whenever an entity in it changes, in
   another section or in code.
 - **The service also validates that unit of work continuously** (`validateEntityStore()`): every
   live entity against every rule, sync and async, the metadata's and Breeze's, again whenever an
-  entity changes.  Save reacts to that one result: it stays disabled while any rule is broken, and
-  while async rules have yet to answer.
+  entity changes.  Save reacts to that one result: nothing is saved while any rule is broken, and
+  Save waits while async rules have yet to answer.
+- **A new resource is not all red at once.**  The screen's `ErrorVisibility`
+  (`provideErrorVisibility({ isNew: breezeIsNew, watchEntityStore: true })` in
+  `ResourceMgtComponent`) decides which errors to show; validation itself is unchanged.  Loaded
+  entities show all their errors.  A new one - a resource, or an address or phone number added to
+  one - starts with its first errors hidden: a field's show once the user edits or leaves it, and
+  an error the user causes shows at once, on every field it is about, touched or not.  Save stays
+  enabled while rules are broken: clicking it shows every error, and a "Not saved" message says
+  why nothing happened.  An entity added after that starts with its errors hidden again.  The
+  library's [Showing errors](https://github.com/Breeze/ideablade-validation/blob/main/docs/concepts.md#showing-errors-error-visibility)
+  describes the rules.
 - **Rules about a whole entity**, such as "at least one address", have no field.  Validating the
   whole unit of work keeps them current - deleting a resource's last address breaks the resource's
   rule without changing the resource - and the address and phone lists show them from the same
-  result.  A new resource starts without an address or a
-  phone number, and the last one of each can be deleted, so the rule is the user's to satisfy.
+  result, through `injectErrorVisibility()`, so they follow the same rules: a new resource's
+  messages show on a save attempt, or when the user deletes the last address or phone number.  A
+  new resource starts without an address or a phone number, and the last one of each can be
+  deleted, so the rule is the user's to satisfy.
 - **The name editor**, a Signal Form over names for a `StaffingResource`, validates a
   `ResourceName` view model with `validateWithMetadata`.  Its properties inherit the
   `StaffingResource` properties' Breeze rules with `from` (`core/validation/client-validation-metadata.ts`,
   through `breezeRuleSource`), so nothing is restated.  Signal Forms then hand the result to Optimus
-  UI themselves.
+  UI themselves.  The dialog shows a name's errors once its field has been touched (Signal Forms'
+  own `touched()`), not through the screen's `ErrorVisibility`, and OK waits until the names are
+  valid.
 - **Login** keeps Signal Forms' `required`: credentials are not an entity, so there is no model to
   validate them against.
 
