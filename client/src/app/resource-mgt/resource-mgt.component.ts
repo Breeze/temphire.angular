@@ -11,10 +11,9 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { ErrorVisibility, type ValidationError, ValidationService } from '@ideablade/validation';
+import { ErrorVisibility, ValidationService } from '@ideablade/validation';
 import { provideErrorVisibility, provideValidationScope } from '@ideablade/validation/angular';
 import { breezeIsNew } from '@ideablade/validation/breeze';
-import { firstValueFrom } from 'rxjs';
 
 import { CanComponentDeactivate } from '../app.routes';
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
@@ -24,6 +23,7 @@ import { AuthService } from '../core/services/auth.service';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { AppErrorHandler } from '../core/services/error-handler.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
+import { SaveHandler, type SaveOptions } from '../core/services/save-handler';
 import { ToolbarGroup, registerToolbarGroup } from '../core/services/toolbar.service';
 import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/unit-of-work-manager';
 import { ResourceDetailComponent } from './resource-detail.component';
@@ -31,7 +31,6 @@ import { ResourceNameEditorComponent, ResourceName } from './resource-name-edito
 import { ResourceSearchComponent } from './resource-search.component';
 import { describeProblems } from './resource-tabs';
 
-import { MessageService } from '@openng/optimus-ui/api';
 import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
 
 type EditMode = 'view' | 'edit';
@@ -110,7 +109,6 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
 
   /** Which errors the screen shows: see `ErrorVisibility`. */
   private readonly errorVisibility = inject(ErrorVisibility);
-  private readonly messages = inject(MessageService);
 
   /**
    * The `resource` query parameter: a staffing resource to open, from a link in Quinn's answers.
@@ -377,19 +375,13 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   }
 
   /**
-   * The unit of work's validation errors as it is now, sync and async, for deciding whether to save.
-   *
-   * Not `validationResult`: the continuous validation catches up with an edit a moment later, once
-   * the change has been coalesced (a `setTimeout`), and until then it still holds the result from
-   * before the edit, not pending.  A Save clicked right after an edit decided on that: it counted
-   * too few problems ("One problem needs fixing" with two on screen), and with no problems before the
-   * edit it would have saved one it had not seen, leaving Breeze and the server to refuse it.
-   * Validating once here also waits for async rules, which the continuous result may still be
-   * running.  The fields and the tab marks keep following the continuous result.
+   * How this screen saves (`SaveHandler`): with its validation scope, showing every error through
+   * its error visibility, and saying which tabs to look on, since the tabs are marked but the user
+   * is on one of them.
    */
-  private async currentErrors(unitOfWork: ResourceMgtUnitOfWork): Promise<ValidationError[]> {
-    const result = await firstValueFrom(this.validation.validateEntityStoreOneTime(unitOfWork.entityStore));
-    return result.validationErrors;
+  private readonly saveHandler = inject(SaveHandler);
+  private saveOptions(beforeCommit?: () => void): SaveOptions {
+    return { visibility: this.errorVisibility, describe: describeProblems, beforeCommit };
   }
 
   /** Port of `ResourceMgtViewModel.Save`. */
@@ -400,28 +392,15 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       return;
     }
 
-    const errors = await this.currentErrors(unitOfWork);
-    if (errors.length > 0) {
-      // Nothing is saved while a rule is broken: show every error, including those a new resource
-      // has kept hidden so far, and say why nothing happened.
-      this.errorVisibility.revealAll();
-      this.messages.add({
-        severity: 'warn',
-        summary: 'Not saved',
-        // Which tabs to look on, too: the tabs are marked, but the user is on one of them.
-        detail: describeProblems(errors),
-        life: 6000,
-      });
-      return;
-    }
-
     await this.run(async () => {
       // Select the row before saving.  The save reloads the search list (it watches
       // `UnitOfWorkManager.saves`), and the list keeps the selected row selected if it is there -
       // which, for a newly added resource, it only is from this save on.
-      this.selectedId.set(id);
-
-      await unitOfWork.commit();
+      const saved = await this.saveHandler.save(unitOfWork, this.validation, this.saveOptions(() => this.selectedId.set(id)));
+      if (!saved) {
+        // Rules are broken: the handler has shown them and said why nothing was saved.
+        return;
+      }
       this.unitOfWorkManager.releaseIfClean(id);
 
       // The save happened in the *sandbox* manager, so the shared manager still holds whatever it
@@ -590,29 +569,22 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     );
 
     if (answer === 'yes') {
-      const errors = await this.currentErrors(unitOfWork);
-      if (errors.length > 0) {
-        // As with Save: show every error and keep the user here, with their edits.
-        this.errorVisibility.revealAll();
-        this.messages.add({
-          severity: 'warn',
-          summary: 'Not saved',
-          detail: describeProblems(errors),
-          life: 6000,
-        });
-        throw new DialogCancelledError();
-      }
+      let saved: boolean;
       try {
-        await this.busy.run(unitOfWork.commit());
-        // The search list reloads itself off `UnitOfWorkManager.saves`; only the shared cache needs
-        // dropping so the next view-mode load re-reads the saved graph.
-        this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
+        saved = await this.busy.run(this.saveHandler.save(unitOfWork, this.validation, this.saveOptions()));
       } catch (error) {
         // The save failed (most likely validation).  Show why, and keep the user on this resource
         // with their edits intact rather than letting them navigate away and lose them.
         this.errorHandler.show(error);
         throw new DialogCancelledError();
       }
+      if (!saved) {
+        // As with Save: the handler has shown every error; keep the user here, with their edits.
+        throw new DialogCancelledError();
+      }
+      // The search list reloads itself off `UnitOfWorkManager.saves`; only the shared cache needs
+      // dropping so the next view-mode load re-reads the saved graph.
+      this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).clear();
     } else {
       unitOfWork.rollback();
     }

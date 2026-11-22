@@ -255,6 +255,10 @@ Everything below is a conscious departure from the original.
   is marked when they have errors.  The original got the tab for free from MEF's
   `[ImportMany] IEnumerable<IStaffingResourceDetailSection>` ordered by `Index`.
 - **Adding a workspace** means adding a route in `app.routes.ts` and an entry in `WORKSPACES`.
+  If it saves, it saves through `SaveHandler.save(unitOfWork, validation, options)`, with its
+  validation scope and error visibility: the handler decides on the data as it is when Save is
+  clicked, shows every error and says why nothing was saved.  Don't decide on the continuous
+  `validateEntityStore()` result; it lags an edit by a moment.
 - **Adding an entity type** means: POCO + `DbSet` on the server, a `[HttpGet]` action returning
   `IQueryable<T>` on `BreezeController`, then `npm run model` in `client/` to export the metadata
   and generate the TypeScript class (registration is generated too), and a repository on
