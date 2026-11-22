@@ -95,9 +95,6 @@ export class AuthService {
    */
   readonly roles = this._roles.asReadonly();
 
-  /** May see the company's staffing resources: an editor or a reader. */
-  readonly canReadStaffing = computed(() => this.hasAnyRole([Roles.Editor, Roles.Reader]));
-
   /** May add, change and delete staffing resources: an editor. */
   readonly canEditStaffing = computed(() => this.hasAnyRole([Roles.Editor]));
 

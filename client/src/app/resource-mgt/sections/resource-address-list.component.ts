@@ -118,7 +118,7 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   #stateId="fieldErrors"
                   [invalid]="stateId.invalid()"
                   appendTo="body"
-                  styleClass="address__state"
+                  class="address__state"
                 />
 
                 <label [for]="'zipcode-' + address.id">Zipcode:</label>

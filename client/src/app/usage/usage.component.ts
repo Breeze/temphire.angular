@@ -82,12 +82,13 @@ export function toMeter(meter: UsageMeterDto): Meter {
         <button
           pButton
           type="button"
-          icon="pi pi-refresh"
-          label="Refresh"
           [outlined]="true"
           [disabled]="usage.isLoading()"
           (click)="usage.reload()"
-        ></button>
+        >
+          <i class="pi pi-refresh"></i>
+          Refresh
+        </button>
       </header>
 
       @if (usage.error(); as error) {

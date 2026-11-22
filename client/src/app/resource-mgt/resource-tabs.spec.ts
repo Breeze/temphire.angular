@@ -36,7 +36,7 @@ describe('resource tabs', () => {
   });
 
   it('puts every collection of the resource on a tab', () => {
-    const resource = store.getEntityType('StaffingResource') as EntityType;
+    const resource = store.getAsEntityType('StaffingResource');
     const collections = resource.navigationProperties
       .filter((property) => !property.isScalar)
       .map((property) => (property.entityType as EntityType).shortName);
