@@ -3,13 +3,18 @@ import { TestBed } from '@angular/core/testing';
 import { FormsModule, NgModel } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { ModelValidationMetadataMap, ValidationError } from '@ideablade/validation';
-import { ValidationFormsDirectives, provideValidation } from '@ideablade/validation/angular';
 import {
+  ValidationFormsDirectives,
+  provideErrorVisibility,
+  provideValidation,
+} from '@ideablade/validation/angular';
+import {
+  breezeIsNew,
   breezeModelType,
   breezeValidator,
   installBreezeValidators,
 } from '@ideablade/validation/breeze';
-import { ValidationService } from '@ideablade/validation';
+import { ErrorVisibility, ValidationService } from '@ideablade/validation';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { DataService, Entity, EntityManager, MetadataStore } from 'breeze-client';
 
@@ -29,7 +34,7 @@ import { FieldErrorsDirective } from './field-errors.directive';
   imports: [FormsModule, InputTextModule, ValidationFormsDirectives, FieldErrorsDirective],
   template: `
     <div ngForm [validationModel]="address()">
-      <input pInputText name="city" [(ngModel)]="address().city" #city="ngModel" [invalid]="city.invalid" />
+      <input pInputText name="city" [(ngModel)]="address().city" #city="fieldErrors" [invalid]="city.invalid()" />
       <input pInputText name="stateId" [(ngModel)]="address().stateId" />
       <input type="radio" name="primary-address" [ngModel]="true" />
     </div>
@@ -40,7 +45,8 @@ class Host {
 }
 
 describe('entity fields', () => {
-  async function render() {
+  /** With `visibility`, as on the resource management screen: a new entity's first errors wait. */
+  async function render(visibility = false) {
     const metadataStore = new MetadataStore();
     metadataStore.importMetadata(metadata);
     setDisplayNames(metadataStore);
@@ -56,6 +62,7 @@ describe('entity fields', () => {
           validators: [breezeValidator],
           modelTypeResolvers: [breezeModelType],
         }),
+        ...(visibility ? [provideErrorVisibility({ isNew: breezeIsNew })] : []),
       ],
     });
     installBreezeValidators(metadataStore, TestBed.inject(ValidationService));
@@ -108,5 +115,22 @@ describe('entity fields', () => {
     expect(field('city').messages).toEqual([]);
     expect(field('city').element.getAttribute('title')).toBeNull();
     expect(field('city').element.classList).not.toContain('p-invalid');
+  });
+
+  it("hides a new entity's first errors until the user leaves the field, or tries to save", async () => {
+    const { fixture, field } = await render(true);
+    expect(field('city').messages).toEqual(["'City' is required"]);
+    expect(field('city').element.getAttribute('title')).toBeNull();
+    expect(field('city').element.classList).not.toContain('p-invalid');
+
+    field('city').element.dispatchEvent(new Event('blur'));
+    await fixture.whenStable();
+    expect(field('city').element.getAttribute('title')).toBe("'City' is required");
+    expect(field('city').element.classList).toContain('p-invalid');
+    expect(field('stateId').element.getAttribute('title')).toBeNull();
+
+    TestBed.inject(ErrorVisibility).revealAll();
+    await fixture.whenStable();
+    expect(field('stateId').element.getAttribute('title')).toBe("'State' is required");
   });
 });

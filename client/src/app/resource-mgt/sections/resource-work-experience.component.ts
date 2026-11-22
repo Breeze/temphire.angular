@@ -70,8 +70,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                 <p-datepicker
                   name="from"
                   [(ngModel)]="item.from"
-                  #from="ngModel"
-                  [invalid]="from.invalid"
+                  #from="fieldErrors"
+                  [invalid]="from.invalid()"
                   [disabled]="readOnly()"
                   [showIcon]="true"
                   appendTo="body"
@@ -85,8 +85,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                 <p-datepicker
                   name="to"
                   [(ngModel)]="item.to"
-                  #to="ngModel"
-                  [invalid]="to.invalid"
+                  #to="fieldErrors"
+                  [invalid]="to.invalid()"
                   [disabled]="readOnly()"
                   [showIcon]="true"
                   appendTo="body"
@@ -102,8 +102,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   type="text"
                   name="positionTitle"
                   [(ngModel)]="item.positionTitle"
-                  #positionTitle="ngModel"
-                  [invalid]="positionTitle.invalid"
+                  #positionTitle="fieldErrors"
+                  [invalid]="positionTitle.invalid()"
                   [readOnly]="readOnly()"
                 />
               </label>
@@ -115,8 +115,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                   type="text"
                   name="location"
                   [(ngModel)]="item.location"
-                  #location="ngModel"
-                  [invalid]="location.invalid"
+                  #location="fieldErrors"
+                  [invalid]="location.invalid()"
                   [readOnly]="readOnly()"
                 />
               </label>
@@ -143,8 +143,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                 type="text"
                 name="company"
                 [(ngModel)]="item.company"
-                #company="ngModel"
-                [invalid]="company.invalid"
+                #company="fieldErrors"
+                [invalid]="company.invalid()"
                 [readOnly]="readOnly()"
               />
             </label>
@@ -156,8 +156,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                 rows="4"
                 name="description"
                 [(ngModel)]="item.description"
-                #description="ngModel"
-                [invalid]="description.invalid"
+                #description="fieldErrors"
+                [invalid]="description.invalid()"
                 [readOnly]="readOnly()"
               ></textarea>
             </label>

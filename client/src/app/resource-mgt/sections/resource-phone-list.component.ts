@@ -11,8 +11,9 @@ import { PhoneNumber, PhoneNumberType, StaffingResource } from '../../core/model
 import { AppDialogService, DialogCancelledError } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
-import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives, trackVisibility } from '@ideablade/validation/angular';
 
+import { ErrorVisibility } from '@ideablade/validation';
 import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
 /**
@@ -67,8 +68,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
               name="areaCode"
               [readOnly]="readOnly()"
               [(ngModel)]="phoneNumber.areaCode"
-              #areaCode="ngModel"
-              [invalid]="areaCode.invalid"
+              #areaCode="fieldErrors"
+              [invalid]="areaCode.invalid()"
             />
 
             <input
@@ -78,8 +79,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
               name="number"
               [readOnly]="readOnly()"
               [(ngModel)]="phoneNumber.number"
-              #number="ngModel"
-              [invalid]="number.invalid"
+              #number="fieldErrors"
+              [invalid]="number.invalid()"
             />
 
             <div class="phone__primary">
@@ -178,11 +179,22 @@ export class ResourcePhoneListComponent {
   /**
    * The resource's "at least one phone number" rule, when it is broken; see the address list.
    */
-  readonly ruleErrors = computed(() =>
-    (this.validationResult()?.validationErrors ?? []).filter(
-      (error) => error.model === this.staffingResource() && error.id === 'PHONE_NUMBER_REQUIRED',
-    ),
-  );
+  readonly ruleErrors = computed(() => {
+    const resource = this.staffingResource();
+    const errors = (this.validationResult()?.validationErrors ?? []).filter(
+      (error) => error.model === resource && error.id === 'PHONE_NUMBER_REQUIRED',
+    );
+    // On a new resource, the rule is broken from the start: it shows once the user breaks it again
+    // (deletes the last one) or tries to save.  See `ErrorVisibility`.
+    if (!this.visibility) {
+      return errors;
+    }
+    // The visibility is not a signal: this makes the computed follow it (a save attempt, say).
+    trackVisibility(this.visibility);
+    return this.visibility.shown(resource, errors);
+  });
+
+  private readonly visibility = inject(ErrorVisibility, { optional: true });
 
   private readonly validationResult = toSignal(inject(ValidationService).validateEntityStore());
 

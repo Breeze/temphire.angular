@@ -8,8 +8,9 @@ import { StaffingResource } from '../core/model';
 import { AppDialogService, DialogCancelledError } from '../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { ResourceName, ResourceNameEditorComponent } from './resource-name-editor.component';
-import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives, trackVisibility } from '@ideablade/validation/angular';
 
+import { ErrorVisibility } from '@ideablade/validation';
 import { FieldErrorsDirective } from '../core/validation/field-errors.directive';
 
 /**
@@ -68,8 +69,8 @@ import { FieldErrorsDirective } from '../core/validation/field-errors.directive'
             <p-datepicker
               name="dateOfBirth"
               [(ngModel)]="staffingResource().dateOfBirth"
-              #dateOfBirth="ngModel"
-              [invalid]="dateOfBirth.invalid"
+              #dateOfBirth="fieldErrors"
+              [invalid]="dateOfBirth.invalid()"
               [disabled]="readOnly()"
               [showIcon]="true"
               [showClear]="true"
@@ -83,8 +84,8 @@ import { FieldErrorsDirective } from '../core/validation/field-errors.directive'
             <p-datepicker
               name="hireDate"
               [(ngModel)]="staffingResource().hireDate"
-              #hireDate="ngModel"
-              [invalid]="hireDate.invalid"
+              #hireDate="fieldErrors"
+              [invalid]="hireDate.invalid()"
               [disabled]="readOnly()"
               [showIcon]="true"
               [showClear]="true"
@@ -105,8 +106,8 @@ import { FieldErrorsDirective } from '../core/validation/field-errors.directive'
           [readOnly]="readOnly()"
           name="summary"
           [(ngModel)]="staffingResource().summary"
-          #summary="ngModel"
-          [invalid]="summary.invalid"
+          #summary="fieldErrors"
+          [invalid]="summary.invalid()"
           placeholder="Summary"
         ></textarea>
       </div>
@@ -266,9 +267,17 @@ export class ResourceSummaryComponent {
    * date, in the server's validation metadata) is about both, so both fields show it as invalid.
    */
   protected datesMessages(errors: readonly ValidationError[]): string[] {
-    const messages = errors.filter((e) => e.isFor('dateOfBirth') || e.isFor('hireDate')).map((e) => e.errorMessage);
-    return [...new Set(messages)];
+    const about = errors.filter((e) => e.isFor('dateOfBirth') || e.isFor('hireDate'));
+    // The same errors the date fields show: on a new resource, not until the user can see them.
+    if (this.visibility) {
+      // The visibility is not a signal: this makes the template follow it.
+      trackVisibility(this.visibility);
+    }
+    const shown = this.visibility ? this.visibility.shown(this.staffingResource(), about) : about;
+    return [...new Set(shown.map((e) => e.errorMessage))];
   }
+
+  private readonly visibility = inject(ErrorVisibility, { optional: true });
 
   /** Port of `StaffingResourceSummaryViewModel.EditName`. */
   async editName(): Promise<void> {

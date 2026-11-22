@@ -62,8 +62,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
                 class="skills__input"
                 name="description"
                 [(ngModel)]="skill.description"
-                #description="ngModel"
-                [invalid]="description.invalid"
+                #description="fieldErrors"
+                [invalid]="description.invalid()"
                 [readOnly]="readOnly()"
               />
 
