@@ -2,6 +2,7 @@ import {
   Component,
   Injector,
   afterNextRender,
+  ElementRef,
   computed,
   effect,
   inject,
@@ -11,9 +12,13 @@ import {
   resource,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { FormField, FormRoot, form } from '@angular/forms/signals';
 import { ButtonDirective } from '@openng/optimus-ui/button';
+import { IconField } from '@openng/optimus-ui/iconfield';
+import { TimesIcon } from '@openng/optimus-ui/icons/times';
+import { InputIcon } from '@openng/optimus-ui/inputicon';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner';
 import { TableModule } from '@openng/optimus-ui/table';
@@ -45,6 +50,9 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
     FormField,
     FormRoot,
     ButtonDirective,
+    IconField,
+    InputIcon,
+    TimesIcon,
     InputTextModule,
     TableModule,
     ProgressSpinnerModule,
@@ -52,15 +60,32 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
   template: `
     <div class="search">
       <form class="search__bar" [formRoot]="searchForm">
-        <input
-          pInputText
-          type="search"
-          class="search__text"
-          placeholder="Search staffing resources"
-          aria-label="Search staffing resources"
-          [formField]="searchForm.text"
-          (input)="onInput($event)"
-        />
+        <!-- The box draws its own X rather than the browser's, so it looks the same in every
+             browser (Firefox draws none), as in the React client. -->
+        <p-iconfield iconPosition="right" class="search__field">
+          <input
+            #box
+            pInputText
+            type="search"
+            class="search__text"
+            placeholder="Search staffing resources"
+            aria-label="Search staffing resources"
+            [formField]="searchForm.text"
+            (input)="onInput($event)"
+          />
+          @if (searchForm.text().value()) {
+            <p-inputicon>
+              <button
+                type="button"
+                class="search__clear"
+                aria-label="Clear search"
+                (click)="clearBox()"
+              >
+                <svg data-p-icon="times"></svg>
+              </button>
+            </p-inputicon>
+          }
+        </p-iconfield>
         <button pButton type="submit">Search</button>
         @if (results.isLoading()) {
           <p-progress-spinner
@@ -129,8 +154,44 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
         gap: 0.5rem;
       }
 
-      .search__text {
+      .search__field {
         width: 18rem;
+      }
+
+      .search__text {
+        width: 100%;
+      }
+
+      /* The browser's own X: the box has its own (search__clear). */
+      .search__text::-webkit-search-cancel-button {
+        appearance: none;
+      }
+
+      /* Optimus UI places an input icon for a bare 16px icon: a fixed -8px margin to centre it, and
+         12px from the edge.  The X sits in a button with padding, so centre it by its own height,
+         and move it closer to the edge so the X itself ends up about 10px in. */
+      .search__field p-inputicon {
+        margin-top: 0;
+        transform: translateY(-50%);
+        right: 0.375rem;
+      }
+
+      .search__clear {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.25rem;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: var(--p-inputtext-placeholder-color, #64748b);
+        cursor: pointer;
+      }
+
+      .search__clear:hover,
+      .search__clear:focus-visible {
+        background: var(--p-content-hover-background, #f1f5f9);
+        color: var(--p-inputtext-color, #334155);
       }
 
       .search__error {
@@ -288,18 +349,35 @@ export class ResourceSearchComponent {
     this.search();
   }
 
+  private readonly box = viewChild.required<ElementRef<HTMLInputElement>>('box');
+
   /**
-   * The user changed the text.  Emptying the box - the X in it, Escape, or deleting the text -
-   * while a search is filtering the list shows the full list again.
-   *
-   * This replaces the original's Clear button, which the box's own X made redundant.  Its
-   * `CanSearch` / `CanClear` also both required text in the box, so once the user emptied it
-   * after a search, both buttons were disabled and the full list could only come back by typing
-   * something and clicking Clear.  Search is now always enabled: an empty search lists everyone.
+   * The user changed the text.  Emptying the box - Escape, or deleting the text - while a search
+   * is filtering the list shows the full list again.
    */
   protected onInput(event: Event): void {
-    if (!(event.target as HTMLInputElement).value && this.query()) {
-      this.searchForm.text().value.set('');
+    if (!(event.target as HTMLInputElement).value) {
+      this.emptied();
+    }
+  }
+
+  /** The X in the box: empties it, and keeps the focus there for the next search. */
+  protected clearBox(): void {
+    this.emptied();
+    this.box().nativeElement.focus();
+  }
+
+  /**
+   * The box was emptied.  If a search was filtering the list, show the full list again.
+   *
+   * This replaces the original's Clear button.  Its `CanSearch` / `CanClear` both required text in
+   * the box, so once the user emptied it after a search, both buttons were disabled and the full
+   * list could only come back by typing something and clicking Clear.  Search is now always
+   * enabled: an empty search lists everyone.
+   */
+  private emptied(): void {
+    this.searchForm.text().value.set('');
+    if (this.query()) {
       this.search();
     }
   }
