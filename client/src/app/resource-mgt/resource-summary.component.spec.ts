@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideValidation } from '@ideablade/validation/angular';
-import { breezeModelType } from '@ideablade/validation/breeze';
+import { provideValidation } from 'ideablade-validation/angular';
+import { breezeModelType } from 'ideablade-validation/breeze';
 import { DataService, Entity, EntityManager, MetadataStore } from 'breeze-client';
 
 import metadata from '../../../metadata.json';

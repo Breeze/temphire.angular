@@ -10,9 +10,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { ErrorVisibility, ValidationService } from '@ideablade/validation';
-import { provideErrorVisibility, provideValidationScope } from '@ideablade/validation/angular';
-import { breezeIsNew } from '@ideablade/validation/breeze';
+import { ErrorVisibility, ValidationService } from 'ideablade-validation';
+import { provideErrorVisibility, provideValidationScope } from 'ideablade-validation/angular';
+import { breezeIsNew } from 'ideablade-validation/breeze';
 
 import { CanComponentDeactivate } from '../app.routes';
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';

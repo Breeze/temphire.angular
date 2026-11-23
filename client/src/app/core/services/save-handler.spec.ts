@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ErrorVisibility, asyncValidator, createEntityStore, createValidationService } from '@ideablade/validation';
+import { ErrorVisibility, asyncValidator, createEntityStore, createValidationService } from 'ideablade-validation';
 import { MessageService } from '@openng/optimus-ui/api';
 import { Subject, firstValueFrom, skip } from 'rxjs';
 import { vi } from 'vitest';

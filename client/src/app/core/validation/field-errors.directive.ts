@@ -1,13 +1,13 @@
 import { DestroyRef, Directive, computed, inject, signal } from '@angular/core';
 import { NgControl } from '@angular/forms';
-import { ValidationFieldDirective } from '@ideablade/validation/angular';
+import { ValidationFieldDirective } from 'ideablade-validation/angular';
 
 /**
  * Shows a form control's errors on the element: the messages as its `title`, so they show on hover,
  * and `aria-invalid` for assistive technology.  Templates use `invalid()` for PrimeNG's `[invalid]`
  * (`#city="fieldErrors"`, `[invalid]="city.invalid()"`), so the red border follows the same rule.
  *
- * Only presentation.  The errors are `@ideablade/validation`'s, which cover the server's validation
+ * Only presentation.  The errors are `ideablade-validation`'s, which cover the server's validation
  * metadata and Breeze's own rules alike, each a `ValidationError` with an `errorMessage`.  The
  * library's field directive, on the same `ngModel`, says which of them to show: with the screen's
  * `ErrorVisibility` (`provideErrorVisibility` in `ResourceMgtComponent`), a new entity's errors wait

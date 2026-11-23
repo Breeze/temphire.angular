@@ -1,7 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ValidationService } from '@ideablade/validation';
-import { injectErrorVisibility } from '@ideablade/validation/angular';
+import { ValidationService } from 'ideablade-validation';
+import { injectErrorVisibility } from 'ideablade-validation/angular';
 import { TabsModule } from '@openng/optimus-ui/tabs';
 
 import { StaffingResource } from '../core/model';

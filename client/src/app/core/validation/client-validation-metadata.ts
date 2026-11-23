@@ -1,4 +1,4 @@
-import { ModelValidationMetadataMap } from '@ideablade/validation';
+import { ModelValidationMetadataMap } from 'ideablade-validation';
 
 /**
  * Validation metadata for the client's own view models.  The entities' rules come from the server

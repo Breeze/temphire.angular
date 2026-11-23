@@ -240,7 +240,9 @@ read by [IdeaBlade Validation](https://github.com/Breeze/ideablade-validation) o
 The library grew with the application: rules that read other entities, error messages that stay
 hidden on a new record until the user gets to a field, tabs marked when they hold errors, and a
 Save that checks the data as it is when clicked.  Its previews were built and tested in TempHire
-first.
+first; once version 0.1.0 was published, on npm as `ideablade-validation` and on NuGet as
+`IdeaBlade.Validation`, TempHire moved to those packages
+([#135](https://github.com/Breeze/temphire.angular/pull/135)).
 
 ### A second client: React
 
@@ -364,6 +366,7 @@ that work:
 | Nov 22 | [#125](https://github.com/Breeze/temphire.angular/pull/125)-[#127](https://github.com/Breeze/temphire.angular/pull/127) | A plausible date of birth, and the sample data checked against every rule |
 | Nov 22 | [#128](https://github.com/Breeze/temphire.angular/pull/128)-[#132](https://github.com/Breeze/temphire.angular/pull/132) | The unit-of-work manager and the event aggregator as in Punch; quick clicks on Save and Cancel |
 | Nov 22 | [#133](https://github.com/Breeze/temphire.angular/pull/133) | Swagger and every endpoint documented; bounded, ordered queries; two Breeze fixes proposed |
+| Nov 23 | [#135](https://github.com/Breeze/temphire.angular/pull/135) | IdeaBlade Validation 0.1.0, published on npm and NuGet, instead of local preview builds |
 
 ---
 

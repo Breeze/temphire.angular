@@ -129,12 +129,6 @@ git clone --recurse-submodules https://github.com/Breeze/temphire.angular.git
 In a clone made without it, run `git submodule update --init` once.  After a `git pull` that moves
 the submodule to another commit, run `git submodule update` to check that commit out.
 
-TempHire's validation uses a preview of
-[IdeaBlade Validation](https://github.com/Breeze/ideablade-validation), which isn't published yet.
-Its packages are in `packages/` and `server/packages/`, and `npm install` and `dotnet` take them
-from there (see [Validation](#validation-comes-from-the-server)), so there is nothing extra to
-install.
-
 Then two terminals. Server first, because the client fetches its Breeze and validation metadata
 from it.
 
@@ -358,7 +352,6 @@ temphire.angular/
 │   ├── TempHire.Model/            # entities, DbContexts, migrations, sample data
 │   ├── TempHire.Server/           # Breeze, validation, OAuth, Quinn and MCP
 │   └── TempHire.Server.Tests/     # saves, rules, sample data, queries, who may call what
-├── packages/                      # the @ideablade/validation preview
 └── client/
     ├── metadata.json              # Breeze metadata exported from the server (npm run model:metadata)
     └── src/app/
@@ -448,12 +441,9 @@ The client is meant to show current Angular, not just to run on it:
 
 ### Validation comes from the server
 
-> **Preview.**  Validation uses a preview of IdeaBlade Validation (`0.1.0-preview.10`), which
-> isn't published to NuGet or npm yet: the builds are in `packages/` and `server/packages/`,
-> where `client/package.json` and the server's `nuget.config` find them (`packages/README.md`
-> explains how to update them).  The framework's API may still change before its first release,
-> and so may its name - the `IdeaBlade.Validation` / `@ideablade/validation` packages and their
-> namespaces and imports.
+> Validation uses IdeaBlade Validation 0.1.0: [`ideablade-validation`](https://www.npmjs.com/package/ideablade-validation)
+> on npm and [`IdeaBlade.Validation`](https://www.nuget.org/packages/IdeaBlade.Validation) on NuGet.
+> As with any 0.x version, its API may still change between minor versions.
 
 The validation rules are written once, on the server, in two places:
 
@@ -465,7 +455,7 @@ The validation rules are written once, on the server, in two places:
   3 digits); a rate is a valid amount and not negative; dates are valid dates; a date of birth is
   neither in the future nor more than 123 years ago; and a staffing resource has at least one
   address and one phone number, and it is at least 18 years old when hired.  These use
-  [IdeaBlade.Validation / `@ideablade/validation`](https://github.com/Breeze/ideablade-validation),
+  [IdeaBlade.Validation / `ideablade-validation`](https://github.com/Breeze/ideablade-validation),
   which reads the same metadata on both sides.
 
 The metadata's global `breeze` validator brings in the annotations: on the client it runs Breeze's

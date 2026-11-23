@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import type { ErrorVisibility, ValidationError, ValidationService } from '@ideablade/validation';
+import type { ErrorVisibility, ValidationError, ValidationService } from 'ideablade-validation';
 import { MessageService } from '@openng/optimus-ui/api';
 import { firstValueFrom } from 'rxjs';
 

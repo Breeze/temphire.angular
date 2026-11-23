@@ -4,7 +4,7 @@ import { ButtonDirective } from '@openng/optimus-ui/button';
 import { DynamicDialogConfig, DynamicDialogRef } from '@openng/optimus-ui/dynamicdialog';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 
-import { validateWithMetadata } from '@ideablade/validation/angular/signal-forms';
+import { validateWithMetadata } from 'ideablade-validation/angular/signal-forms';
 
 export interface ResourceName {
   firstName: string;

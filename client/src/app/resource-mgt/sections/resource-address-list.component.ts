@@ -1,7 +1,7 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ValidationService } from '@ideablade/validation';
+import { ValidationService } from 'ideablade-validation';
 import { ButtonDirective } from '@openng/optimus-ui/button';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MessageModule } from '@openng/optimus-ui/message';
@@ -12,7 +12,7 @@ import { Address, AddressType, StaffingResource } from '../../core/model';
 import { AppDialogService } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
-import { ValidationFormsDirectives, injectErrorVisibility } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives, injectErrorVisibility } from 'ideablade-validation/angular';
 
 import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 

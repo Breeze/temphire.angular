@@ -8,7 +8,7 @@ import { Rate, RateType, StaffingResource } from '../../core/model';
 import { AppDialogService } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent, ItemSelectorData } from '../item-selector.component';
-import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives } from 'ideablade-validation/angular';
 
 import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
