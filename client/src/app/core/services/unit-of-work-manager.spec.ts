@@ -3,50 +3,45 @@ import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
 
 import { EntityManagerProvider } from './entity-manager-provider';
+import { EventAggregator } from './event-aggregator';
 import type { UnitOfWork } from './unit-of-work';
-import {
-  SHARED_UNIT_OF_WORK_KEY,
-  UnitOfWorkManager,
-  UnitOfWorkManagers,
-} from './unit-of-work-manager';
+import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from './unit-of-work-manager';
 
 /** A unit of work as far as the managers see one: it can commit, report changes and be cleared. */
-function fakeUnitOfWork(onCommitted: () => void) {
+type FakeUnitOfWork = UnitOfWork & { commit(): Promise<void>; clear: ReturnType<typeof vi.fn> };
+
+function fakeUnitOfWork(onCommitted: () => void): FakeUnitOfWork {
   return {
     commit: async () => onCommitted(),
     hasChanges: () => false,
     clear: vi.fn(),
-  } as unknown as UnitOfWork & { commit(): Promise<void>; clear: ReturnType<typeof vi.fn> };
+  } as unknown as FakeUnitOfWork;
 }
 
 /** Two workspaces, each with its own kind of unit of work and its own manager. */
-class OrdersUnitOfWork {}
-class OrdersManager extends UnitOfWorkManager<UnitOfWork & OrdersUnitOfWork> {
+class OrdersManager extends UnitOfWorkManager<FakeUnitOfWork> {
   protected override newUnitOfWork(onCommitted: () => void) {
-    return fakeUnitOfWork(onCommitted) as UnitOfWork & OrdersUnitOfWork;
+    return fakeUnitOfWork(onCommitted);
   }
 }
-class InvoicesManager extends UnitOfWorkManager<UnitOfWork> {
+class InvoicesManager extends UnitOfWorkManager<FakeUnitOfWork> {
   protected override newUnitOfWork(onCommitted: () => void) {
     return fakeUnitOfWork(onCommitted);
   }
 }
 
 /**
- * The manager is generic: each workspace has its own, for its own unit of work, and what concerns
- * them all (the saves, the shared caches after a save, sign-out) goes through `UnitOfWorkManagers`.
+ * The manager is generic: each workspace has its own, for its own unit of work.  Saves and sign-out
+ * come as events (`EventAggregator`), and every manager reacts to them itself.
  */
 describe('UnitOfWorkManager', () => {
   function setUp() {
     TestBed.configureTestingModule({
-      providers: [
-        provideZonelessChangeDetection(),
-        { provide: EntityManagerProvider, useValue: {} },
-      ],
+      providers: [provideZonelessChangeDetection(), { provide: EntityManagerProvider, useValue: {} }],
     });
     const orders = TestBed.runInInjectionContext(() => new OrdersManager());
     const invoices = TestBed.runInInjectionContext(() => new InvoicesManager());
-    return { orders, invoices, managers: TestBed.inject(UnitOfWorkManagers) };
+    return { orders, invoices, events: TestBed.inject(EventAggregator) };
   }
 
   it('holds its units of work weakly: a collected one is replaced on the next get', () => {
@@ -87,41 +82,64 @@ describe('UnitOfWorkManager', () => {
     expect(orders.create()).not.toBe(orders.create());
   });
 
-  it('counts a save in any workspace', async () => {
-    const { orders, invoices } = setUp();
-    expect(orders.saves()).toBe(0);
+  it('announces every save of its units of work, in any workspace', async () => {
+    const { orders, invoices, events } = setUp();
+    expect(events.lastSave()).toBeNull();
 
-    await orders.get('order-1').commit();
-    await invoices.get('invoice-1').commit();
+    const order = orders.get('order-1');
+    await order.commit();
+    const first = events.lastSave();
+    expect(first?.unitOfWork.deref()).toBe(order);
 
-    expect(orders.saves()).toBe(2);
-    expect(invoices.saves()).toBe(2);
+    const invoice = invoices.get('invoice-1');
+    await invoice.commit();
+    expect(events.lastSave()).not.toBe(first);
+    expect(events.lastSave()?.unitOfWork.deref()).toBe(invoice);
   });
 
-  it("drops every workspace's shared cache after a save, except the one saved", () => {
-    const { orders, invoices, managers } = setUp();
-    const ordersShared = orders.get(SHARED_UNIT_OF_WORK_KEY) as unknown as {
-      clear: ReturnType<typeof vi.fn>;
-    };
-    const invoicesShared = invoices.get(SHARED_UNIT_OF_WORK_KEY) as unknown as {
-      clear: ReturnType<typeof vi.fn>;
-    };
+  it("drops every workspace's shared cache after a save, except the one saved", async () => {
+    const { orders, invoices } = setUp();
+    const ordersShared = orders.get(SHARED_UNIT_OF_WORK_KEY);
+    const invoicesShared = invoices.get(SHARED_UNIT_OF_WORK_KEY);
 
-    managers.dropSharedCaches(orders.get('order-1'));
+    await orders.get('order-1').commit();
+    TestBed.tick();
     expect(ordersShared.clear).toHaveBeenCalledTimes(1);
     expect(invoicesShared.clear).toHaveBeenCalledTimes(1);
 
-    managers.dropSharedCaches(ordersShared);
+    await ordersShared.commit();
+    TestBed.tick();
     expect(ordersShared.clear).toHaveBeenCalledTimes(1);
     expect(invoicesShared.clear).toHaveBeenCalledTimes(2);
   });
 
+  it('creates no shared unit of work just to clear it', async () => {
+    const { orders, invoices } = setUp();
+    await orders.get('order-1').commit();
+    TestBed.tick();
+    expect(invoices.has(SHARED_UNIT_OF_WORK_KEY)).toBe(false);
+  });
+
+  it('ignores the events from before it was created', async () => {
+    const { orders, events } = setUp();
+    await orders.get('order-1').commit();
+    events.loggedOut();
+    TestBed.tick();
+
+    const late = TestBed.runInInjectionContext(() => new InvoicesManager());
+    const shared = late.get(SHARED_UNIT_OF_WORK_KEY);
+    TestBed.tick();
+    expect(shared.clear).not.toHaveBeenCalled();
+    expect(late.has(SHARED_UNIT_OF_WORK_KEY)).toBe(true);
+  });
+
   it("forgets every workspace's units of work at sign-out", () => {
-    const { orders, invoices, managers } = setUp();
+    const { orders, invoices, events } = setUp();
     orders.get('order-1');
     invoices.get(SHARED_UNIT_OF_WORK_KEY);
 
-    managers.clear();
+    events.loggedOut();
+    TestBed.tick();
 
     expect(orders.has('order-1')).toBe(false);
     expect(invoices.has(SHARED_UNIT_OF_WORK_KEY)).toBe(false);

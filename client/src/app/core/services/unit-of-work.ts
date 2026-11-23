@@ -75,7 +75,7 @@ export class UnitOfWork {
    * @param serviceName the URL root of the server controller of the workspace this unit of work
    *   belongs to: its queries and its saves go there, and nowhere else.
    * @param onCommitted called after every successful save, so the owner can publish it.  This is
-   *   the replacement for Punch's `SavedMessage`; see `UnitOfWorkManager.saves`.
+   *   where Punch published `SavedMessage`: the manager announces it (`EventAggregator.saved`).
    */
   constructor(
     protected readonly emProvider: EntityManagerProvider,

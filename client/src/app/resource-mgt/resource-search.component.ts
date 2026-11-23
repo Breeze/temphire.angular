@@ -25,6 +25,7 @@ import { TableModule } from '@openng/optimus-ui/table';
 
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
 import { AppErrorHandler } from '../core/services/error-handler.service';
+import { EventAggregator } from '../core/services/event-aggregator';
 import { ResourceMgtUnitOfWorkManager } from '../core/services/resource-mgt-unit-of-work-manager';
 import { SHARED_UNIT_OF_WORK_KEY } from '../core/services/unit-of-work-manager';
 
@@ -38,10 +39,10 @@ import { SHARED_UNIT_OF_WORK_KEY } from '../core/services/unit-of-work-manager';
  *  - it queries through the **shared** unit of work (`Guid.Empty`), so it never sees a sandbox's
  *    uncommitted edits;
  *  - it re-runs the search whenever anything is saved anywhere, which is what
- *    `IHandle<SavedMessage>` did.  `UnitOfWorkManager.saves` is the signal equivalent of that
+ *    `IHandle<SavedMessage>` did.  `EventAggregator.lastSave` is the signal equivalent of that
  *    Caliburn.Micro event aggregator message.
  *
- * The list is a `resource()`: its params are the submitted search text and the save counter, so a
+ * The list is a `resource()`: its params are the submitted search text and the latest save, so a
  * new search or a save anywhere reloads it, and its `isLoading` / `error` drive the spinner and the
  * error message.  The search box is a Signal Form.
  */
@@ -253,6 +254,7 @@ import { SHARED_UNIT_OF_WORK_KEY } from '../core/services/unit-of-work-manager';
 })
 export class ResourceSearchComponent {
   private readonly unitOfWorkManager = inject(ResourceMgtUnitOfWorkManager);
+  private readonly events = inject(EventAggregator);
 
   /** Keeps the grid highlight in step with the resource the workspace has open. */
   readonly selectedId = input<string | null>(null);
@@ -272,7 +274,7 @@ export class ResourceSearchComponent {
    * `IHandle<SavedMessage>` - because both are read in `params`.
    */
   readonly results = resource({
-    params: () => ({ searchText: this.query(), saves: this.unitOfWorkManager.saves() }),
+    params: () => ({ searchText: this.query(), lastSave: this.events.lastSave() }),
     loader: ({ params }) =>
       this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY).search.simple(params.searchText),
   });

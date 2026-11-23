@@ -110,7 +110,7 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 |---|---|---|
 | `IEntityManagerProvider` + `GlobalCache` + `GlobalCacheRepository<T>` | `entity-manager-provider.ts` | One master manager holds metadata + all lookups; every sandbox is `createEmptyCopy()` seeded via `exportEntities`/`importEntities`. This is the same trick `GlobalCacheRepository.OnManagerCreated` used, and it is why `QueryStrategy.CacheOnly` becomes `FetchStrategy.FromLocalCache` |
 | `IUnitOfWork` | `unit-of-work.ts` | Owns one `EntityManager` |
-| `IUnitOfWorkManager<T>` / `UnitOfWorkManager<T>` | `unit-of-work-manager.ts` | `UnitOfWorkManager<T extends UnitOfWork>`, a keyed cache: `Guid.Empty` → `SHARED_UNIT_OF_WORK_KEY`.  Generic as in the original, so each workspace has a manager for its own unit of work.  What concerns them all - the save count, the shared caches after a save, sign-out - is in `UnitOfWorkManagers`, which every manager registers with |
+| `IUnitOfWorkManager<T>` / `UnitOfWorkManager<T>` | `unit-of-work-manager.ts` | `UnitOfWorkManager<T extends UnitOfWork>`, a keyed cache: `Guid.Empty` → `SHARED_UNIT_OF_WORK_KEY`.  Generic as in the original, so each workspace has a manager for its own unit of work.  Its units of work announce their saves as events (`EventAggregator`), and every manager reacts to the saves and to sign-out in an `effect` of its own: it drops its shared cache, or forgets every unit of work.  Nothing calls a manager for either |
 | `ResourceMgtUnitOfWorkManager` | `resource-mgt-unit-of-work-manager.ts` | `UnitOfWorkManager<ResourceMgtUnitOfWork>`, the one the Resource Management screens inject.  A new workspace gets one like it |
 | `IRepository<T>` | `repository.ts` | |
 | `StaffingResourceRepository` | `staffing-resource-repository.ts` | A subclass of the generic repository whose `withId` loads a resource with all of its children, as the original's `GetKeyQuery` included its addresses and phone numbers. Every caller gets a complete resource |
@@ -119,11 +119,11 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 | `IDialogManager`, `DialogResult`, `DialogButtons` | `dialog.service.ts` + `core/dialogs/message-box.component.ts` | Every dialog returns what the user chose: a message box its button's `DialogResult` (closing it counts as its cancel answer), a component dialog its result or `undefined`. The first port kept Punch's shape, where cancelling rejected the task with `TaskCanceledException`, as a thrown `DialogCancelledError`; every caller then needed a try/catch, and real failures were reported by hand. Cancelling is an answer, not an error. Optimus UI's two-button `p-confirmDialog` cannot express Yes/No/Cancel, so the buttons are data |
 | `IBusyWatcher` / `Busy.GetTicket()` | `busy.service.ts` — `await busy.run(promise)` | |
 | `IToolbarManager`, `ToolbarAction`, `ToolbarGroup` | `toolbar.service.ts` | `CanExecute` was found by reflecting for a `Can<Method>` property; it is now an explicit `canExecute` thunk reading signals |
-| `IAuthenticationService`, `LoggedInMessage`, `LoggedOutMessage` | `auth.service.ts` (+ `auth.interceptor.ts`, `auth.guard.ts`) | The two messages become one `isLoggedIn` signal |
+| `IAuthenticationService`, `LoggedInMessage`, `LoggedOutMessage` | `auth.service.ts` (+ `auth.interceptor.ts`, `auth.guard.ts`) | For the UI, the two messages become one `isLoggedIn` signal.  `LoggedOutMessage` is also an event (`EventAggregator.lastLogout`), on which every unit-of-work manager forgets its units of work |
 | `INavigator` | Angular router (`app.routes.ts`) | |
 | `IErrorHandler`, `ValidationErrorHandler` | `error-handler.service.ts` | Angular's global `ErrorHandler`. `provideBrowserGlobalErrorListeners()` passes it window errors and unhandled rejections, so a command that fails (called from a click) is reported without a try/catch in the component. A component catches only an error it acts on, such as rolling back a failed delete |
 | `IWorkspace` (`[ImportMany]` via MEF) | `WORKSPACES` array in `app.routes.ts` | Angular has no ambient discovery; the list is explicit |
-| `IMessageProcessor`, `EntityChangedMessage`, `SavedMessage` | `UnitOfWork.changes` / `UnitOfWork.hasChanges` and `UnitOfWorkManager.saves` signals | `EntityChangedMessage` becomes a counter signal bumped from the manager's `entityChanged` event; `SavedMessage` a save counter (`UnitOfWorkManagers`, app-wide like the original message) that the search list's `resource()` reads, so it reloads after a save in any workspace |
+| `IEventAggregator`, `IMessageProcessor`, `EntityChangedMessage`, `SavedMessage` | `event-aggregator.ts`; `UnitOfWork.changes` / `UnitOfWork.hasChanges` signals | The event aggregator stays, for the app-wide messages: an event is a signal holding its latest occurrence (`lastSave`, `lastLogout`), set by a notification method (`saved`, `loggedOut`), and `IHandle<T>` becomes reading the signal.  The search list's `resource()` reads `lastSave`, so it reloads after a save in any workspace, and every unit-of-work manager reads it in an `effect`.  `EntityChangedMessage`, which concerned one unit of work, becomes a counter signal on it, bumped from the manager's `entityChanged` event |
 
 ### Screens
 
@@ -171,8 +171,8 @@ const key = editMode === 'view' ? SHARED_UNIT_OF_WORK_KEY : id;
 
 Two consequences are worth calling out because they are not obvious:
 
-1. **After a save, the shared cache is dropped**, by `SaveHandler` after every successful commit,
-   so no workspace has to remember it.  The save happened in the sandbox, so the shared manager still holds the children it loaded
+1. **After a save, the shared cache is dropped**, by every manager when its saved event comes
+   (`EventAggregator.lastSave`), so no workspace has to remember it.  The save happened in the sandbox, so the shared manager still holds the children it loaded
    earlier — including any that were just deleted. A Breeze query merge never detaches entities the
    server omitted, so re-querying would not remove them; the cache has to be cleared and re-seeded.
 2. **The manager holds its units of work weakly**, as Punch's did (Cocktail's `ObjectManager`
@@ -295,11 +295,12 @@ Everything below is a conscious departure from the original.
   `[ImportMany] IEnumerable<IStaffingResourceDetailSection>` ordered by `Index`.
 - **Adding a workspace** means adding a route in `app.routes.ts` and an entry in `WORKSPACES`.
   If it saves, it saves through `SaveHandler`: `save(unitOfWork, validation, options)` with its
-  validation scope and error visibility, or `commit(unitOfWork)` for a deletion, which isn't
-  validated.  The handler decides on the data as it is when Save is clicked, shows every error and
-  says why nothing was saved, and drops the shared cache after a save.  Don't call
-  `unitOfWork.commit()` yourself, and don't decide on the continuous `validateEntityStore()`
-  result; it lags an edit by a moment.
+  validation scope and error visibility.  The handler decides on the data as it is when Save is
+  clicked, and shows every error and says why nothing was saved.  Only a commit that isn't
+  validated, a deletion, calls `unitOfWork.commit()` directly.  Don't decide on the continuous
+  `validateEntityStore()` result; it lags an edit by a moment.  What follows every save - dropping
+  the shared caches, reloading the search list - comes from the saved event, so a new workspace's
+  manager does it with no code of its own.
 - **Never reach for the `EntityManager`.** Components and services work with data only through
   the unit of work: its repositories (queries and loads), factories (new entities), services
   (searches and other queries) and `commit()` / `rollback()`, and the validation entity store.
