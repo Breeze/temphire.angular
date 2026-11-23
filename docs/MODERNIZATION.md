@@ -322,8 +322,10 @@ only by the clients that called it.
   silently ignored until something had loaded the metadata, which the clients always do first, so
   only a different caller - Swagger UI - ever saw it.  And a controller's own query settings
   replaced the global limits instead of tightening them, so the recommended global limit could be
-  lifted by an attribute left over from before.  TempHire works around both; the fix in Breeze is in
-  review ([breeze-server-v3#1](https://github.com/Breeze/breeze-server-v3/pull/1)).
+  lifted by an attribute left over from before.  Both are fixed in Breeze
+  [8.0.1](https://github.com/Breeze/breeze-server-v3/releases/tag/8.0.1), and TempHire, on it
+  and on breeze-client [3.0.1](https://github.com/Breeze/breeze-client-v3/releases/tag/3.0.1),
+  carries no Breeze workarounds any more ([#136](https://github.com/Breeze/temphire.angular/pull/136)).
 
 ---
 
@@ -367,6 +369,7 @@ that work:
 | Nov 22 | [#128](https://github.com/Breeze/temphire.angular/pull/128)-[#132](https://github.com/Breeze/temphire.angular/pull/132) | The unit-of-work manager and the event aggregator as in Punch; quick clicks on Save and Cancel |
 | Nov 22 | [#133](https://github.com/Breeze/temphire.angular/pull/133) | Swagger and every endpoint documented; bounded, ordered queries; two Breeze fixes proposed |
 | Nov 23 | [#135](https://github.com/Breeze/temphire.angular/pull/135) | IdeaBlade Validation 0.1.0, published on npm and NuGet, instead of local preview builds |
+| Nov 23 | [#136](https://github.com/Breeze/temphire.angular/pull/136) | Breeze 8.0.1 and breeze-client 3.0.1, with the fixes; TempHire's workarounds removed |
 
 ---
 
@@ -411,4 +414,3 @@ that work:
 - **Administration**: managing users and roles, and the MCP clients users have authorized.
 - **Paging in the search**, now that a query returns at most 1000 rows: a larger company would see
   only the first thousand people, without being told there are more.
-- **A Breeze release with the two fixes**, so the server can drop its workaround.
