@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ApplicationRef, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { ButtonDirective } from '@openng/optimus-ui/button';
 import { MenuItem } from '@openng/optimus-ui/api';
@@ -8,7 +8,7 @@ import { ToastModule } from '@openng/optimus-ui/toast';
 
 import { WORKSPACES } from './app.routes';
 import { AuthService } from './core/services/auth.service';
-import { ToolbarGroup, ToolbarService, toolbarActions } from './core/services/toolbar.service';
+import { ToolbarAction, ToolbarGroup, ToolbarService, executeAction, toolbarActions } from './core/services/toolbar.service';
 import { FrameworkMarkComponent } from './core/framework-mark.component';
 import { QuinnComponent } from './quinn/quinn.component';
 
@@ -93,6 +93,13 @@ export class App {
   readonly actions = computed(() =>
     this.isLoggedIn() ? toolbarActions([this.workspaceGroup(), ...this.toolbar.groups()]) : [],
   );
+
+  private readonly appRef = inject(ApplicationRef);
+
+  /** Runs a toolbar action with the screen up to date first: see `executeAction`. */
+  execute(action: ToolbarAction): void {
+    executeAction(action, this.appRef);
+  }
 
   /**
    * Port of `ShellViewModel.Logout`, which returned to the default workspace before logging out.
