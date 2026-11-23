@@ -43,7 +43,6 @@ describe('ResourceSearchComponent', () => {
         {
           provide: ResourceMgtUnitOfWorkManager,
           useValue: {
-            saves: signal(0),
             get: () => ({
               search: {
                 simple: async (text: string) => {

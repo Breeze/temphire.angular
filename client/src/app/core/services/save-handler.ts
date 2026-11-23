@@ -4,7 +4,6 @@ import { MessageService } from '@openng/optimus-ui/api';
 import { firstValueFrom } from 'rxjs';
 
 import type { UnitOfWork } from './unit-of-work';
-import { UnitOfWorkManagers } from './unit-of-work-manager';
 
 /** What a workspace adds to {@link SaveHandler.save}. */
 export interface SaveOptions {
@@ -33,19 +32,17 @@ export type SavableUnitOfWork = Pick<UnitOfWork, 'entityStore' | 'commit'>;
  *   problems ("One problem needs fixing" with two on screen), and with no problems before the edit
  *   it would have saved one it had not seen, leaving Breeze and the server to refuse it.
  *   Validating here also waits for async rules.
- * - **After every successful commit** it drops the shared unit of work's cache.  The save happened
- *   in a sandbox, so the shared manager still holds whatever it last loaded, including children the
- *   save just deleted.  A Breeze query merge never detaches cached entities the server omitted, so
- *   re-querying would not remove them; the shared cache has to be dropped and re-seeded.
- *   DevForce's shared EntityManager was refreshed for the same reason.
  *
- * The busy indicator and what else follows a save (releasing the sandbox, reloading) stay with the
- * workspace: `BusyService` is per screen, and so is what a save means for it.
+ * What follows every successful save happens through the unit of work's saved event
+ * (`EventAggregator`): each manager drops its shared cache, and the search list reloads.  A
+ * commit without validation, such as a deletion, is the unit of work's own `commit`.
+ *
+ * The busy indicator and what else follows a save for the screen (reloading what it shows) stay
+ * with the workspace: `BusyService` is per screen, and so is what a save means for it.
  */
 @Injectable({ providedIn: 'root' })
 export class SaveHandler {
   private readonly messages = inject(MessageService);
-  private readonly unitOfWorkManagers = inject(UnitOfWorkManagers);
 
   /**
    * Validates the unit of work and saves it.  With broken rules nothing is saved: every error is
@@ -67,26 +64,8 @@ export class SaveHandler {
     }
 
     options.beforeCommit?.();
-    await this.commit(unitOfWork);
-    return true;
-  }
-
-  /**
-   * Commits the unit of work without validating it, such as a deletion: a record that breaks a
-   * rule can still be deleted.  Then drops the shared cache, as after every save.  A failed commit
-   * throws.
-   */
-  async commit(unitOfWork: SavableUnitOfWork): Promise<void> {
     await unitOfWork.commit();
-    this.dropSharedCache(unitOfWork);
-  }
-
-  /**
-   * Drops every workspace's shared cache, except where there is none yet or it is the one just
-   * saved: a save can change what any of them has loaded.
-   */
-  private dropSharedCache(saved: SavableUnitOfWork): void {
-    this.unitOfWorkManagers.dropSharedCaches(saved);
+    return true;
   }
 }
 

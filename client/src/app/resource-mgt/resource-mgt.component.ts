@@ -358,16 +358,17 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     }
 
     await this.run(async () => {
-      // Select the row before saving.  The save reloads the search list (it watches
-      // `UnitOfWorkManager.saves`), and the list keeps the selected row selected if it is there -
+      // Select the row before saving.  The save reloads the search list (it reads
+      // `EventAggregator.lastSave`), and the list keeps the selected row selected if it is there -
       // which, for a newly added resource, it only is from this save on.
       const saved = await this.saveHandler.save(unitOfWork, this.validation, this.saveOptions(() => this.selectedId.set(id)));
       if (!saved) {
         // Rules are broken: the handler has shown them and said why nothing was saved.
         return;
       }
-      // The handler has dropped the shared cache, so the view-mode load below re-reads the saved graph.
-      // The sandbox needs no releasing: once the screen moves on, nothing holds it.
+      // The save drops the shared cache (the unit-of-work manager handles the saved event), so the
+      // view-mode load below re-reads the saved graph.  The sandbox needs no releasing: once the
+      // screen moves on, nothing holds it.
       await this.loadDetail(id, 'view');
     });
   }
@@ -412,9 +413,9 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     await this.run(async () => {
       try {
         resource.delete();
-        // Not validated: a record that breaks a rule can still be deleted.  The handler drops the
-        // shared cache, so the deleted graph goes with it.
-        await this.saveHandler.commit(unitOfWork);
+        // Not validated: a record that breaks a rule can still be deleted.  Like every save, it
+        // drops the shared cache, so the deleted graph goes with it.
+        await unitOfWork.commit();
       } catch (error) {
         unitOfWork.rollback();
         throw error;
@@ -532,7 +533,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
         // As with Save: the handler has shown every error; keep the user here, with their edits.
         return false;
       }
-      // The search list reloads itself off `UnitOfWorkManager.saves`, and the handler has dropped
+      // The search list reloads itself off `EventAggregator.lastSave`, and the manager has dropped
       // the shared cache, so the next view-mode load re-reads the saved graph.
     } else {
       unitOfWork.rollback();

@@ -400,7 +400,7 @@ The rest of the WPF-era dependencies did not need replacing so much as *deleting
 
 | Original | Replacement | Why |
 |---|---|---|
-| Caliburn.Micro (MVVM, conventions, `IEventAggregator`) | Angular components and signals | Angular already is an MVVM framework; the event aggregator's messages become signals (`UnitOfWork.changes`, `UnitOfWorkManager.saves`) |
+| Caliburn.Micro (MVVM, conventions, `IEventAggregator`) | Angular components and signals | Angular already is an MVVM framework.  The event aggregator stays (`EventAggregator`), its messages become signals (`lastSave`, `lastLogout`) that whoever cares reads; a unit of work's own changes are a signal on it (`UnitOfWork.changes`) |
 | Punch (`IUnitOfWorkManager`, `IRepository`, `IFactory`, `IDialogManager`, `IBusyWatcher`, `INavigator`) | Hand-ported into `core/services` | These are ~250 lines of pattern, and porting them keeps the app's architecture recognisable. Navigation becomes the Angular router |
 | MEF (`[Export]`, `[ImportMany]`) | Angular DI + explicit lists | Angular DI covers the singleton/scoped cases; the two places MEF was used for *discovery* (workspaces, detail sections) are now explicit lists, called out in the code |
 | Xceed WPF Toolkit `BusyIndicator` | `BusyService` + `p-progressSpinner` | |
@@ -424,8 +424,8 @@ The client is meant to show current Angular, not just to run on it:
   `EntityManager`'s change events into a counter signal, `UnitOfWork.changes`, plus a `hasChanges`
   signal.  The toolbar's Save and Cancel derive from those, so an edit anywhere in a sandbox
   enables Save without any subscription.
-- **`resource()`** loads the search results; its params are the search text and the save counter,
-  so a save anywhere reloads the list.
+- **`resource()`** loads the search results; its params are the search text and the latest save
+  (`EventAggregator.lastSave`), so a save anywhere reloads the list.
 - **Signal Forms** (`@angular/forms/signals`) for the forms over plain data: login, the search box
   and the name editor.  The entity editors keep `[(ngModel)]` bound straight to the Breeze
   entities, as Breeze recommends: a Signal Form would hold a second copy of every value, kept in
@@ -511,8 +511,9 @@ The forms add no rules of their own; they show the verdict:
   validates the unit of work again when Save is clicked (`validateEntityStoreOneTime`), since the
   continuous result catches up with an edit a moment later and a Save clicked right after an edit
   would otherwise miss it.  Nothing is saved while any rule is broken, async ones included: the
-  handler shows every error and says why.  After a save (or a deletion, `commit`) it drops the
-  shared unit of work's cache, so the read-only views re-read what was saved.
+  handler shows every error and says why.  After every save (a deletion too), each unit-of-work
+  manager drops its shared cache, on the saved event (`EventAggregator`), so the read-only views
+  re-read what was saved.
 - **A new resource is not all red at once.**  The screen's `ErrorVisibility`
   (`provideErrorVisibility({ isNew: breezeIsNew, watchEntityStore: true })` in
   `ResourceMgtComponent`) decides which errors to show; validation itself is unchanged.  Loaded
