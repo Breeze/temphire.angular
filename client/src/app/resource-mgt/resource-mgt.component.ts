@@ -105,8 +105,11 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
    * Validating the whole unit of work is what keeps a rule about related entities current: "a
    * resource keeps an address" is re-checked when an address is deleted, which Breeze, validating
    * entity by entity, would only do when the resource itself was saved.
+   *
+   * It runs while subscribed, so the subscription lasts as long as the screen; the screen itself
+   * doesn't read the result (Save doesn't wait for it: see `canSave`).
    */
-  private readonly validationResult = toSignal(this.validation.validateEntityStore());
+  private readonly continuousValidation = toSignal(this.validation.validateEntityStore());
 
   /** Which errors the screen shows: see `ErrorVisibility`. */
   private readonly errorVisibility = inject(ErrorVisibility);
@@ -142,16 +145,12 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
     }
 
     unitOfWork.changes();
-    const validation = this.validationResult();
-    return (
-      unitOfWork.hasChanges() &&
-      // Save waits until the async rules, if any, have answered.  It stays enabled while there are
-      // errors: a new resource's errors are hidden until the user has seen the field, so a disabled
-      // Save would give no reason.  Clicking it shows them all instead (`save()`).
-      !!validation &&
-      !validation.pending &&
-      !resource.entityAspect.entityState.isDeleted()
-    );
+    // Save stays enabled while there are errors, and while the continuous validation is still
+    // running after an edit: clicking it validates the data as it is then, async rules included,
+    // and shows every error instead of saving (`save()`).  A disabled Save would give no reason
+    // for a new resource's errors, which are hidden until the user has seen the field, and waiting
+    // for the validation would swallow a click made right after typing.
+    return unitOfWork.hasChanges() && !resource.entityAspect.entityState.isDeleted();
   });
 
   readonly canRefresh = computed(() => {
