@@ -146,7 +146,9 @@ dotnet run
 
 On startup the server creates or migrates its two databases (`TempHire` and `TempHireIdentity`)
 and seeds them with two companies, their users and their staffing resources; see the server's
-[Running it](https://github.com/Breeze/temphire.server#running-it).
+[Running it](https://github.com/Breeze/temphire.server#running-it).  It also describes its API with
+Swagger UI, at `http://localhost:5000/swagger`, where its root redirects; sign in with
+**Authorize** (see the server's [Swagger](https://github.com/Breeze/temphire.server#swagger)).
 
 **2. Client** (`http://localhost:4200`)
 
@@ -316,7 +318,8 @@ Server, shared with the React version.  It lives in its own repository,
 The sections of its README:
 
 - [Running it](https://github.com/Breeze/temphire.server#running-it), with the
-  [sample users](https://github.com/Breeze/temphire.server#sample-users) and the
+  [sample users](https://github.com/Breeze/temphire.server#sample-users),
+  [Swagger](https://github.com/Breeze/temphire.server#swagger) and the
   [tests](https://github.com/Breeze/temphire.server#tests)
 - [Quinn, the assistant](https://github.com/Breeze/temphire.server#quinn-the-assistant):
   [how it works](https://github.com/Breeze/temphire.server#how-it-works),
@@ -324,7 +327,8 @@ The sections of its README:
   [setting up Ollama](https://github.com/Breeze/temphire.server#setting-up-ollama),
   [setting up Claude](https://github.com/Breeze/temphire.server#setting-up-claude),
   [budgets](https://github.com/Breeze/temphire.server#budgets-usage-and-quotas)
-- [Multi-tenancy](https://github.com/Breeze/temphire.server#multi-tenancy)
+- [Multi-tenancy](https://github.com/Breeze/temphire.server#multi-tenancy):
+  [query limits](https://github.com/Breeze/temphire.server#query-limits)
 - [Users and sign-in](https://github.com/Breeze/temphire.server#users-and-sign-in):
   [using TempHire's MCP server from Claude Code](https://github.com/Breeze/temphire.server#using-temphires-mcp-server-from-claude-code),
   [roles](https://github.com/Breeze/temphire.server#roles),
