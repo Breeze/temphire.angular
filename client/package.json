@@ -25,7 +25,7 @@
     "@openng/icons": "^1.0.0",
     "@openng/optimus-ui": "^2.0.2",
     "@openng/optimus-ui-themes": "^2.0.2",
-    "breeze-client": "^3.0.0",
+    "breeze-client": "^3.0.1",
     "ideablade-validation": "^0.1.0",
     "marked": "^18.2.0",
     "rxjs": "~7.8.2",

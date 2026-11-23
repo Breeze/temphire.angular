@@ -588,22 +588,10 @@ are in [its README](https://github.com/Breeze/temphire.server#configuration).
 
 ## Known gaps
 
-- **A temporary workaround for a breeze-client 3.0.0 bug.** Breeze 3.0.0 fails any request whose
-  successful response has an empty body: a **204 No Content**, which ASP.NET Core sends whenever a
-  controller action returns `null`, or a 200 with no body. The query rejects with
-  `SyntaxError: Unexpected end of JSON input` instead of resolving with no results. None of
-  TempHire's current endpoints send such a response, but a new action that can return `null`
-  would. `app.config.ts` therefore wraps Breeze's fetch function in `emptyBodyAsNull`
-  (`client/src/app/core/services/breeze-fetch.ts`), the workaround from the
-  [breeze-client release notes](https://github.com/Breeze/breeze-client-v3/blob/fix/empty-response-body/RELEASE-NOTES.md).
-  The fix is on the `fix/empty-response-body` branch of breeze-client-v3 and not yet released.
-  **When you upgrade to a release with the fix**, `breeze-fetch.spec.ts` fails its "without the
-  workaround" test; that is the signal to delete `breeze-fetch.ts` and its spec, and to pass
-  `httpClientFetch(inject(HttpClient))` to `configureBreeze` directly.
 - **No end-to-end tests.** The original had no tests at all; the conversion has unit tests on both
   tiers, over 100 in the client (`ng test`, Vitest) and over 60 on the server (`dotnet test` in
   `server/`).  The client's cover:
-  - the services: the sign-in guard and token handling, Breeze's fetch, the dialogs, the global
+  - the services: the sign-in guard and token handling, the dialogs, the global
     error handler, the save handler and the staffing resource repository;
   - validation: the server's rules as the client runs them, the field bindings and display names;
   - Resource Management: the search box, the grid's selection, the summary, the address list, the

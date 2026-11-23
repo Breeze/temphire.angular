@@ -27,7 +27,6 @@ import { routes } from './app.routes';
 import { EntityManagerProvider } from './core/services/entity-manager-provider';
 import { clientValidationMetadata } from './core/validation/client-validation-metadata';
 import { authInterceptor } from './core/services/auth.interceptor';
-import { emptyBodyAsNull } from './core/services/breeze-fetch';
 import { TempHirePreset } from './core/theme/temphire-preset';
 import { AppErrorHandler } from './core/services/error-handler.service';
 
@@ -95,14 +94,9 @@ export const appConfig: ApplicationConfig = {
      * The one thing left to configure is transport.  Breeze 3 makes its requests with `fetch`,
      * which Angular's interceptors never see; `httpClientFetch` routes them through `HttpClient`
      * instead, so they pick up `authInterceptor` and the bearer token.
-     *
-     * WORKAROUND: `emptyBodyAsNull` works around a breeze-client 3.0.0 bug that fails any request
-     * answered with an empty body (a 204 No Content, for example).  Remove it, leaving
-     * `httpClientFetch(inject(HttpClient))`, once a release with the fix is installed - see
-     * `core/services/breeze-fetch.ts`.
      */
     provideAppInitializer(() => {
-      configureBreeze({ fetch: emptyBodyAsNull(httpClientFetch(inject(HttpClient))) });
+      configureBreeze({ fetch: httpClientFetch(inject(HttpClient)) });
     }),
   ],
 };
