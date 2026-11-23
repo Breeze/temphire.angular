@@ -9,7 +9,6 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ErrorVisibility, ValidationService } from '@ideablade/validation';
 import { provideErrorVisibility, provideValidationScope } from '@ideablade/validation/angular';
@@ -62,6 +61,16 @@ type EditMode = 'view' | 'edit';
   // `ErrorVisibility`: which errors the screen shows, so a new resource is not all red at once.  Only
   // added entities count as new; it also follows the continuous validation of the unit of work, so
   // the resource's own rules (at least one address, one phone number) have a baseline too.
+  //
+  // That continuous validation (`validateEntityStore()`, one shared run per scope) checks every live
+  // entity in the unit of work against every rule - the metadata's, sync and async, and Breeze's own
+  // (the `breeze` validator) - again whenever an entity in it changes, and follows the unit of work
+  // when the route moves on to another one.  Validating the whole unit of work is what keeps a rule
+  // about related entities current: "a resource keeps an address" is re-checked when an address is
+  // deleted, which Breeze, validating entity by entity, would only do when the resource itself was
+  // saved.  The error visibility keeps it running for the life of the screen; the detail and the
+  // address and phone lists read their rules' errors from it.  Save doesn't wait for it: see
+  // `SaveHandler`.
   providers: [
     BusyService,
     provideValidationScope(),
@@ -95,21 +104,6 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
    * entity in it changes - in another section, or in code.
    */
   private readonly validation = inject(ValidationService);
-
-  /**
-   * The continuous validation of that unit of work: every live entity in it, against every rule -
-   * the validation metadata's, sync and async, and Breeze's own (the `breeze` validator) - again
-   * whenever an entity in it changes.  It follows the unit of work when the route moves on to
-   * another one.  The address and phone lists show the resource's rules from the same validation.
-   *
-   * Validating the whole unit of work is what keeps a rule about related entities current: "a
-   * resource keeps an address" is re-checked when an address is deleted, which Breeze, validating
-   * entity by entity, would only do when the resource itself was saved.
-   *
-   * It runs while subscribed, so the subscription lasts as long as the screen; the screen itself
-   * doesn't read the result (Save doesn't wait for it: see `canSave`).
-   */
-  private readonly continuousValidation = toSignal(this.validation.validateEntityStore());
 
   /** Which errors the screen shows: see `ErrorVisibility`. */
   private readonly errorVisibility = inject(ErrorVisibility);
