@@ -16,8 +16,9 @@ own.  The work went in two steps:
 
 Both steps were done with AI: Claude Code wrote the code, a developer decided what to build and
 reviewed every change.  The fourteen pull requests from the conversion to OAuth were merged within
-five days; validation rules shared by client and server, a second client in React and a review of
-the conversion followed in the next week.
+five days; validation rules shared by client and server, a second client in React, a review of
+the conversion against the original's architecture, and a documented API with bounded queries
+followed in the next week.
 
 The [README](../README.md) describes the application as it is now, and
 [CONVERSION-NOTES.md](CONVERSION-NOTES.md) maps the original's architecture onto the new one, file
@@ -261,7 +262,8 @@ price.
 
 ### A second look at the conversion
 
-**[#117](https://github.com/Breeze/temphire.angular/pull/117)-[#124](https://github.com/Breeze/temphire.angular/pull/124).**
+**[#117](https://github.com/Breeze/temphire.angular/pull/117)-[#124](https://github.com/Breeze/temphire.angular/pull/124),
+then [#128](https://github.com/Breeze/temphire.angular/pull/128)-[#132](https://github.com/Breeze/temphire.angular/pull/132).**
 A faithful conversion still deserves a review by someone who knows the original's architecture.
 Reading the converted code against Punch's patterns found places where the conversion had taken a
 shortcut:
@@ -276,11 +278,50 @@ shortcut:
   each instead of one query that multiplies the rows.
 - **One controller per workspace**, plus one for the lookups loaded at sign-in and one for the
   model's metadata, instead of one controller for everything.
-- **Current code**: no deprecated APIs, no dead code, and current C# syntax throughout the
-  server.
+- **Screens never touch the data layer.**  The unit of work no longer hands out its entity
+  manager; everything goes through its repositories and services
+  ([#128](https://github.com/Breeze/temphire.angular/pull/128)).
+- **The unit-of-work manager is Punch's again**: generic, one per workspace, and holding its units
+  of work weakly, as the original framework did, so an edit's sandbox lives exactly as long as a
+  screen uses it and no screen has to release one
+  ([#129](https://github.com/Breeze/temphire.angular/pull/129)).
+- **The event aggregator is back.**  What spans workspaces - a save in one refreshing the data the
+  others show, everything forgotten at sign-out - had become a registry that the managers signed
+  up with and other code called into.  It is Caliburn.Micro's event aggregator again: events and
+  the methods that announce them, and whoever cares reacts
+  ([#131](https://github.com/Breeze/temphire.angular/pull/131)).  In Angular an event is a signal;
+  React has no signals, so there it is a subscription, under the same name.
+- **A quick click counts.**  Cancel clicked right after typing left the discarded text on screen,
+  and Save waited for a validation that its own check made unnecessary, so a quick click was lost
+  ([#130](https://github.com/Breeze/temphire.angular/pull/130)).
+- **Current code**: no deprecated APIs, no dead code
+  ([#132](https://github.com/Breeze/temphire.angular/pull/132) swept up what the refactoring left
+  behind), and current C# syntax throughout the server.
 
-None of these changed what the user sees much.  They keep the code the shape of the original, and
-ready to grow.
+Apart from the quick clicks, none of these changed what the user sees.  They keep the code the
+shape of the original, and ready to grow.
+
+### An API you can see, with limits
+
+**[#133](https://github.com/Breeze/temphire.angular/pull/133), with the server's
+[#19](https://github.com/Breeze/temphire.server/pull/19).**  The server's API had been described
+only by the clients that called it.
+
+- **Swagger.**  In development the server serves Swagger UI, and its root opens it.  Every
+  endpoint has a summary, its parameters, its responses and who may call it, written as comments
+  in the code; a test fails for an endpoint without them.  Swagger UI signs in like any other OAuth
+  client, as a client of its own, and its tokens are good at the API only.
+- **Bounded queries.**  A Breeze client composes its own queries, so the server now bounds what one
+  may ask for, following Breeze's
+  [security guide](https://breeze.github.io/breeze-server-v3/guide/security): at most 1000 rows,
+  and related data at most two levels deep from a person, one from anything else, none from the
+  lookup tables.  Every query is ordered, so the rows a limit keeps are the same each time.
+- **And in Breeze itself.**  Doing this found two problems in the Breeze server.  An `expand` was
+  silently ignored until something had loaded the metadata, which the clients always do first, so
+  only a different caller - Swagger UI - ever saw it.  And a controller's own query settings
+  replaced the global limits instead of tightening them, so the recommended global limit could be
+  lifted by an attribute left over from before.  TempHire works around both; the fix in Breeze is in
+  review ([breeze-server-v3#1](https://github.com/Breeze/breeze-server-v3/pull/1)).
 
 ---
 
@@ -320,6 +361,9 @@ that work:
 | Nov 20 | [#99](https://github.com/Breeze/temphire.angular/pull/99)-[#108](https://github.com/Breeze/temphire.angular/pull/108) | The server in its own repository, shared by both clients; Quinn's budgets and usage page |
 | Nov 21-22 | [#109](https://github.com/Breeze/temphire.angular/pull/109)-[#116](https://github.com/Breeze/temphire.angular/pull/116) | Errors shown when the user gets to them, tabs marked, Save checks the data as it is |
 | Nov 22 | [#117](https://github.com/Breeze/temphire.angular/pull/117)-[#124](https://github.com/Breeze/temphire.angular/pull/124) | A second look at the conversion: dialogs, the unit of work, per-workspace controllers, current code |
+| Nov 22 | [#125](https://github.com/Breeze/temphire.angular/pull/125)-[#127](https://github.com/Breeze/temphire.angular/pull/127) | A plausible date of birth, and the sample data checked against every rule |
+| Nov 22 | [#128](https://github.com/Breeze/temphire.angular/pull/128)-[#132](https://github.com/Breeze/temphire.angular/pull/132) | The unit-of-work manager and the event aggregator as in Punch; quick clicks on Save and Cancel |
+| Nov 22 | [#133](https://github.com/Breeze/temphire.angular/pull/133) | Swagger and every endpoint documented; bounded, ordered queries; two Breeze fixes proposed |
 
 ---
 
@@ -341,6 +385,10 @@ that work:
   visible, reviewable and changeable in one place, and enforced on the server as well as the
   client without writing them twice.  For a desktop application that was never client/server, this
   is what saves duplicating its validation logic on the way to the web.
+- **A real application is its framework's best test.**  IdeaBlade Validation's previews were built
+  and tried in TempHire first, and bounding TempHire's queries found two problems in the Breeze
+  server that its own tests had never hit: both only show to a caller the framework's own client
+  never imitates.  Modernizing an application improves the framework under it too.
 - **Security is part of modernization.**  The original's reversibly encrypted passwords would be
   unacceptable today.  Identity, roles and OAuth 2.1 bring the application to the standard any
   security review expects, and make enterprise sign-in a configuration step.
@@ -358,3 +406,6 @@ that work:
   to identify themselves, once OpenIddict supports them.
 - **Write tools for Quinn**, for editors, with a confirmation step before anything changes.
 - **Administration**: managing users and roles, and the MCP clients users have authorized.
+- **Paging in the search**, now that a query returns at most 1000 rows: a larger company would see
+  only the first thousand people, without being told there are more.
+- **A Breeze release with the two fixes**, so the server can drop its workaround.
