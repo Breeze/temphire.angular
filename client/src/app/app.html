@@ -13,7 +13,7 @@
           class="app-toolbar__action"
           [disabled]="action.canExecute ? !action.canExecute() : false"
           [text]="true"
-          (click)="action.execute()"
+          (click)="execute(action)"
         >
           @if (action.icon; as icon) {
             <i [class]="icon"></i>

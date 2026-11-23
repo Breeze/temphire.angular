@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
+import { ApplicationRef, DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
 
 /**
  * Port of `Common/Toolbar/ToolbarAction.cs`.
@@ -19,6 +19,21 @@ export interface ToolbarAction {
 export interface ToolbarGroup {
   level: number;
   actions: ToolbarAction[];
+}
+
+/**
+ * Runs a toolbar action, after bringing the screen up to date.
+ *
+ * A command can put an entity back to a value the screen has already shown: Cancel rolls the
+ * edits back, Refresh reloads.  Angular writes a value to a field only when its binding has
+ * changed since the last change detection.  So when the user typed and clicked within one frame,
+ * before change detection had seen the typed value, the rolled-back value looked unchanged to the
+ * binding, and the field kept the text that had just been discarded.  Running change detection
+ * first records what the fields show, so whatever the command changes is written back.
+ */
+export function executeAction(action: ToolbarAction, appRef: ApplicationRef): void {
+  appRef.tick();
+  action.execute();
 }
 
 /** Flattens groups into one action list, ordered by group level. */
