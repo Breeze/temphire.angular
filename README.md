@@ -60,7 +60,8 @@ original Silverlight and WPF versions are in the
 ported file names the file it came from, and `docs/CONVERSION-NOTES.md` maps the old architecture
 onto the new one.  [**The modernization story**](docs/MODERNIZATION.md) tells the whole journey:
 the conversion to a modern stack, and then what was built on it - Quinn, multi-tenancy, a fresh UI,
-and OAuth 2.1.
+OAuth 2.1, validation rules in one file, a React client, and a documented API with bounded
+queries.
 
 Have a Silverlight, WPF or DevForce application of your own to take forward?  That is what
 [IdeaBlade](https://www.ideablade.com/modernization/), the team behind Breeze and DevForce, does.
