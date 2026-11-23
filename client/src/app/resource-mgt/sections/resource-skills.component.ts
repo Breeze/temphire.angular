@@ -5,7 +5,7 @@ import { InputTextModule } from '@openng/optimus-ui/inputtext';
 
 import { Skill, StaffingResource } from '../../core/model';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
-import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives } from 'ideablade-validation/angular';
 
 import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 

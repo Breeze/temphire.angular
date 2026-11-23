@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, Injector, inject } from '@angular/core';
-import { ModelValidationMetadataMap, ValidationService } from '@ideablade/validation';
-import { installBreezeValidators } from '@ideablade/validation/breeze';
+import { ModelValidationMetadataMap, ValidationService } from 'ideablade-validation';
+import { installBreezeValidators } from 'ideablade-validation/breeze';
 import { DataService, EntityManager, EntityQuery, MetadataStore } from 'breeze-client';
 import { firstValueFrom } from 'rxjs';
 

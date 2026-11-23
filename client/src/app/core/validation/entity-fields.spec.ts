@@ -2,19 +2,19 @@ import { Component, provideZonelessChangeDetection, signal } from '@angular/core
 import { TestBed } from '@angular/core/testing';
 import { FormsModule, NgModel } from '@angular/forms';
 import { By } from '@angular/platform-browser';
-import { ModelValidationMetadataMap, ValidationError } from '@ideablade/validation';
+import { ModelValidationMetadataMap, ValidationError } from 'ideablade-validation';
 import {
   ValidationFormsDirectives,
   provideErrorVisibility,
   provideValidation,
-} from '@ideablade/validation/angular';
+} from 'ideablade-validation/angular';
 import {
   breezeIsNew,
   breezeModelType,
   breezeValidator,
   installBreezeValidators,
-} from '@ideablade/validation/breeze';
-import { ErrorVisibility, ValidationService } from '@ideablade/validation';
+} from 'ideablade-validation/breeze';
+import { ErrorVisibility, ValidationService } from 'ideablade-validation';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { DataService, Entity, EntityManager, MetadataStore } from 'breeze-client';
 

@@ -1,4 +1,4 @@
-import type { ValidationError } from '@ideablade/validation';
+import type { ValidationError } from 'ideablade-validation';
 
 /**
  * The detail screen's tabs, and which of them shows each validation error.

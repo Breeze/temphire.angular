@@ -1,6 +1,6 @@
 import { Signal, computed, signal } from '@angular/core';
-import { NotifyingEntityStore } from '@ideablade/validation';
-import { breezeEntityStore } from '@ideablade/validation/breeze';
+import { NotifyingEntityStore } from 'ideablade-validation';
+import { breezeEntityStore } from 'ideablade-validation/breeze';
 import { Entity, EntityManager, InitialValues, SaveOptions } from 'breeze-client';
 
 import { EntityManagerProvider } from './entity-manager-provider';

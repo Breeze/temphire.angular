@@ -16,12 +16,12 @@ import { provideOptimus } from '@openng/optimus-ui/config';
 import { DialogService } from '@openng/optimus-ui/dynamicdialog';
 import { HttpClient } from '@angular/common/http';
 
-import { provideRuleSources, provideValidation } from '@ideablade/validation/angular';
+import { provideRuleSources, provideValidation } from 'ideablade-validation/angular';
 import {
   breezeModelType,
   breezeRuleSource,
   breezeValidator,
-} from '@ideablade/validation/breeze';
+} from 'ideablade-validation/breeze';
 
 import { routes } from './app.routes';
 import { EntityManagerProvider } from './core/services/entity-manager-provider';
@@ -55,7 +55,7 @@ export const appConfig: ApplicationConfig = {
     }),
 
     /**
-     * Validation (`@ideablade/validation`).
+     * Validation (`ideablade-validation`).
      *
      * The rules come from the server's validation metadata, which `EntityManagerProvider` loads at
      * sign-in next to the Breeze metadata and installs into Breeze; the view models' metadata is

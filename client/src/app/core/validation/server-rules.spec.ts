@@ -1,9 +1,9 @@
-import { ModelValidationMetadataMap, createValidationService } from '@ideablade/validation';
+import { ModelValidationMetadataMap, createValidationService } from 'ideablade-validation';
 import {
   breezeEntityStore,
   breezeValidator,
   installBreezeValidators,
-} from '@ideablade/validation/breeze';
+} from 'ideablade-validation/breeze';
 import { DataService, Entity, EntityManager, MetadataStore } from 'breeze-client';
 
 import metadata from '../../../../metadata.json';

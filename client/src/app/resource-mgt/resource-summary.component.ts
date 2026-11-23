@@ -1,6 +1,6 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ValidationError } from '@ideablade/validation';
+import { ValidationError } from 'ideablade-validation';
 import { DatePickerModule } from '@openng/optimus-ui/datepicker';
 import { TextareaModule } from '@openng/optimus-ui/textarea';
 
@@ -8,7 +8,7 @@ import { StaffingResource } from '../core/model';
 import { AppDialogService } from '../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { ResourceName, ResourceNameEditorComponent } from './resource-name-editor.component';
-import { ValidationFormsDirectives, injectErrorVisibility } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives, injectErrorVisibility } from 'ideablade-validation/angular';
 
 import { FieldErrorsDirective } from '../core/validation/field-errors.directive';
 

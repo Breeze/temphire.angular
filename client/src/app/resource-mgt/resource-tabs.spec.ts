@@ -1,4 +1,4 @@
-import type { ValidationError } from '@ideablade/validation';
+import type { ValidationError } from 'ideablade-validation';
 import { EntityType, MetadataStore } from 'breeze-client';
 
 import metadata from '../../../metadata.json';

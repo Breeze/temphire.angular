@@ -22,11 +22,11 @@
     "@angular/forms": "^22.2.6",
     "@angular/platform-browser": "^22.2.6",
     "@angular/router": "^22.2.6",
-    "@ideablade/validation": "file:../packages/ideablade-validation-0.1.0-preview.10.tgz",
     "@openng/icons": "^1.0.0",
     "@openng/optimus-ui": "^2.0.2",
     "@openng/optimus-ui-themes": "^2.0.2",
     "breeze-client": "^3.0.0",
+    "ideablade-validation": "^0.1.0",
     "marked": "^18.2.0",
     "rxjs": "~7.8.2",
     "tslib": "^2.9.1"

@@ -1,4 +1,4 @@
-import { ModelValidationMetadataMap } from '@ideablade/validation';
+import { ModelValidationMetadataMap } from 'ideablade-validation';
 import { ComplexType, EntityType, MetadataStore } from 'breeze-client';
 
 import { modelClasses } from './model';

@@ -8,7 +8,7 @@ import { TextareaModule } from '@openng/optimus-ui/textarea';
 
 import { StaffingResource, WorkExperienceItem } from '../../core/model';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
-import { ValidationFormsDirectives } from '@ideablade/validation/angular';
+import { ValidationFormsDirectives } from 'ideablade-validation/angular';
 
 import { FieldErrorsDirective } from '../../core/validation/field-errors.directive';
 
