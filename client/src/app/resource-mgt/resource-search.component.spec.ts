@@ -2,7 +2,7 @@ import { Component, provideZonelessChangeDetection, signal } from '@angular/core
 import { TestBed } from '@angular/core/testing';
 
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
-import { UnitOfWorkManager } from '../core/services/unit-of-work-manager';
+import { ResourceMgtUnitOfWorkManager } from '../core/services/resource-mgt-unit-of-work-manager';
 import { ResourceSearchComponent } from './resource-search.component';
 
 /**
@@ -41,7 +41,7 @@ describe('ResourceSearchComponent', () => {
       providers: [
         provideZonelessChangeDetection(),
         {
-          provide: UnitOfWorkManager,
+          provide: ResourceMgtUnitOfWorkManager,
           useValue: {
             saves: signal(0),
             get: () => ({

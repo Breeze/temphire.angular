@@ -6,7 +6,7 @@ import { environment } from '../../../environments/environment';
 import { EntityManagerProvider } from './entity-manager-provider';
 import { challengeFor, randomString } from './pkce';
 import { Roles } from './roles';
-import { UnitOfWorkManager } from './unit-of-work-manager';
+import { UnitOfWorkManagers } from './unit-of-work-manager';
 
 /** `GET api/account/me`: who the access token belongs to. */
 interface UserInfo {
@@ -73,7 +73,7 @@ const authority = (): string => environment.authority || window.location.origin;
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly emProvider = inject(EntityManagerProvider);
-  private readonly unitOfWorkManager = inject(UnitOfWorkManager);
+  private readonly unitOfWorkManagers = inject(UnitOfWorkManagers);
 
   private readonly _tokens = signal<StoredTokens | null>(readJson<StoredTokens>(TOKENS_KEY));
   private readonly _username = signal<string | null>(null);
@@ -243,7 +243,7 @@ export class AuthService {
     this._username.set(null);
     this._tenantName.set(null);
     this._roles.set([]);
-    this.unitOfWorkManager.clear();
+    this.unitOfWorkManagers.clear();
     this.emProvider.reset();
   }
 

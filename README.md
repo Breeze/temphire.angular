@@ -363,7 +363,7 @@ temphire.angular/
         │   ├── model-display-names.ts  # friendly property names for validation messages
         │   ├── projections/       # non-entity query results (StaffingResourceListItem)
         │   ├── services/          # ← Punch: EntityManagerProvider, UnitOfWork,
-        │   │                      #   Repository, UnitOfWorkManager, toolbar, dialogs, auth
+        │   │                      #   Repository, UnitOfWorkManager<T>, toolbar, dialogs, auth
         │   └── dialogs/
         ├── auth-callback/         # where the sign-in page returns to (code → tokens)
         ├── home/                  # ← ViewModels/HomeViewModel.cs

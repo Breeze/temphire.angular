@@ -1,6 +1,5 @@
 import {
   Component,
-  DestroyRef,
   ErrorHandler,
   computed,
   effect,
@@ -25,7 +24,8 @@ import { AppDialogService } from '../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { SaveHandler, type SaveOptions } from '../core/services/save-handler';
 import { ToolbarGroup, registerToolbarGroup } from '../core/services/toolbar.service';
-import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/unit-of-work-manager';
+import { ResourceMgtUnitOfWorkManager } from '../core/services/resource-mgt-unit-of-work-manager';
+import { SHARED_UNIT_OF_WORK_KEY } from '../core/services/unit-of-work-manager';
 import { ResourceDetailComponent } from './resource-detail.component';
 import { ResourceNameEditorComponent, ResourceName } from './resource-name-editor.component';
 import { ResourceSearchComponent } from './resource-search.component';
@@ -50,7 +50,7 @@ type EditMode = 'view' | 'edit';
  *    else on screen.
  *
  * That is `IUnitOfWorkManager<IResourceMgtUnitOfWork>.Get(key)` from the WPF app, unchanged in
- * substance - see `UnitOfWorkManager`.
+ * substance - see `UnitOfWorkManager` and `ResourceMgtUnitOfWorkManager`.
  *
  * `/resourcemgt?resource=<id>` opens that staffing resource and searches for them by last name;
  * the people Quinn mentions link there.
@@ -71,7 +71,7 @@ type EditMode = 'view' | 'edit';
   styleUrl: './resource-mgt.component.css',
 })
 export class ResourceMgtComponent implements CanComponentDeactivate {
-  private readonly unitOfWorkManager = inject(UnitOfWorkManager);
+  private readonly unitOfWorkManager = inject(ResourceMgtUnitOfWorkManager);
   private readonly dialogs = inject(AppDialogService);
   /** The app's global handler (`AppErrorHandler`), for the one failure this screen catches: see `confirmDiscardPendingChanges`. */
   private readonly errorHandler = inject(ErrorHandler);
@@ -230,14 +230,6 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
         untracked(() => void this.openFromLink(id));
       }
     });
-
-    // Don't leave an empty sandbox behind in the root-scoped manager.
-    inject(DestroyRef).onDestroy(() => {
-      const id = this.staffingResourceId();
-      if (id) {
-        this.unitOfWorkManager.releaseIfClean(id);
-      }
-    });
   }
 
   /**
@@ -376,7 +368,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
         return;
       }
       // The handler has dropped the shared cache, so the view-mode load below re-reads the saved graph.
-      this.unitOfWorkManager.releaseIfClean(id);
+      // The sandbox needs no releasing: once the screen moves on, nothing holds it.
       await this.loadDetail(id, 'view');
     });
   }
@@ -547,7 +539,6 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       unitOfWork.rollback();
     }
 
-    this.unitOfWorkManager.releaseIfClean(id);
     return true;
   }
 

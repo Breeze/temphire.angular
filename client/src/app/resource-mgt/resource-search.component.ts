@@ -25,7 +25,8 @@ import { TableModule } from '@openng/optimus-ui/table';
 
 import { StaffingResourceListItem } from '../core/projections/staffing-resource-list-item';
 import { AppErrorHandler } from '../core/services/error-handler.service';
-import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/unit-of-work-manager';
+import { ResourceMgtUnitOfWorkManager } from '../core/services/resource-mgt-unit-of-work-manager';
+import { SHARED_UNIT_OF_WORK_KEY } from '../core/services/unit-of-work-manager';
 
 /**
  * Port of `ViewModels/StaffingResource/StaffingResourceSearchViewModel.cs` +
@@ -251,7 +252,7 @@ import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from '../core/services/uni
   ],
 })
 export class ResourceSearchComponent {
-  private readonly unitOfWorkManager = inject(UnitOfWorkManager);
+  private readonly unitOfWorkManager = inject(ResourceMgtUnitOfWorkManager);
 
   /** Keeps the grid highlight in step with the resource the workspace has open. */
   readonly selectedId = input<string | null>(null);

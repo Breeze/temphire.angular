@@ -4,7 +4,7 @@ import { MessageService } from '@openng/optimus-ui/api';
 import { firstValueFrom } from 'rxjs';
 
 import type { UnitOfWork } from './unit-of-work';
-import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from './unit-of-work-manager';
+import { UnitOfWorkManagers } from './unit-of-work-manager';
 
 /** What a workspace adds to {@link SaveHandler.save}. */
 export interface SaveOptions {
@@ -45,7 +45,7 @@ export type SavableUnitOfWork = Pick<UnitOfWork, 'entityStore' | 'commit'>;
 @Injectable({ providedIn: 'root' })
 export class SaveHandler {
   private readonly messages = inject(MessageService);
-  private readonly unitOfWorkManager = inject(UnitOfWorkManager);
+  private readonly unitOfWorkManagers = inject(UnitOfWorkManagers);
 
   /**
    * Validates the unit of work and saves it.  With broken rules nothing is saved: every error is
@@ -81,15 +81,12 @@ export class SaveHandler {
     this.dropSharedCache(unitOfWork);
   }
 
-  /** Drops the shared unit of work's cache, unless there is none yet or it is the one just saved. */
+  /**
+   * Drops every workspace's shared cache, except where there is none yet or it is the one just
+   * saved: a save can change what any of them has loaded.
+   */
   private dropSharedCache(saved: SavableUnitOfWork): void {
-    if (!this.unitOfWorkManager.has(SHARED_UNIT_OF_WORK_KEY)) {
-      return;
-    }
-    const shared = this.unitOfWorkManager.get(SHARED_UNIT_OF_WORK_KEY);
-    if (shared !== saved) {
-      shared.clear();
-    }
+    this.unitOfWorkManagers.dropSharedCaches(saved);
   }
 }
 
