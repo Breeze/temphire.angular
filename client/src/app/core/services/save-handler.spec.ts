@@ -6,7 +6,16 @@ import { Subject, firstValueFrom, skip } from 'rxjs';
 import { vi } from 'vitest';
 
 import { SaveHandler } from './save-handler';
+import { EntityManagerProvider } from './entity-manager-provider';
+import type { UnitOfWork } from './unit-of-work';
 import { SHARED_UNIT_OF_WORK_KEY, UnitOfWorkManager } from './unit-of-work-manager';
+
+/** A workspace's manager; the tests never create its units of work. */
+class TestManager extends UnitOfWorkManager<UnitOfWork> {
+  protected override newUnitOfWork(): UnitOfWork {
+    throw new Error('Not used by these tests.');
+  }
+}
 
 /**
  * Regression test: Save must decide on the data as it is when clicked.
@@ -47,22 +56,25 @@ describe('SaveHandler', () => {
       }),
     };
     const messages = { add: vi.fn() };
-    // The shared unit of work: its cache is dropped after every successful save.
-    const shared = { clear: vi.fn(() => calls.push('clear shared')) };
-    const units = new Map<string, unknown>(options.noShared ? [] : [[SHARED_UNIT_OF_WORK_KEY, shared]]);
-    const unitOfWorkManager = { has: (key: string) => units.has(key), get: (key: string) => units.get(key) };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
         { provide: MessageService, useValue: messages },
-        { provide: UnitOfWorkManager, useValue: unitOfWorkManager },
+        { provide: EntityManagerProvider, useValue: {} },
       ],
     });
+    // A workspace's manager, registered with `UnitOfWorkManagers` like any other, holding the shared
+    // unit of work: its cache is dropped after every successful save.
+    const manager = TestBed.runInInjectionContext(() => new TestManager());
+    const shared = { clear: vi.fn(() => calls.push('clear shared')) };
+    if (!options.noShared) {
+      manager.add(SHARED_UNIT_OF_WORK_KEY, shared as unknown as UnitOfWork);
+    }
     const edit = (change: Partial<Order>) => {
       Object.assign(order, change);
       changes.next();
     };
-    return { handler: TestBed.inject(SaveHandler), validation, unitOfWork, messages, calls, edit, shared, units };
+    return { handler: TestBed.inject(SaveHandler), validation, unitOfWork, messages, calls, edit, shared, manager };
   }
 
   it('decides on an edit made just before, which the continuous validation has not seen yet', async () => {
@@ -133,11 +145,11 @@ describe('SaveHandler', () => {
   it('leaves the shared cache alone when there is none yet, or when it is the one saved', async () => {
     const none = setUp({ name: 'Ann', code: '' }, { noShared: true });
     await none.handler.commit(none.unitOfWork);
-    expect(none.units.has(SHARED_UNIT_OF_WORK_KEY)).toBe(false); // not created just to be cleared
+    expect(none.manager.has(SHARED_UNIT_OF_WORK_KEY)).toBe(false); // not created just to be cleared
     TestBed.resetTestingModule();
 
     const self = setUp({ name: 'Ann', code: '' });
-    self.units.set(SHARED_UNIT_OF_WORK_KEY, self.unitOfWork);
+    self.manager.add(SHARED_UNIT_OF_WORK_KEY, self.unitOfWork as unknown as UnitOfWork);
     await self.handler.commit(self.unitOfWork);
     expect(self.calls).toEqual(['commit']);
   });

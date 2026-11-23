@@ -110,7 +110,8 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 |---|---|---|
 | `IEntityManagerProvider` + `GlobalCache` + `GlobalCacheRepository<T>` | `entity-manager-provider.ts` | One master manager holds metadata + all lookups; every sandbox is `createEmptyCopy()` seeded via `exportEntities`/`importEntities`. This is the same trick `GlobalCacheRepository.OnManagerCreated` used, and it is why `QueryStrategy.CacheOnly` becomes `FetchStrategy.FromLocalCache` |
 | `IUnitOfWork` | `unit-of-work.ts` | Owns one `EntityManager` |
-| `IUnitOfWorkManager<T>` | `unit-of-work-manager.ts` | Keyed cache. `Guid.Empty` → `SHARED_UNIT_OF_WORK_KEY` |
+| `IUnitOfWorkManager<T>` / `UnitOfWorkManager<T>` | `unit-of-work-manager.ts` | `UnitOfWorkManager<T extends UnitOfWork>`, a keyed cache: `Guid.Empty` → `SHARED_UNIT_OF_WORK_KEY`.  Generic as in the original, so each workspace has a manager for its own unit of work.  What concerns them all - the save count, the shared caches after a save, sign-out - is in `UnitOfWorkManagers`, which every manager registers with |
+| `ResourceMgtUnitOfWorkManager` | `resource-mgt-unit-of-work-manager.ts` | `UnitOfWorkManager<ResourceMgtUnitOfWork>`, the one the Resource Management screens inject.  A new workspace gets one like it |
 | `IRepository<T>` | `repository.ts` | |
 | `StaffingResourceRepository` | `staffing-resource-repository.ts` | A subclass of the generic repository whose `withId` loads a resource with all of its children, as the original's `GetKeyQuery` included its addresses and phone numbers. Every caller gets a complete resource |
 | `IStaffingResourceSearchService` / `StaffingResourceSearchService` | `staffing-resource-search-service.ts`, the unit of work's `search` | `simple(text)`; the predicate now lives on the server |
@@ -122,7 +123,7 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 | `INavigator` | Angular router (`app.routes.ts`) | |
 | `IErrorHandler`, `ValidationErrorHandler` | `error-handler.service.ts` | Angular's global `ErrorHandler`. `provideBrowserGlobalErrorListeners()` passes it window errors and unhandled rejections, so a command that fails (called from a click) is reported without a try/catch in the component. A component catches only an error it acts on, such as rolling back a failed delete |
 | `IWorkspace` (`[ImportMany]` via MEF) | `WORKSPACES` array in `app.routes.ts` | Angular has no ambient discovery; the list is explicit |
-| `IMessageProcessor`, `EntityChangedMessage`, `SavedMessage` | `UnitOfWork.changes` / `UnitOfWork.hasChanges` and `UnitOfWorkManager.saves` signals | `EntityChangedMessage` becomes a counter signal bumped from the manager's `entityChanged` event; `SavedMessage` a save counter that the search list's `resource()` reads, so it reloads after any save |
+| `IMessageProcessor`, `EntityChangedMessage`, `SavedMessage` | `UnitOfWork.changes` / `UnitOfWork.hasChanges` and `UnitOfWorkManager.saves` signals | `EntityChangedMessage` becomes a counter signal bumped from the manager's `entityChanged` event; `SavedMessage` a save counter (`UnitOfWorkManagers`, app-wide like the original message) that the search list's `resource()` reads, so it reloads after a save in any workspace |
 
 ### Screens
 
@@ -152,7 +153,7 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 
 This is the architectural idea TempHire exists to demonstrate, and it survives intact.
 
-`UnitOfWorkManager` keys units of work by id:
+Each workspace's unit-of-work manager (`ResourceMgtUnitOfWorkManager` here, a `UnitOfWorkManager<T>`) keys its units of work by id:
 
 - **`SHARED_UNIT_OF_WORK_KEY`** (`Guid.Empty` in the original) — one long-lived unit of work that
   every read-only screen shares. The search list and the view-mode detail read from it, so they see
@@ -174,8 +175,12 @@ Two consequences are worth calling out because they are not obvious:
    so no workspace has to remember it.  The save happened in the sandbox, so the shared manager still holds the children it loaded
    earlier — including any that were just deleted. A Breeze query merge never detaches entities the
    server omitted, so re-querying would not remove them; the cache has to be cleared and re-seeded.
-2. **A sandbox is released once it is clean** (`releaseIfClean`), mirroring Punch's automatic
-   eviction, so a cancelled edit does not leak its `EntityManager` for the rest of the session.
+2. **The manager holds its units of work weakly**, as Punch's did (Cocktail's `ObjectManager`
+   kept them in a `WeakRefDictionary`): `WeakRef`s, with a `FinalizationRegistry` that removes the
+   keys of collected ones.  A sandbox lives as long as the screen holds it; after a save or a
+   cancel nothing does, and the garbage collector takes it with its `EntityManager`, with no code to
+   release it.  The first port evicted sandboxes by hand (`releaseIfClean`, called from three
+   places); a missed call would have leaked a manager for the rest of the session.
 
 ---
 
