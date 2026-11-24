@@ -352,6 +352,7 @@ temphire.angular/
 │   ├── TempHire.Model/            # entities, DbContexts, migrations, sample data
 │   ├── TempHire.Server/           # Breeze, validation, OAuth, Quinn and MCP
 │   └── TempHire.Server.Tests/     # saves, rules, sample data, queries, who may call what
+├── temphire.ivproj                # IdeaBlade Validation Editor project (see Editing the rules)
 └── client/
     ├── metadata.json              # Breeze metadata exported from the server (npm run model:metadata)
     └── src/app/
@@ -572,6 +573,17 @@ row someone else saved in the meantime fails with a concurrency conflict (409); 
 client tells the user so, in plain words, rather than showing the database's message: someone else
 changed this data, so click Refresh to load the latest, then make the changes again and save
 (`CONCURRENCY_CONFLICT` in `error-handler.service.ts`).
+
+#### Editing the rules
+
+The rules can be edited by hand, or in the
+[IdeaBlade Validation Editor](https://github.com/Breeze/ideablade-validation-editor), a desktop app
+that writes the metadata through forms and checks it with the library as you type.  Open
+`temphire.ivproj` at the root of this repo in it: that opens both metadata files, the server's
+`validation.metadata.json` and the client's `client-validation-metadata.ts`, and loads what the
+forms and the code completion in expressions offer: the entities from `client/metadata.json`
+(regenerated with `npm run model`), the list projection in `core/projections/`, and the name
+editor's `ResourceName`.  A new file in `core/projections/` is picked up as soon as it's written.
 
 ---
 
