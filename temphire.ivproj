@@ -1,0 +1,14 @@
+{
+  "$comment": "IdeaBlade Validation Editor project (https://github.com/Breeze/ideablade-validation-editor): TempHire's validation metadata, the server's and the client's, and what the editor offers in its forms and code completion: the entities from the Breeze metadata (client/metadata.json, which npm run model exports and generates the entity classes from), the list projection and the name editor's view model. Paths are relative to this file.",
+  "metadata": [
+    "server/TempHire.Server/Validation/validation.metadata.json",
+    "client/src/app/core/validation/client-validation-metadata.ts"
+  ],
+  "sources": [
+    "client/metadata.json",
+    "client/src/app/core/projections/*.ts",
+    "client/src/app/resource-mgt/resource-name-editor.component.ts"
+  ],
+  "otherValidators": [],
+  "camelCase": true
+}
