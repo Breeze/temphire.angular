@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, Injector, inject } from '@angular/core';
+import { DataService, EntityManager, EntityQuery, MetadataStore } from 'breeze-client';
 import { ModelValidationMetadataMap, ValidationService } from 'ideablade-validation';
 import { installBreezeValidators } from 'ideablade-validation/breeze';
-import { DataService, EntityManager, EntityQuery, MetadataStore } from 'breeze-client';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -60,87 +60,105 @@ export class EntityManagerProvider {
   }
 
   /**
-   * The one `MetadataStore` for the life of the page.  Breeze binds each registered entity class to
-   * a single store - registering `StaffingResource` with a second store throws - so the store has to
-   * outlive a logout, or the next login could not register the classes again.  The metadata is the
-   * same for every user, so nothing is lost by keeping it.
+   * The one `MetadataStore`, kept until the page is reloaded.  Breeze binds each registered entity
+   * class to a single store - registering `StaffingResource` with a second store throws - so the
+   * store outlives `reset()`, and `loadBreezeMetadata` fills it only once, at the first sign-in
+   * that succeeds.  The validation
+   * service's rule source reads it too (`breezeRuleSource`, see app.config.ts).
    */
   readonly metadataStore = new MetadataStore();
-  private metadataPromise?: Promise<void>;
 
   private masterManager?: EntityManager;
   private preparePromise?: Promise<void>;
 
   /**
-   * Downloads the metadata (on the first login only) and the lookup bundle.  Must complete before
-   * any manager is created.
+   * The server's validation metadata, set once it has been added to the validation service and
+   * installed into Breeze.  Like Breeze's metadata, it loads at the first sign-in that succeeds and
+   * stays until the page is reloaded: adding it to the validation service again would duplicate
+   * every rule.
+   */
+  private validationMetadata?: ModelValidationMetadataMap;
+
+  /**
+   * Downloads the metadata and the lookup bundle.  Must complete before any manager is created.
    *
    * Both endpoints require authentication (`[Authorize]` on `ModelController` and
    * `LookupsController`, matching DevForce's `[RequiresAuthentication]`), so this runs immediately
    * after a successful login - exactly where `LoginViewModel` called `IGlobalCache.LoadAsync()` in
    * the original.
+   *
+   * A failure is final until `reset()`: nothing retries.  The metadata and the lookups are what
+   * every screen needs, so `restoreSession` signs the user out and the sign-in callback reports
+   * the failure.  After a reset, `prepare()` loads the lookups again, and each kind of metadata
+   * only if it didn't load before.
    */
   prepare(): Promise<void> {
-    if (!this.preparePromise) {
-      const masterManager = new EntityManager({
-        dataService: this.lookupsService,
-        metadataStore: this.metadataStore,
-      });
-
-      this.preparePromise = this.loadMetadata()
-        // One request for every lookup table - `LookupsController.AllTypes` on the server.
-        .then(() => masterManager.executeQuery(EntityQuery.from('AllTypes')))
-        .then(() => {
-          this.masterManager = masterManager;
-        })
-        .catch((error) => {
-          // Let the next attempt start over rather than caching the failure forever.
-          this.preparePromise = undefined;
-          throw error;
-        });
-    }
-
+    this.preparePromise ??= this.loadMasterManager();
     return this.preparePromise;
   }
 
+  private async loadMasterManager(): Promise<void> {
+    // Both kinds of metadata are fetched in parallel; the validation metadata waits for Breeze's.
+    await this.loadValidationMetadata(this.loadBreezeMetadata());
+
+    // One request for every lookup table - `LookupsController.AllTypes` on the server.
+    const masterManager = new EntityManager({
+      dataService: this.lookupsService,
+      metadataStore: this.metadataStore,
+    });
+    await masterManager.executeQuery(EntityQuery.from('AllTypes'));
+    this.masterManager = masterManager;
+  }
+
   /**
-   * Fetches the metadata and registers the model on the shared store, once per page.
-   *
-   * Two kinds of metadata come from the server, in parallel:
-   *
-   *  - Breeze's, built from the EF Core model, with the entities' data annotations as validators;
-   *  - the validation metadata (`ValidationController`), with the rules the annotations cannot
-   *    express: an address has a state, a rate is not negative, a resource keeps an address and a
-   *    phone number.
-   *
-   * The validation metadata gets Breeze's display names (`displayNameMetadata`) and is then
-   * installed into Breeze (`installBreezeValidators`).  Breeze then runs those rules next to its
-   * own: a property's rules whenever it changes, and all of them on every save, so a save with a
-   * broken rule never leaves the client.  The server checks the same metadata again when it saves.
+   * Breeze's metadata, built from the EF Core model, with the entities' data annotations as
+   * validators.  Fetched into the store and the model registered on it (`registerModel`) until
+   * that has succeeded once; after that, until the page is reloaded, the store is returned as it
+   * is.  Breeze fetches a service's metadata only once per store, and the classes can't be
+   * registered with another store.
    */
-  private loadMetadata(): Promise<void> {
-    this.metadataPromise ??= Promise.all([
-      this.metadataStore.fetchMetadata(this.modelService),
-      firstValueFrom(
-        this.http.get<ModelValidationMetadataMap>(`${environment.validationApiRoot}/Metadata`),
-      ),
-    ])
-      .then(([, validationMetadata]) => {
-        registerModel(this.metadataStore);
+  private async loadBreezeMetadata(): Promise<MetadataStore> {
+    const metadataStore = this.metadataStore;
+    if (!metadataStore.hasMetadataFor(this.modelService.serviceName)) {
+      await metadataStore.fetchMetadata(this.modelService);
+      registerModel(metadataStore);
+    }
 
-        const validation = this.injector.get(ValidationService);
-        validation.validationMetadata.addMetadata([
-          validationMetadata,
-          displayNameMetadata(this.metadataStore),
-        ]);
-        installBreezeValidators(this.metadataStore, validation);
-      })
-      .catch((error) => {
-        this.metadataPromise = undefined;
-        throw error;
-      });
+    return metadataStore;
+  }
 
-    return this.metadataPromise;
+  /**
+   * The validation metadata (`ValidationController`), with the rules the annotations cannot
+   * express: an address has a state, a rate is not negative, a resource keeps an address and a
+   * phone number.
+   *
+   * Fetched in parallel with Breeze's metadata (`breezeMetadata`), and both awaited together, so a
+   * failure of either rejects here.  Once both have arrived, the rules are added to the validation
+   * service with Breeze's display names (`displayNameMetadata`) and installed into Breeze
+   * (`installBreezeValidators`), which both read the store.  Breeze then runs those rules next to
+   * its own: a property's rules whenever it changes, and all of them on every save, so a save with
+   * a broken rule never leaves the client.  The server checks the same metadata again when it saves.
+   *
+   * Like Breeze's, loaded only until it has succeeded once: see `validationMetadata`.
+   */
+  private async loadValidationMetadata(breezeMetadata: Promise<MetadataStore>): Promise<void> {
+    if (!this.validationMetadata) {
+      const [validationMetadata, metadataStore] = await Promise.all([
+        firstValueFrom(
+          this.http.get<ModelValidationMetadataMap>(`${environment.validationApiRoot}/Metadata`),
+        ),
+        breezeMetadata,
+      ]);
+
+      const validation = this.injector.get(ValidationService);
+      validation.validationMetadata.addMetadata([
+        validationMetadata,
+        displayNameMetadata(metadataStore),
+      ]);
+      installBreezeValidators(metadataStore, validation);
+
+      this.validationMetadata = validationMetadata;
+    }
   }
 
   get isPrepared(): boolean {
@@ -148,8 +166,8 @@ export class EntityManagerProvider {
   }
 
   /**
-   * Forgets the master manager so the next login starts from a clean cache.  The metadata store is
-   * kept; see `metadataStore`.
+   * Forgets the master manager and its lookups, so the next sign-in loads them again.  The metadata
+   * stays in the store and the validation service until the page is reloaded.
    */
   reset(): void {
     this.masterManager = undefined;
