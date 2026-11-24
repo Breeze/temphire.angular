@@ -10,5 +10,35 @@
     "client/src/app/resource-mgt/resource-name-editor.component.ts"
   ],
   "otherValidators": [],
-  "camelCase": true
+  "camelCase": true,
+  "regexTests": {
+    "PhoneNumber.areaCode": {
+      "shouldPass": [
+        "206",
+        "425",
+        "800"
+      ],
+      "shouldFail": [
+        "20",
+        "2065",
+        "2a6",
+        " 206",
+        "(206)"
+      ]
+    },
+    "PhoneNumber.number": {
+      "shouldPass": [
+        "555-1234",
+        "555.1234",
+        "5551234"
+      ],
+      "shouldFail": [
+        "555 1234",
+        "555-12345",
+        "55-51234",
+        "555--1234",
+        "555-123"
+      ]
+    }
+  }
 }
