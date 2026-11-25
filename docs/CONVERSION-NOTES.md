@@ -130,20 +130,22 @@ Punch was first called Cocktail, and its code still uses that name: the types be
 | Original view model + view | Converted |
 |---|---|
 | `ShellViewModel` + `ShellView.Wpf.xaml` | `app.ts` / `app.html` |
-| `LoginViewModel` + `LoginView.Wpf.xaml` | The server's sign-in page, `Views/SignIn/Login.cshtml` (OAuth: the client never sees the password); the client keeps `auth-callback/auth-callback.component.ts` |
-| `HomeViewModel` + `HomeView.xaml` | `home/home.component.ts` |
+| `LoginViewModel` + `LoginView.Wpf.xaml` | The server's sign-in page, `Views/SignIn/Login.cshtml` (OAuth: the client never sees the password); the client keeps `auth-callback/auth-callback.component.*` |
+| `HomeViewModel` + `HomeView.xaml` | `home/home.component.*` |
 | `ResourceMgtViewModel` + `ResourceMgtView.xaml` | `resource-mgt/resource-mgt.component.*` |
-| `StaffingResourceSearchViewModel` + view | `resource-mgt/resource-search.component.ts` |
-| `StaffingResourceDetailViewModel` + view | `resource-mgt/resource-detail.component.ts` (+ loading logic hoisted into `resource-mgt.component.ts`) |
-| `StaffingResourceSummaryViewModel` + view | `resource-mgt/resource-summary.component.ts` |
-| `StaffingResourceContactInfoViewModel` + view | `resource-mgt/sections/resource-contact-info.component.ts` |
-| `StaffingResourceAddressListViewModel` + `StaffingResourceAddressItemViewModel` | `sections/resource-address-list.component.ts` |
-| `StaffingResourcePhoneListViewModel` + `StaffingResourcePhoneItemViewModel` | `sections/resource-phone-list.component.ts` |
-| `StaffingResourceRatesViewModel` + view | `sections/resource-rates.component.ts` |
-| `StaffingResourceWorkExperienceViewModel` + view | `sections/resource-work-experience.component.ts` |
-| `StaffingResourceSkillsViewModel` + view | `sections/resource-skills.component.ts` |
-| `StaffingResourceNameEditorViewModel` + view | `resource-mgt/resource-name-editor.component.ts` |
-| `ItemSelectorViewModel` + view | `resource-mgt/item-selector.component.ts` |
+| `StaffingResourceSearchViewModel` + view | `resource-mgt/resource-search.component.*` |
+| `StaffingResourceDetailViewModel` + view | `resource-mgt/resource-detail.component.*` (+ loading logic hoisted into `resource-mgt.component.*`) |
+| `StaffingResourceSummaryViewModel` + view | `resource-mgt/resource-summary.component.*` |
+| `StaffingResourceContactInfoViewModel` + view | `resource-mgt/sections/resource-contact-info.component.*` |
+| `StaffingResourceAddressListViewModel` + view | `sections/resource-address-list.component.*` |
+| `StaffingResourceAddressItemViewModel` (one address) | `sections/resource-address.component.*`, one card per address |
+| `StaffingResourcePhoneListViewModel` + view | `sections/resource-phone-list.component.*` |
+| `StaffingResourcePhoneItemViewModel` (one phone number) | `sections/resource-phone.component.*`, one card per phone number |
+| `StaffingResourceRatesViewModel` + view | `sections/resource-rates.component.*` |
+| `StaffingResourceWorkExperienceViewModel` + view | `sections/resource-work-experience.component.*` |
+| `StaffingResourceSkillsViewModel` + view | `sections/resource-skills.component.*` |
+| `StaffingResourceNameEditorViewModel` + view | `resource-mgt/resource-name-editor.component.*` |
+| `ItemSelectorViewModel` + view | `resource-mgt/item-selector.component.*` |
 | `Harness` project (Punch development harness) | Not ported — `ng serve` with hot reload covers what it was for |
 | `TempHire.SL`, `*.SL` projects (Silverlight) | Not ported — Silverlight is dead, and the browser is now the only target |
 

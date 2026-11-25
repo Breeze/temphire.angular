@@ -1,0 +1,11 @@
+<div class="callback">
+  @if (error(); as message) {
+    <div class="callback__card">
+      <p-message severity="error">{{ message }}</p-message>
+      <button pButton type="button" (click)="signInAgain()">Sign in again</button>
+    </div>
+  } @else {
+    <p-progressSpinner ariaLabel="Signing in" />
+    <span class="callback__text">Signing in...</span>
+  }
+</div>

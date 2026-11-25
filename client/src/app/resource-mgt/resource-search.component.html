@@ -1,0 +1,81 @@
+<div class="search">
+  <form class="search__bar" [formRoot]="searchForm">
+    <!-- The box draws its own X rather than the browser's, so it looks the same in every
+         browser (Firefox draws none), as in the React client. -->
+    <p-iconfield iconPosition="right" class="search__field">
+      <input
+        #box
+        pInputText
+        type="search"
+        class="search__text"
+        placeholder="Search staffing resources"
+        aria-label="Search staffing resources"
+        [formField]="searchForm.text"
+        (input)="onInput($event)"
+      />
+      @if (searchForm.text().value()) {
+        <p-inputicon>
+          <button
+            type="button"
+            class="search__clear"
+            aria-label="Clear search"
+            (click)="clearBox()"
+          >
+            <svg data-p-icon="times"></svg>
+          </button>
+        </p-inputicon>
+      }
+    </p-iconfield>
+    <button pButton type="submit">Search</button>
+    @if (results.isLoading()) {
+      <p-progress-spinner
+        class="search__spinner"
+        strokeWidth="4"
+        ariaLabel="Please wait"
+      />
+    }
+  </form>
+
+  @if (results.error(); as error) {
+    <p class="search__error" role="alert">{{ describe(error) }}</p>
+  }
+
+  <p-table
+    [value]="items()"
+    [scrollable]="true"
+    scrollHeight="14rem"
+    selectionMode="single"
+    [selection]="tableSelection()"
+    (selectionChange)="onSelect($event)"
+    dataKey="id"
+    class="p-datatable-sm search__table"
+  >
+    <ng-template #header>
+      <tr>
+        <th>Name</th>
+        <th>Address 1</th>
+        <th>City</th>
+        <th>State</th>
+        <th>Zipcode</th>
+        <th>Phone</th>
+      </tr>
+    </ng-template>
+
+    <ng-template #body let-item>
+      <tr [pSelectableRow]="item">
+        <td>{{ item.fullName }}</td>
+        <td>{{ item.address1 }}</td>
+        <td>{{ item.city }}</td>
+        <td>{{ item.state }}</td>
+        <td>{{ item.zipcode }}</td>
+        <td>{{ item.phoneNumber }}</td>
+      </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="6">No staffing resources matched.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

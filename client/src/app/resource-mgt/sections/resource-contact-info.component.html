@@ -1,0 +1,19 @@
+<div class="contact-info">
+  <section>
+    <h3 class="temphire-section-heading">Addresses:</h3>
+    <app-resource-address-list
+      [staffingResource]="staffingResource()"
+      [readOnly]="readOnly()"
+      [unitOfWork]="unitOfWork()"
+    />
+  </section>
+
+  <section>
+    <h3 class="temphire-section-heading">Phone numbers:</h3>
+    <app-resource-phone-list
+      [staffingResource]="staffingResource()"
+      [readOnly]="readOnly()"
+      [unitOfWork]="unitOfWork()"
+    />
+  </section>
+</div>

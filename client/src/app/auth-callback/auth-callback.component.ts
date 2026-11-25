@@ -16,49 +16,8 @@ import { AuthService } from '../core/services/auth.service';
 @Component({
   selector: 'app-auth-callback',
   imports: [ButtonDirective, MessageModule, ProgressSpinnerModule],
-  template: `
-    <div class="callback">
-      @if (error(); as message) {
-        <div class="callback__card">
-          <p-message severity="error">{{ message }}</p-message>
-          <button pButton type="button" (click)="signInAgain()">Sign in again</button>
-        </div>
-      } @else {
-        <p-progressSpinner ariaLabel="Signing in" />
-        <span class="callback__text">Signing in...</span>
-      }
-    </div>
-  `,
-  styles: [
-    `
-      .callback {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 1rem;
-        background: linear-gradient(150deg, #2c72b3 0%, var(--temphire-accent) 45%, var(--temphire-accent-deep) 100%);
-      }
-
-      .callback__text {
-        color: #ffffff;
-      }
-
-      .callback__card {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 1rem;
-        width: 24rem;
-        max-width: 100%;
-        padding: 1.5rem;
-        border-radius: 18px;
-        background: #ffffff;
-        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
-      }
-    `,
-  ],
+  templateUrl: './auth-callback.component.html',
+  styleUrl: './auth-callback.component.css',
 })
 export class AuthCallbackComponent implements OnInit {
   private readonly auth = inject(AuthService);

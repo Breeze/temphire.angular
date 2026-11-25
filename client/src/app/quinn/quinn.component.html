@@ -1,0 +1,119 @@
+@if (!quinn.isOpen()) {
+  <button
+    type="button"
+    class="quinn-launcher"
+    aria-label="Chat with Quinn"
+    title="Chat with Quinn"
+    (click)="quinn.open()"
+  >
+    <app-quinn-logo class="quinn-launcher__logo" />
+  </button>
+}
+
+<aside
+  class="quinn-pane"
+  [class.quinn-pane--open]="quinn.isOpen()"
+  [inert]="!quinn.isOpen()"
+  role="dialog"
+  aria-label="Chat with Quinn"
+>
+  <header class="quinn-pane__header">
+    <app-quinn-logo class="quinn-pane__logo" />
+    <div class="quinn-pane__title">
+      <strong>Quinn</strong>
+      <span>
+        {{ quinn.companyName() ?? 'TempHire' }}
+        @if (quinn.info.hasValue()) {
+          · {{ quinn.info.value().model }}
+        }
+      </span>
+    </div>
+    <button
+      pButton
+      type="button"
+      [text]="true"
+      severity="contrast"
+      class="quinn-pane__close"
+      aria-label="Close"
+      (click)="quinn.close()"
+    >
+      <i class="pi pi-times"></i>
+    </button>
+  </header>
+
+  <div
+    class="quinn-pane__messages"
+    #messageList
+    aria-live="polite"
+    (click)="followLink($event)"
+  >
+    @for (message of quinn.messages(); track message.id) {
+      <div class="quinn-message" [class]="'quinn-message--' + message.role">
+        @if (message.role !== 'user') {
+          <app-quinn-logo class="quinn-message__avatar" />
+        }
+        <div
+          class="quinn-message__bubble quinn-md"
+          [innerHTML]="message.content | linkPeople: message.people | markdown"
+        ></div>
+      </div>
+
+      @if (message.intro) {
+        <div class="quinn-examples">
+          @for (example of examples; track example.label) {
+            <button
+              type="button"
+              class="quinn-examples__chip"
+              [disabled]="quinn.busy() || quinn.quotaBlock()"
+              (click)="quinn.ask(example.question)"
+            >
+              {{ example.label }}
+            </button>
+          }
+        </div>
+      }
+    }
+
+    @if (quinn.thinking()) {
+      <div class="quinn-message quinn-message--assistant" aria-label="Quinn is thinking">
+        <app-quinn-logo class="quinn-message__avatar" />
+        <div class="quinn-message__bubble quinn-typing">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- A used-up quota: no questions until it starts over, and how long that is. -->
+  @if (quinn.quotaMessage(); as message) {
+    <div class="quinn-quota" role="status">
+      <i class="pi pi-hourglass quinn-quota__icon" aria-hidden="true"></i>
+      <div>
+        <p class="quinn-quota__text">{{ message }}</p>
+        <button type="button" class="quinn-quota__link" (click)="showUsage()">
+          See your usage
+        </button>
+      </div>
+    </div>
+  }
+
+  <form class="quinn-pane__input" [formRoot]="questionForm">
+    <div class="quinn-pane__input-row">
+      <textarea
+        pTextarea
+        rows="2"
+        placeholder="Ask Quinn about your staffing data..."
+        aria-label="Your question"
+        #questionBox
+        [value]="questionForm.question().value()"
+        (input)="questionForm.question().value.set(questionBox.value)"
+        [disabled]="questionForm.question().disabled()"
+        (keydown.enter)="sendOnEnter($event)"
+      ></textarea>
+      <button pButton type="submit" aria-label="Send" [disabled]="!canSend()">
+        <i class="pi pi-send"></i>
+      </button>
+    </div>
+    <p class="quinn-pane__note">Quinn can make mistakes.</p>
+  </form>
+</aside>

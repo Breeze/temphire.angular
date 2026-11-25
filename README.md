@@ -418,6 +418,8 @@ what jQuery/lodash/moment would once have been used for.
 The client is meant to show current Angular, not just to run on it:
 
 - **Standalone components, no NgModules**, lazy-loaded routes, functional guards and interceptors.
+  Each component keeps its template and styles in their own files next to the class
+  (`.component.html`, `.component.css`, with `templateUrl` and `styleUrl`).
 - **Zoneless and OnPush.** There is no zone.js, and Angular 22 makes OnPush the default change
   detection for every component.  Views update from signals, so state lives in signals.
 - **Signals throughout.** `input()` / `output()` instead of decorators, `computed` for derived

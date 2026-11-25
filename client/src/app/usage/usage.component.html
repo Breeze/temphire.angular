@@ -1,0 +1,98 @@
+<div class="usage">
+  <header class="usage__header">
+    <div>
+      <h1 class="usage__title">Quinn usage</h1>
+      <p class="usage__intro">
+        What Quinn's answers cost, at each model's prices: the text sent to the model and the
+        text it wrote, counted in tokens. When a budget is used up, Quinn takes no new questions
+        until it starts over.
+      </p>
+    </div>
+    <button
+      pButton
+      type="button"
+      [outlined]="true"
+      [disabled]="usage.isLoading()"
+      (click)="usage.reload()"
+    >
+      <i class="pi pi-refresh"></i>
+      Refresh
+    </button>
+  </header>
+
+  @if (usage.error(); as error) {
+    <p-message severity="error">{{ describe(error) }}</p-message>
+  } @else if (models(); as models) {
+    @for (model of models; track model.key) {
+      <section class="usage__model" [attr.aria-label]="model.name">
+        <div class="usage__model-header">
+          <h2 class="usage__model-name">
+            {{ model.provider }} <span class="usage__model-id">{{ model.model }}</span>
+          </h2>
+          @if (model.isCurrent) {
+            <span class="usage__tag usage__tag--current">Quinn uses this now</span>
+          }
+          @if (model.isUnlimited) {
+            <span class="usage__tag">No limits</span>
+          }
+        </div>
+
+        <div class="usage__periods">
+          @for (period of model.periods; track period.period) {
+            <section class="usage__period temphire-card" [attr.aria-label]="period.title">
+              <h2 class="usage__period-title">{{ period.title }}</h2>
+
+              @for (
+                meter of [
+                  { who: 'You', value: period.user },
+                  { who: company(), value: period.company },
+                ];
+                track meter.who
+              ) {
+                <div
+                  class="usage__meter"
+                  [class]="'usage__meter usage__meter--' + meter.value.level"
+                >
+                  <div class="usage__meter-label">
+                    <span class="usage__who">{{ meter.who }}</span>
+                    <span class="usage__numbers">
+                      @if (meter.value.limit !== null) {
+                        {{ meter.value.used | currency: 'USD' : 'symbol' : '1.2-3' }} of
+                        {{ meter.value.limit | currency: 'USD' }}
+                      } @else if (model.isUnlimited) {
+                        no limit
+                      } @else {
+                        {{ meter.value.used | currency: 'USD' : 'symbol' : '1.2-3' }}, no limit
+                      }
+                    </span>
+                  </div>
+                  <span class="usage__tokens">{{ meter.value.tokens | number }} tokens</span>
+                  @if (meter.value.limit !== null) {
+                    <p-progressbar
+                      [value]="meter.value.percent"
+                      [showValue]="false"
+                      [attr.aria-label]="
+                        meter.who + ': ' + (meter.value.percent | number: '1.0-0') + '% used'
+                      "
+                    />
+                  }
+                </div>
+              }
+
+              @if (!model.isUnlimited) {
+                <p class="usage__resets">
+                  Starts over {{ period.resetsAt | date: 'EEEE, MMMM d, h:mm a' }}
+                  <span class="usage__utc">(midnight UTC)</span>
+                </p>
+              }
+            </section>
+          }
+        </div>
+      </section>
+    }
+  } @else {
+    <div class="usage__loading">
+      <p-progressSpinner ariaLabel="Loading usage" />
+    </div>
+  }
+</div>

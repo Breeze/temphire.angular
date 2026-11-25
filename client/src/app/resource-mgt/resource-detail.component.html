@@ -1,0 +1,67 @@
+<div class="detail">
+  <app-resource-summary
+    [staffingResource]="staffingResource()"
+    [readOnly]="readOnly()"
+    [unitOfWork]="unitOfWork()"
+  />
+
+  <p-tabs [(value)]="activeTab" class="detail__tabs temphire-card">
+    <p-tablist>
+      @for (tab of tabs; track tab.value) {
+        <p-tab [value]="tab.value">
+          {{ tab.label }}
+          @if (errorCounts()[tab.value]; as count) {
+            <span class="detail__tab-errors" aria-hidden="true">
+              <i class="pi pi-exclamation-circle"></i>{{ count }}
+            </span>
+            <span class="temphire-visually-hidden">({{ count === 1 ? '1 error' : count + ' errors' }})</span>
+          }
+        </p-tab>
+      }
+    </p-tablist>
+
+    <p-tabpanels>
+      <p-tabpanel value="contact">
+        <app-resource-contact-info
+          [staffingResource]="staffingResource()"
+          [readOnly]="readOnly()"
+          [unitOfWork]="unitOfWork()"
+        />
+      </p-tabpanel>
+
+      <!--
+        The other three tabs are deferred: each is loaded, as its own chunk, the first time its
+        tab is selected, and stays loaded after that.
+      -->
+      <p-tabpanel value="rates">
+        @defer (when activeTab() === 'rates') {
+          <app-resource-rates
+            [staffingResource]="staffingResource()"
+            [readOnly]="readOnly()"
+            [unitOfWork]="unitOfWork()"
+          />
+        }
+      </p-tabpanel>
+
+      <p-tabpanel value="work">
+        @defer (when activeTab() === 'work') {
+          <app-resource-work-experience
+            [staffingResource]="staffingResource()"
+            [readOnly]="readOnly()"
+            [unitOfWork]="unitOfWork()"
+          />
+        }
+      </p-tabpanel>
+
+      <p-tabpanel value="skills">
+        @defer (when activeTab() === 'skills') {
+          <app-resource-skills
+            [staffingResource]="staffingResource()"
+            [readOnly]="readOnly()"
+            [unitOfWork]="unitOfWork()"
+          />
+        }
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</div>

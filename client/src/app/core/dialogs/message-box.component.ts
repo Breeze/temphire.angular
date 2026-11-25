@@ -24,36 +24,8 @@ export interface MessageBoxData {
 @Component({
   selector: 'app-message-box',
   imports: [ButtonDirective],
-  template: `
-    <p class="message-box__text">{{ data.message }}</p>
-    <div class="message-box__buttons">
-      @for (button of data.buttons; track button.value) {
-        <button
-          pButton
-          type="button"
-          [severity]="button.severity === 'primary' ? undefined : button.severity"
-          [outlined]="button.severity === 'secondary'"
-          (click)="close(button.value)"
-        >
-          {{ button.label }}
-        </button>
-      }
-    </div>
-  `,
-  styles: [
-    `
-      .message-box__text {
-        margin: 0 0 1.5rem;
-        white-space: pre-line;
-      }
-
-      .message-box__buttons {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: flex-end;
-      }
-    `,
-  ],
+  templateUrl: './message-box.component.html',
+  styleUrl: './message-box.component.css',
 })
 export class MessageBoxComponent {
   private readonly ref = inject(DynamicDialogRef);

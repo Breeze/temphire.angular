@@ -1,0 +1,22 @@
+.name-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.name-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.name-editor__field input {
+  width: 100%;
+}
+
+.name-editor__buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}

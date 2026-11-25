@@ -1,0 +1,53 @@
+.rates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rates__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rates__header .temphire-section-heading {
+  margin: 0;
+}
+
+.rates__empty {
+  margin: 1rem 0;
+  text-align: center;
+  color: #666666;
+}
+
+/* The WrapPanel of the original: rows flow across the pane and wrap when they run out of room. */
+.rates__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+}
+
+.rates__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rates__type {
+  min-width: 5rem;
+  font-weight: 700;
+}
+
+.rates__amount {
+  width: 8rem;
+}
+
+.rates__amount--text {
+  display: inline-block;
+  text-align: right;
+}
+
+:host ::ng-deep .rates__amount-input {
+  width: 8rem;
+  text-align: right;
+}

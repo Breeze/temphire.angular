@@ -1,0 +1,44 @@
+<!-- The whole card reads the phone number through 'entity', so it repaints for changes made elsewhere too. -->
+@let phone = entity();
+
+<div class="phone temphire-elevated" ngForm [validationModel]="phone">
+  <span class="phone__type">{{ phone.phoneNumberType?.name }}</span>
+
+  <input
+    pInputText
+    class="phone__number"
+    aria-label="Phone number"
+    name="number"
+    type="tel"
+    placeholder="(206) 555-1234"
+    [readOnly]="readOnly()"
+    [(ngModel)]="phone.number"
+    (blur)="formatNumber()"
+    #number="fieldErrors"
+    [invalid]="number.invalid()"
+  />
+
+  <div class="phone__primary">
+    <p-radiobutton
+      name="primary-phone-number"
+      [inputId]="'primary-phone-' + phone.id"
+      [value]="phone.id"
+      [ngModel]="staffingResource().primaryPhoneNumber?.id"
+      [disabled]="!canSetPrimary()"
+      (ngModelChange)="setPrimary()"
+    />
+    <label [for]="'primary-phone-' + phone.id">Primary</label>
+  </div>
+
+  <button
+    pButton
+    type="button"
+    severity="danger"
+    size="small"
+    [outlined]="true"
+    [disabled]="!canDelete()"
+    (click)="delete()"
+  >
+    Delete
+  </button>
+</div>

@@ -1,0 +1,28 @@
+<div class="phones">
+  <button
+    pButton
+    type="button"
+    size="small"
+    [outlined]="true"
+    [disabled]="readOnly()"
+    (click)="add()"
+  >
+    <i class="pi pi-plus"></i>
+    Add
+  </button>
+
+  @for (error of ruleErrors(); track error.key) {
+    <p-message severity="error" size="small">{{ error.errorMessage }}</p-message>
+  }
+
+  <div class="phones__cards">
+    @for (phoneNumber of phoneNumbers(); track phoneNumber.id) {
+      <app-resource-phone
+        [phoneNumber]="phoneNumber"
+        [staffingResource]="staffingResource()"
+        [readOnly]="readOnly()"
+        [unitOfWork]="unitOfWork()"
+      />
+    }
+  </div>
+</div>

@@ -1,0 +1,148 @@
+.usage {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.usage__header {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.usage__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--temphire-accent);
+}
+
+.usage__intro {
+  margin: 0;
+  max-width: 46rem;
+  color: #4b5563;
+  line-height: 1.45;
+}
+
+.usage__model {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.usage__model-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.usage__model-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--temphire-accent-deep);
+}
+
+.usage__model-id {
+  font-family: var(--p-font-family-mono, ui-monospace, monospace);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.usage__tag {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  background: #e5e7eb;
+}
+
+.usage__tag--current {
+  color: #ffffff;
+  background: var(--temphire-accent);
+}
+
+.usage__periods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.25rem;
+}
+
+.usage__period {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.usage__period-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--temphire-accent);
+}
+
+.usage__meter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.usage__meter-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.usage__who {
+  font-weight: 600;
+}
+
+.usage__numbers {
+  color: #4b5563;
+  font-variant-numeric: tabular-nums;
+}
+.usage__tokens {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bar turns amber from 80% and red when the quota is used up. */
+.usage__meter--warn {
+  --p-progressbar-value-background: #d97706;
+}
+
+.usage__meter--over {
+  --p-progressbar-value-background: #dc2626;
+}
+
+.usage__meter--over .usage__numbers {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.usage__resets {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.usage__utc {
+  white-space: nowrap;
+}
+
+.usage__loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem;
+}

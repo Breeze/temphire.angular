@@ -22,72 +22,8 @@ export interface ResourceName {
 @Component({
   selector: 'app-resource-name-editor',
   imports: [FormField, FormRoot, ButtonDirective, InputTextModule],
-  template: `
-    <form class="name-editor" [formRoot]="nameForm">
-      <div class="name-editor__field">
-        <label for="name-editor-first">First name</label>
-        <input pInputText id="name-editor-first" [formField]="nameForm.firstName" autofocus />
-        @if (nameForm.firstName().touched()) {
-          @for (error of nameForm.firstName().errors(); track error.kind) {
-            <small class="temphire-field-error">{{ error.message }}</small>
-          }
-        }
-      </div>
-
-      <div class="name-editor__field">
-        <label for="name-editor-middle">Middle name</label>
-        <input pInputText id="name-editor-middle" [formField]="nameForm.middleName" />
-        @if (nameForm.middleName().touched()) {
-          @for (error of nameForm.middleName().errors(); track error.kind) {
-            <small class="temphire-field-error">{{ error.message }}</small>
-          }
-        }
-      </div>
-
-      <div class="name-editor__field">
-        <label for="name-editor-last">Last name</label>
-        <input pInputText id="name-editor-last" [formField]="nameForm.lastName" />
-        @if (nameForm.lastName().touched()) {
-          @for (error of nameForm.lastName().errors(); track error.kind) {
-            <small class="temphire-field-error">{{ error.message }}</small>
-          }
-        }
-      </div>
-
-      <div class="name-editor__buttons">
-        <button pButton type="submit" [disabled]="nameForm().invalid()">OK</button>
-        <button pButton type="button" severity="secondary" [outlined]="true" (click)="cancel()">
-          Cancel
-        </button>
-      </div>
-    </form>
-  `,
-  styles: [
-    `
-      .name-editor {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-      }
-
-      .name-editor__field {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-      }
-
-      .name-editor__field input {
-        width: 100%;
-      }
-
-      .name-editor__buttons {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: flex-end;
-        margin-top: 0.5rem;
-      }
-    `,
-  ],
+  templateUrl: './resource-name-editor.component.html',
+  styleUrl: './resource-name-editor.component.css',
 })
 export class ResourceNameEditorComponent {
   private readonly ref = inject(DynamicDialogRef);

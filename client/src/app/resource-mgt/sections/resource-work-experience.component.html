@@ -1,0 +1,124 @@
+<div class="work">
+  <div class="work__header">
+    <h3 class="temphire-section-heading">Work Experience:</h3>
+
+    @if (!readOnly()) {
+      <button pButton type="button" size="small" [outlined]="true" (click)="add()">
+        <i class="pi pi-plus"></i>
+        Add
+      </button>
+    }
+  </div>
+
+  @if (!sortedWorkExperience().length) {
+    <p class="work__empty">
+      No work experience found. Please add work experience by clicking the 'Add' button.
+    </p>
+  } @else {
+    @for (item of sortedWorkExperience(); track item.id; let last = $last) {
+      <div class="work__item" ngForm [validationModel]="item">
+        <div class="work__row">
+          <label class="work__field work__field--date">
+            <span class="work__label">From:</span>
+            <p-datepicker
+              name="from"
+              [(ngModel)]="item.from"
+              #from="fieldErrors"
+              [invalid]="from.invalid()"
+              [disabled]="readOnly()"
+              [showIcon]="true"
+              appendTo="body"
+              dateFormat="mm/dd/yy"
+              class="work__control"
+            />
+          </label>
+
+          <label class="work__field work__field--date">
+            <span class="work__label">To:</span>
+            <p-datepicker
+              name="to"
+              [(ngModel)]="item.to"
+              #to="fieldErrors"
+              [invalid]="to.invalid()"
+              [disabled]="readOnly()"
+              [showIcon]="true"
+              appendTo="body"
+              dateFormat="mm/dd/yy"
+              class="work__control"
+            />
+          </label>
+
+          <label class="work__field work__field--grow">
+            <span class="work__label">Title:</span>
+            <input
+              pInputText
+              type="text"
+              name="positionTitle"
+              [(ngModel)]="item.positionTitle"
+              #positionTitle="fieldErrors"
+              [invalid]="positionTitle.invalid()"
+              [readOnly]="readOnly()"
+            />
+          </label>
+
+          <label class="work__field work__field--location">
+            <span class="work__label">Location:</span>
+            <input
+              pInputText
+              type="text"
+              name="location"
+              [(ngModel)]="item.location"
+              #location="fieldErrors"
+              [invalid]="location.invalid()"
+              [readOnly]="readOnly()"
+            />
+          </label>
+
+          <div class="work__field work__field--action">
+            <button
+              pButton
+              type="button"
+              severity="danger"
+              size="small"
+              [text]="true"
+              [disabled]="readOnly()"
+              (click)="delete(item)"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+
+        <label class="work__field">
+          <span class="work__label">Company:</span>
+          <input
+            pInputText
+            type="text"
+            name="company"
+            [(ngModel)]="item.company"
+            #company="fieldErrors"
+            [invalid]="company.invalid()"
+            [readOnly]="readOnly()"
+          />
+        </label>
+
+        <label class="work__field">
+          <span class="work__label">Description:</span>
+          <textarea
+            pTextarea
+            rows="4"
+            name="description"
+            [(ngModel)]="item.description"
+            #description="fieldErrors"
+            [invalid]="description.invalid()"
+            [readOnly]="readOnly()"
+          ></textarea>
+        </label>
+
+        @if (!last) {
+          <p-divider />
+        }
+      </div>
+    }
+  }
+</div>

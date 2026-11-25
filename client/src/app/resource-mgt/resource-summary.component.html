@@ -1,0 +1,87 @@
+<div class="summary temphire-card">
+  <div class="summary__header">
+    <span class="summary__avatar temphire-orb" aria-hidden="true">{{ initials() }}</span>
+
+    <div class="summary__identity">
+      <button
+        type="button"
+        class="summary__name"
+        [class.summary__name--editable]="!readOnly()"
+        [disabled]="readOnly()"
+        [title]="readOnly() ? '' : 'Edit the name'"
+        (click)="editName()"
+      >
+        {{ fullName() }}
+        @if (!readOnly()) {
+          <i class="pi pi-pencil summary__edit" aria-hidden="true"></i>
+        }
+      </button>
+
+      <div class="summary__facts">
+        @if (primaryAddress(); as address) {
+          <span class="summary__fact">
+            <i class="pi pi-map-marker" aria-hidden="true"></i>
+            {{ address.city
+            }}{{ address.state?.shortName ? ', ' + address.state.shortName : '' }}
+          </span>
+        }
+        @if (primaryPhoneNumber(); as phone) {
+          <span class="summary__fact">
+            <i class="pi pi-phone" aria-hidden="true"></i>
+            {{ phone.number }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="summary__form" ngForm [validationModel]="staffingResource()" #form="validationForm">
+    <div class="summary__dates">
+      <label class="summary__date">
+        <span>Date of birth</span>
+        <p-datepicker
+          name="dateOfBirth"
+          [(ngModel)]="staffingResource().dateOfBirth"
+          #dateOfBirth="fieldErrors"
+          [invalid]="dateOfBirth.invalid()"
+          [disabled]="readOnly()"
+          [showIcon]="true"
+          [showClear]="true"
+          appendTo="body"
+          dateFormat="mm/dd/yy"
+        />
+      </label>
+
+      <label class="summary__date">
+        <span>Hire date</span>
+        <p-datepicker
+          name="hireDate"
+          [(ngModel)]="staffingResource().hireDate"
+          #hireDate="fieldErrors"
+          [invalid]="hireDate.invalid()"
+          [disabled]="readOnly()"
+          [showIcon]="true"
+          [showClear]="true"
+          appendTo="body"
+          dateFormat="mm/dd/yy"
+        />
+      </label>
+    </div>
+
+    @for (message of datesMessages(form.errors()); track message) {
+      <small class="temphire-field-error">{{ message }}</small>
+    }
+
+    <textarea
+      pTextarea
+      class="summary__text"
+      rows="3"
+      [readOnly]="readOnly()"
+      name="summary"
+      [(ngModel)]="staffingResource().summary"
+      #summary="fieldErrors"
+      [invalid]="summary.invalid()"
+      placeholder="Summary"
+    ></textarea>
+  </div>
+</div>

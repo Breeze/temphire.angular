@@ -1,0 +1,28 @@
+<div class="addresses">
+  <button
+    pButton
+    type="button"
+    size="small"
+    [outlined]="true"
+    [disabled]="readOnly()"
+    (click)="add()"
+  >
+    <i class="pi pi-plus"></i>
+    Add
+  </button>
+
+  @for (error of ruleErrors(); track error.key) {
+    <p-message severity="error" size="small">{{ error.errorMessage }}</p-message>
+  }
+
+  <div class="addresses__cards">
+    @for (address of addresses(); track address.id) {
+      <app-resource-address
+        [address]="address"
+        [staffingResource]="staffingResource()"
+        [readOnly]="readOnly()"
+        [unitOfWork]="unitOfWork()"
+      />
+    }
+  </div>
+</div>

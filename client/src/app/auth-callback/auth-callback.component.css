@@ -1,0 +1,26 @@
+.callback {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: linear-gradient(150deg, #2c72b3 0%, var(--temphire-accent) 45%, var(--temphire-accent-deep) 100%);
+}
+
+.callback__text {
+  color: #ffffff;
+}
+
+.callback__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+  width: 24rem;
+  max-width: 100%;
+  padding: 1.5rem;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}

@@ -1,0 +1,30 @@
+/* The card is the flex item in the list's row of cards. */
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.phone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 4px;
+}
+
+.phone__type {
+  min-width: 4rem;
+  font-weight: 700;
+}
+
+.phone__number {
+  width: 10rem;
+}
+
+.phone__primary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
