@@ -1,0 +1,13 @@
+.phones {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+/* Like the address cards: a row that wraps when it is full. */
+.phones__cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}

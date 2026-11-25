@@ -1,0 +1,20 @@
+<div class="item-selector">
+  <label class="item-selector__prompt" for="item-selector-list">{{ data.prompt }}</label>
+
+  <p-select
+    inputId="item-selector-list"
+    [options]="data.items"
+    [(ngModel)]="selectedItem"
+    [optionLabel]="data.displayProperty"
+    placeholder="Select..."
+    appendTo="body"
+    class="item-selector__select"
+  />
+
+  <div class="item-selector__buttons">
+    <button pButton type="button" [disabled]="!selectedItem()" (click)="accept()">OK</button>
+    <button pButton type="button" severity="secondary" [outlined]="true" (click)="cancel()">
+      Cancel
+    </button>
+  </div>
+</div>

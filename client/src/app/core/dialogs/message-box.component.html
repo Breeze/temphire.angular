@@ -1,0 +1,14 @@
+<p class="message-box__text">{{ data.message }}</p>
+<div class="message-box__buttons">
+  @for (button of data.buttons; track button.value) {
+    <button
+      pButton
+      type="button"
+      [severity]="button.severity === 'primary' ? undefined : button.severity"
+      [outlined]="button.severity === 'secondary'"
+      (click)="close(button.value)"
+    >
+      {{ button.label }}
+    </button>
+  }
+</div>

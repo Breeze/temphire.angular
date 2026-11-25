@@ -1,0 +1,67 @@
+/* The card is the flex item in the list's row of cards. */
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.address {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--p-content-border-color, #e5e7eb);
+  border-radius: 4px;
+}
+
+.address__header {
+  font-weight: 700;
+}
+
+/* The header is outside this wrapping row, so its length does not change the card's width. */
+.address__body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: flex-start;
+}
+
+.address__fields {
+  display: grid;
+  grid-template-columns: auto minmax(12rem, 18rem);
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+}
+
+.address__fields input {
+  width: 100%;
+}
+
+.address__zipcode {
+  max-width: 8rem;
+}
+
+:host ::ng-deep .address__state,
+:host ::ng-deep .address__address1,
+:host ::ng-deep .address__address1-input {
+  width: 100%;
+}
+
+.address__credit {
+  padding: 0.25rem 0.75rem 0.4rem;
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color, #6b7280);
+}
+
+.address__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.address__primary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}

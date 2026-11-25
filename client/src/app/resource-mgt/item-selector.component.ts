@@ -23,51 +23,8 @@ export interface ItemSelectorData<T = Record<string, unknown>> {
 @Component({
   selector: 'app-item-selector',
   imports: [FormsModule, ButtonDirective, SelectModule],
-  template: `
-    <div class="item-selector">
-      <label class="item-selector__prompt" for="item-selector-list">{{ data.prompt }}</label>
-
-      <p-select
-        inputId="item-selector-list"
-        [options]="data.items"
-        [(ngModel)]="selectedItem"
-        [optionLabel]="data.displayProperty"
-        placeholder="Select..."
-        appendTo="body"
-        class="item-selector__select"
-      />
-
-      <div class="item-selector__buttons">
-        <button pButton type="button" [disabled]="!selectedItem()" (click)="accept()">OK</button>
-        <button pButton type="button" severity="secondary" [outlined]="true" (click)="cancel()">
-          Cancel
-        </button>
-      </div>
-    </div>
-  `,
-  styles: [
-    `
-      .item-selector {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .item-selector__prompt {
-        font-weight: 600;
-      }
-
-      :host ::ng-deep .item-selector__select {
-        width: 100%;
-      }
-
-      .item-selector__buttons {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: flex-end;
-      }
-    `,
-  ],
+  templateUrl: './item-selector.component.html',
+  styleUrl: './item-selector.component.css',
 })
 export class ItemSelectorComponent {
   private readonly ref = inject(DynamicDialogRef);

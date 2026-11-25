@@ -40,7 +40,7 @@ export class PhoneNumber extends BaseEntity {
  * code 1 in front if there is one.  Undefined when the value doesn't have ten digits that way.
  *
  * It only rearranges digits; whether the value was a phone number to begin with is the
- * `PHONE_NUMBER_FORMAT` rule's to say, so check that first (the phone list does, on blur).
+ * `PHONE_NUMBER_FORMAT` rule's to say, so check that first (the phone card does, on blur).
  */
 export function formatPhoneNumber(value: string | null | undefined): string | undefined {
   let digits = (value ?? '').replace(/\D/g, '');

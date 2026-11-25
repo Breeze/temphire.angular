@@ -1,0 +1,47 @@
+<div class="skills">
+  <div class="skills__header">
+    <h3 class="temphire-section-heading">Skills:</h3>
+
+    @if (!readOnly()) {
+      <button pButton type="button" size="small" [outlined]="true" (click)="add()">
+        <i class="pi pi-plus"></i>
+        Add
+      </button>
+    }
+  </div>
+
+  @if (!sortedSkills().length) {
+    <p class="skills__empty">
+      No skills found. Please add a skill by clicking the 'Add' button.
+    </p>
+  } @else {
+    <div class="skills__list">
+      @for (skill of sortedSkills(); track skill.id) {
+        <div class="skills__row" ngForm [validationModel]="skill">
+          <input
+            pInputText
+            type="text"
+            class="skills__input"
+            name="description"
+            [(ngModel)]="skill.description"
+            #description="fieldErrors"
+            [invalid]="description.invalid()"
+            [readOnly]="readOnly()"
+          />
+
+          <button
+            pButton
+            type="button"
+            severity="danger"
+            size="small"
+            [text]="true"
+            [disabled]="readOnly()"
+            (click)="delete(skill)"
+          >
+            Delete
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

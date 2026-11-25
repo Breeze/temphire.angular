@@ -1,0 +1,19 @@
+.item-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.item-selector__prompt {
+  font-weight: 600;
+}
+
+:host ::ng-deep .item-selector__select {
+  width: 100%;
+}
+
+.item-selector__buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}

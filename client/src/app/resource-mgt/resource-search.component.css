@@ -1,0 +1,105 @@
+.search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.search__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search__field {
+  width: 18rem;
+}
+
+.search__text {
+  width: 100%;
+}
+
+/* The browser's own X: the box has its own (search__clear). */
+.search__text::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+/* Optimus UI places an input icon for a bare 16px icon: a fixed -8px margin to centre it, and
+   12px from the edge.  The X sits in a button with padding, so centre it by its own height,
+   and move it closer to the edge so the X itself ends up about 10px in. */
+.search__field p-inputicon {
+  margin-top: 0;
+  transform: translateY(-50%);
+  right: 0.375rem;
+}
+
+.search__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--p-inputtext-placeholder-color, #64748b);
+  cursor: pointer;
+}
+
+.search__clear:hover,
+.search__clear:focus-visible {
+  background: var(--p-content-hover-background, #f1f5f9);
+  color: var(--p-inputtext-color, #334155);
+}
+
+.search__error {
+  margin: 0;
+  color: var(--p-red-600, #dc2626);
+}
+
+/* The grid: a tinted header, rounded, a soft hover and a clear selected row. */
+:host ::ng-deep .search__table {
+  border: 1px solid var(--temphire-border);
+  border-radius: var(--temphire-radius);
+  overflow: hidden;
+}
+
+:host ::ng-deep .search__table .p-datatable-thead > tr > th {
+  background: linear-gradient(180deg, #f4f8fc, #e9f1f9);
+  color: var(--temphire-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-color: var(--temphire-border);
+}
+
+:host ::ng-deep .search__table .p-datatable-tbody > tr {
+  transition: background-color 0.15s ease;
+}
+
+:host ::ng-deep .search__table .p-datatable-tbody > tr > td {
+  border-color: rgba(29, 83, 128, 0.06);
+}
+
+:host ::ng-deep .search__table .p-datatable-tbody > tr:not(.p-datatable-row-selected):hover {
+  background: #f2f7fc;
+}
+
+:host ::ng-deep .search__table .p-datatable-tbody > tr.p-datatable-row-selected {
+  background: linear-gradient(90deg, #dcebf8, #eef5fb);
+  color: var(--temphire-accent-deep);
+  font-weight: 600;
+}
+
+:host
+  ::ng-deep
+  .search__table
+  .p-datatable-tbody
+  > tr.p-datatable-row-selected
+  > td:first-child {
+  box-shadow: inset 4px 0 0 var(--temphire-accent);
+}
+
+:host ::ng-deep .search__spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+}

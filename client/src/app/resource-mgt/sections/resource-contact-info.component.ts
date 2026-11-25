@@ -23,36 +23,8 @@ import { ResourcePhoneListComponent } from './resource-phone-list.component';
 @Component({
   selector: 'app-resource-contact-info',
   imports: [ResourceAddressListComponent, ResourcePhoneListComponent],
-  template: `
-    <div class="contact-info">
-      <section>
-        <h3 class="temphire-section-heading">Addresses:</h3>
-        <app-resource-address-list
-          [staffingResource]="staffingResource()"
-          [readOnly]="readOnly()"
-          [unitOfWork]="unitOfWork()"
-        />
-      </section>
-
-      <section>
-        <h3 class="temphire-section-heading">Phone numbers:</h3>
-        <app-resource-phone-list
-          [staffingResource]="staffingResource()"
-          [readOnly]="readOnly()"
-          [unitOfWork]="unitOfWork()"
-        />
-      </section>
-    </div>
-  `,
-  styles: [
-    `
-      .contact-info {
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-      }
-    `,
-  ],
+  templateUrl: './resource-contact-info.component.html',
+  styleUrl: './resource-contact-info.component.css',
 })
 export class ResourceContactInfoComponent {
   readonly staffingResource = input.required<StaffingResource>();

@@ -1,0 +1,56 @@
+<div class="rates">
+  <div class="rates__header">
+    <h3 class="temphire-section-heading">Rates:</h3>
+
+    @if (!readOnly()) {
+      <button pButton type="button" size="small" [outlined]="true" (click)="add()">
+        <i class="pi pi-plus"></i>
+        Add
+      </button>
+    }
+  </div>
+
+  @if (!sortedRates().length) {
+    <p class="rates__empty">No rates found. Please add a rate by clicking the 'Add' button.</p>
+  } @else {
+    <div class="rates__list">
+      @for (rate of sortedRates(); track rate.id) {
+        <div class="rates__row" ngForm [validationModel]="rate">
+          <span class="rates__type">{{ rate.rateType?.displayName }}</span>
+
+          @if (readOnly()) {
+            <span class="rates__amount rates__amount--text">
+              {{ rate.amount | currency: 'USD' : 'symbol' : '1.2-2' }}
+            </span>
+          } @else {
+            <p-inputnumber
+              class="rates__amount"
+              name="amount"
+              [(ngModel)]="rate.amount"
+              #amount="fieldErrors"
+              [invalid]="amount.invalid()"
+              mode="currency"
+              currency="USD"
+              locale="en-US"
+              [minFractionDigits]="2"
+              [maxFractionDigits]="2"
+              inputStyleClass="rates__amount-input"
+            />
+          }
+
+          <button
+            pButton
+            type="button"
+            severity="danger"
+            size="small"
+            [text]="true"
+            [disabled]="readOnly()"
+            (click)="delete(rate)"
+          >
+            Delete
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>
