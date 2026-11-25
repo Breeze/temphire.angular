@@ -6,6 +6,7 @@ import { Router, provideRouter } from '@angular/router';
 
 import { environment } from '../../environments/environment';
 import { AuthService } from '../core/services/auth.service';
+import { EventAggregator } from '../core/services/event-aggregator';
 import { QuinnService } from './quinn.service';
 
 @Component({ template: '' })
@@ -248,6 +249,57 @@ describe('QuinnService', () => {
       expect(chat.request.body.messages).toEqual([
         { role: 'user', content: "Change Ann Lee's address to 12 Elm St, Tacoma" },
         { role: 'assistant', content: 'Nothing was changed.' },
+        { role: 'user', content: 'Thanks' },
+      ]);
+      chat.flush(stream({ type: 'text', content: 'You are welcome.' }, { type: 'done' }));
+      await next;
+    });
+  });
+  describe('changes a tool saved', () => {
+    const change = {
+      entityType: 'Address',
+      id: 'a1',
+      staffingResourceId: 'n1',
+      summary: "Updated Nancy Lynn Davolio's Home Address from 1 Main St to 2 Pine St.",
+    };
+
+    it('announces them as a save, so the screens that show them refresh', async () => {
+      const events = TestBed.inject(EventAggregator);
+
+      await ask(
+        "Change Nancy's address",
+        stream(
+          { type: 'saved', changes: [change] },
+          { type: 'text', content: 'Done.' },
+          { type: 'done' },
+        ),
+      );
+
+      expect(events.lastSave()).toEqual({
+        unitOfWork: null,
+        elsewhere: { by: 'Quinn', staffingResourceIds: ['n1'] },
+      });
+    });
+
+    // The model gets earlier answers without their tool calls; without the record, it took back a
+    // change it had made.
+    it('keeps what was saved with the answer, and sends it back with the conversation', async () => {
+      await ask(
+        "Change Nancy's address",
+        stream(
+          { type: 'text', content: 'Let me do that.' },
+          { type: 'saved', changes: [change] },
+          { type: 'text', content: 'Done.' },
+          { type: 'done' },
+        ),
+      );
+      expect(lastAnswer().saved).toEqual([change.summary]);
+
+      const next = quinn.ask('Thanks');
+      const chat = http.expectOne(`${environment.agentApiRoot}/chat`);
+      expect(chat.request.body.messages).toEqual([
+        { role: 'user', content: "Change Nancy's address" },
+        { role: 'assistant', content: 'Let me do that.Done.', saved: [change.summary] },
         { role: 'user', content: 'Thanks' },
       ]);
       chat.flush(stream({ type: 'text', content: 'You are welcome.' }, { type: 'done' }));

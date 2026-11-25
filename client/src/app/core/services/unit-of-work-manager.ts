@@ -57,7 +57,7 @@ export abstract class UnitOfWorkManager<T extends UnitOfWork> {
     effect(() => {
       const save = this.events.lastSave();
       if (save && save !== earlierSave) {
-        untracked(() => this.dropSharedCache(save.unitOfWork.deref()));
+        untracked(() => this.dropSharedCache(save.unitOfWork?.deref()));
       }
     });
 

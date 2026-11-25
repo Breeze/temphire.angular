@@ -248,6 +248,13 @@ On the client (`client/src/app/quinn/`):
   clicks on links into the app and routes them; `ResourceMgtComponent` receives the id as its
   `resource` input (the router binds query parameters to inputs), opens the person, with the usual
   prompt if there are unsaved edits, and searches for them.
+- **What Quinn saved.**  A `saved` line in the answer stream is announced as a save
+  (`EventAggregator.savedElsewhere`): the search list reloads, and `ResourceMgtComponent` reloads
+  the resource it shows.  If the user is editing that resource with unsaved changes, it asks whether
+  to discard them; if not, the resource is read again into the sandbox, which keeps their changes
+  (Breeze merges with `PreserveChanges`) and takes the new data of everything else, so their save
+  goes through unless they changed the same thing.  The answer keeps the change's summary and sends
+  it back with the conversation (`QuinnMessage.saved`), so Quinn knows later what it did.
 - **A tool's questions.**  A question arrives in the answer stream as an `input` line, and becomes a
   message of its own (`QuinnMessage.question`) with its choices and buttons; the answer stream
   pauses until the user answers, and `QuinnService.answer` posts the answer to
