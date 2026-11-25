@@ -54,7 +54,7 @@ import { FieldErrorsDirective } from '../core/validation/field-errors.directive'
             @if (primaryPhoneNumber(); as phone) {
               <span class="summary__fact">
                 <i class="pi pi-phone" aria-hidden="true"></i>
-                ({{ phone.areaCode }}) {{ phone.number }}
+                {{ phone.number }}
               </span>
             }
           </div>

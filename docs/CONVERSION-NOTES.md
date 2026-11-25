@@ -219,6 +219,10 @@ Everything below is a conscious departure from the original.
 - *Work experience is listed newest first.* The original ordered by `From` ascending.
 - *Primary address/phone is chosen with a radio button*, where the original used a "Set primary"
   button per row. The enable/disable rules (`CanSetPrimary`, `CanDelete`) are unchanged.
+- *A phone number is one field.* The original had an area code field and a number field. The
+  number now takes the whole U.S. number in any of the common formats, and a valid one is
+  rewritten as `(206) 555-1234` when the user leaves the field (`formatPhoneNumber` in
+  `core/model/phone-number.ts`).
 - *An unsaved-changes prompt now guards route exit* (`pendingChangesGuard`), covering what
   `IScreen.CanClose` + `OnNavigatingFrom` did when the shell switched workspaces.
 
@@ -226,9 +230,12 @@ Everything below is a conscious departure from the original.
 
 - *`Rate.Amount` gained a non-negative validator.* The WPF view enforced this through a masked
   numeric editor; expressing it as a model rule is strictly better.
-- *The search projection composes `FullName` and `PhoneNumber` in SQL.* They were calculated
-  properties on the DTO before. Doing it in the projection means the database can sort and filter on
-  them.
+- *The search projection composes `FullName` in SQL.* It was a calculated property on the DTO
+  before. Doing it in the projection means the database can sort and filter on it. `PhoneNumber` is
+  the primary phone's `Number` as stored, now that the area code is part of it.
+- *`PhoneNumber.AreaCode` is folded into `Number`* (migration `PhoneNumberInOneField`), which
+  widens to 20 characters for the formats the rule accepts. Existing numbers become
+  `(206) 555-1234`.
 - *`IsNullOrEmpty` replaces `IsNullOrWhiteSpace`* in the search projection, because EF Core can
   translate the former and not the latter.
 - *Validation runs against the save bundle, not a sandbox EntityManager.* `SaveInterceptor.ValidateSave`

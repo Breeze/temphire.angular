@@ -10,7 +10,6 @@ import type { StaffingResource } from './staffing-resource';
 /** Ported from `DomainModel/PhoneNumber.cs`. */
 export class PhoneNumber extends BaseEntity {
   declare id: string;  // @generated
-  declare areaCode: string;  // @generated
   declare number: string;  // @generated
   declare primary: boolean;  // @generated
 
@@ -34,4 +33,19 @@ export class PhoneNumber extends BaseEntity {
   get root(): StaffingResource {
     return this.staffingResource;
   }
+}
+
+/**
+ * A U.S. phone number written the preferred way, `(206) 555-1234`: its ten digits, after a country
+ * code 1 in front if there is one.  Undefined when the value doesn't have ten digits that way.
+ *
+ * It only rearranges digits; whether the value was a phone number to begin with is the
+ * `PHONE_NUMBER_FORMAT` rule's to say, so check that first (the phone list does, on blur).
+ */
+export function formatPhoneNumber(value: string | null | undefined): string | undefined {
+  let digits = (value ?? '').replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) {
+    digits = digits.slice(1);
+  }
+  return digits.length === 10 ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}` : undefined;
 }

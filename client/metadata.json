@@ -317,21 +317,6 @@
           ]
         },
         {
-          "dataType": "String",
-          "isNullable": false,
-          "maxLength": 3,
-          "nameOnServer": "AreaCode",
-          "validators": [
-            {
-              "name": "required"
-            },
-            {
-              "maxLength": 3,
-              "name": "maxLength"
-            }
-          ]
-        },
-        {
           "dataType": "DateTime",
           "isNullable": false,
           "nameOnServer": "Created",
@@ -384,14 +369,14 @@
         {
           "dataType": "String",
           "isNullable": false,
-          "maxLength": 8,
+          "maxLength": 20,
           "nameOnServer": "Number",
           "validators": [
             {
               "name": "required"
             },
             {
-              "maxLength": 8,
+              "maxLength": 20,
               "name": "maxLength"
             }
           ]

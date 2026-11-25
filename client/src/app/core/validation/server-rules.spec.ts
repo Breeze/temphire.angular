@@ -160,17 +160,40 @@ describe('the server validation rules on the client', () => {
       ]);
     });
 
-    it('wants a 3-digit area code and a 7-digit number, with a dash or a dot after 3 digits', () => {
-      expect(messagesFor('PhoneNumber', { areaCode: '206' }, 'areaCode')).toEqual([]);
-      expect(messagesFor('PhoneNumber', { areaCode: '20a' }, 'areaCode')).toEqual(["'Area code' must be 3 digits"]);
-      expect(messagesFor('PhoneNumber', { areaCode: '20' }, 'areaCode')).toEqual(["'Area code' must be 3 digits"]);
-
-      for (const number of ['555-1234', '555.1234', '5551234']) {
-        expect(messagesFor('PhoneNumber', { number }, 'number')).toEqual([]);
+    it('wants a U.S. phone number, in any of the common formats', () => {
+      // The same cases as the server's SaveRulesTests and the .ivproj's regexTests.
+      const common = [
+        '2065551234',
+        '206-555-1234',
+        '206.555.1234',
+        '206 555 1234',
+        '(206) 555-1234',
+        '(206)555-1234',
+        '12065551234',
+        '+12065551234',
+        '1-206-555-1234',
+        '1.206.555.1234',
+        '+1 206 555 1234',
+        '+1 (206) 555-1234',
+      ];
+      for (const number of common) {
+        expect(messagesFor('PhoneNumber', { number }, 'number'), number).toEqual([]);
       }
-      for (const number of ['55-51234', '555-123', '555 1234', '555-12345']) {
-        expect(messagesFor('PhoneNumber', { number }, 'number')).toEqual([
-          "'Phone number' must be 7 digits, like 555-1234",
+
+      const others = [
+        '555-1234',
+        '206-555-123',
+        '206-555-12345',
+        '22065551234',
+        '206-555.1234',
+        '(206 555-1234',
+        '(206) 555 1234',
+        '206-555-1234 x12',
+        ' 206-555-1234',
+      ];
+      for (const number of others) {
+        expect(messagesFor('PhoneNumber', { number }, 'number'), number).toEqual([
+          "'Phone number' must be a U.S. phone number, like (206) 555-1234",
         ]);
       }
     });
