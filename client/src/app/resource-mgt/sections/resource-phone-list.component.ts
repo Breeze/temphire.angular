@@ -8,6 +8,7 @@ import { MessageModule } from '@openng/optimus-ui/message';
 import { RadioButtonModule } from '@openng/optimus-ui/radiobutton';
 
 import { PhoneNumber, PhoneNumberType, StaffingResource } from '../../core/model';
+import { formatPhoneNumber } from '../../core/model/phone-number';
 import { AppDialogService } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
@@ -19,8 +20,9 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
  * Port of `ViewModels/StaffingResource/StaffingResourcePhoneListViewModel.cs` +
  * `StaffingResourcePhoneItemViewModel.cs` + `Views/StaffingResource/StaffingResourcePhoneListView.xaml`.
  *
- * The same shape as the address list, one card per phone number: type, area code, number, and the
- * primary / delete actions.  As with the addresses, the per-row
+ * The same shape as the address list, one card per phone number: type, number, and the primary /
+ * delete actions.  The original had the area code in a field of its own; here it is part of the
+ * number, which is rewritten as `(206) 555-1234` when the user leaves the field (`formatNumber`).  As with the addresses, the per-row
  * `StaffingResourcePhoneItemViewModel` has no counterpart here - it only carried `EditMode` next to
  * the entity and re-raised `CanDelete` / `CanSetPrimary` when `Primary` changed, both of which fall
  * out of binding the entity directly - and the original's "Set Primary" button per row is a radio
@@ -62,22 +64,14 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
 
             <input
               pInputText
-              class="phone__area-code"
-              aria-label="Area code"
-              name="areaCode"
-              [readOnly]="readOnly()"
-              [(ngModel)]="phoneNumber.areaCode"
-              #areaCode="fieldErrors"
-              [invalid]="areaCode.invalid()"
-            />
-
-            <input
-              pInputText
               class="phone__number"
-              aria-label="Number"
+              aria-label="Phone number"
               name="number"
+              type="tel"
+              placeholder="(206) 555-1234"
               [readOnly]="readOnly()"
               [(ngModel)]="phoneNumber.number"
+              (blur)="formatNumber(phoneNumber)"
               #number="fieldErrors"
               [invalid]="number.invalid()"
             />
@@ -141,12 +135,8 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
         font-weight: 700;
       }
 
-      .phone__area-code {
-        width: 4rem;
-      }
-
       .phone__number {
-        width: 7rem;
+        width: 10rem;
       }
 
       .phone__primary {
@@ -191,7 +181,28 @@ export class ResourcePhoneListComponent {
 
   private readonly visibility = injectErrorVisibility();
 
-  private readonly validationResult = toSignal(inject(ValidationService).validateEntityStore());
+  private readonly validation = inject(ValidationService);
+
+  private readonly validationResult = toSignal(this.validation.validateEntityStore());
+
+  /**
+   * Rewrites the number as `(206) 555-1234` when the user leaves the field, if it is valid: if the
+   * field's own rules pass, checked now rather than read from the store's validation, which can be
+   * a tick behind the last keystroke.  An invalid number stays as typed, for the user to correct.
+   */
+  formatNumber(phoneNumber: PhoneNumber): void {
+    if (this.readOnly()) {
+      return;
+    }
+
+    const errors = this.validation.validateModelSync(phoneNumber, 'PhoneNumber', {
+      predicate: (_validator, property) => property?.propertyName === 'number',
+    });
+    const formatted = errors.length ? undefined : formatPhoneNumber(phoneNumber.number);
+    if (formatted && formatted !== phoneNumber.number) {
+      phoneNumber.number = formatted;
+    }
+  }
 
   /**
    * Port of `StaffingResourcePhoneItemViewModel.CanDelete`, without its "not the primary one, not

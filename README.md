@@ -452,8 +452,9 @@ The validation rules are written once, on the server, in two places:
   the Breeze metadata as validators;
 - **the validation metadata**, `server/TempHire.Server/Validation/validation.metadata.json`, for
   the rules annotations cannot express: an address is a U.S. address, with a state and a ZIP code;
-  a phone number has a 3-digit area code and a 7-digit number (a dash or a dot may follow the first
-  3 digits); a rate is a valid amount and not negative; dates are valid dates; a date of birth is
+  a phone number is a U.S. number in one field, in any of the common formats (10 digits; dashes,
+  dots or spaces between its parts; the area code in parentheses; a leading 1 or +1), rewritten as
+  `(206) 555-1234` when the user leaves the field; a rate is a valid amount and not negative; dates are valid dates; a date of birth is
   neither in the future nor more than 123 years ago; and a staffing resource has at least one
   address and one phone number, and it is at least 18 years old when hired.  These use
   [IdeaBlade.Validation / `ideablade-validation`](https://github.com/Breeze/ideablade-validation),
