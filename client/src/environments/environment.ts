@@ -14,6 +14,8 @@ export const environment = {
   agentApiRoot: '/api/agent',
   /** Quinn's token usage and quotas for the signed-in user - see `UsageController`. */
   usageApiRoot: '/api/usage',
+  /** Address completion for the address form - see `AddressController`. */
+  addressApiRoot: '/api/address',
   /**
    * The OAuth authorization server.  Empty: the server that serves the app, whose origin
    * `AuthService` uses.

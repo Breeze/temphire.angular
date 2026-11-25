@@ -305,6 +305,9 @@ Server, shared with the React version.  It lives in its own repository,
 - serves the Breeze metadata, queries and saves, and the validation metadata, and checks every
   save against the same rules as the client, on the database as it will be after the save;
 - confines each user to their company's data, the company taken from their email domain;
+- suggests U.S. addresses as an editor types the first address line, and picking one fills the
+  address form: [address completion](https://github.com/Breeze/temphire.server#address-completion),
+  from OpenStreetMap data through Photon, with no API key;
 - signs users in as its own OAuth 2.1 authorization server, with ASP.NET Core Identity and
   OpenIddict, and enforces the Editor and Reader roles;
 - runs Quinn, with an MCP server that other MCP clients such as Claude Code can use as well;
@@ -331,6 +334,7 @@ The sections of its README:
 - [Validation](https://github.com/Breeze/temphire.server#validation):
   [validating the database as it will be after the save](https://github.com/Breeze/temphire.server#validating-the-database-as-it-will-be-after-the-save),
   [concurrency](https://github.com/Breeze/temphire.server#concurrency)
+- [Address completion](https://github.com/Breeze/temphire.server#address-completion)
 - [The database schema](https://github.com/Breeze/temphire.server#the-database-schema) and
   [using a different database](https://github.com/Breeze/temphire.server#using-a-different-database)
 - [Configuration](https://github.com/Breeze/temphire.server#configuration),

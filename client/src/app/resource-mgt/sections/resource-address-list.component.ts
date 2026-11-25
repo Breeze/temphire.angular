@@ -1,7 +1,8 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ValidationService } from 'ideablade-validation';
+import { AutoCompleteModule } from '@openng/optimus-ui/autocomplete';
 import { ButtonDirective } from '@openng/optimus-ui/button';
 import { InputTextModule } from '@openng/optimus-ui/inputtext';
 import { MessageModule } from '@openng/optimus-ui/message';
@@ -9,6 +10,7 @@ import { RadioButtonModule } from '@openng/optimus-ui/radiobutton';
 import { SelectModule } from '@openng/optimus-ui/select';
 
 import { Address, AddressType, StaffingResource } from '../../core/model';
+import { AddressSuggestion, AddressSuggestionService } from '../../core/services/address-suggestion.service';
 import { AppDialogService } from '../../core/services/dialog.service';
 import { ResourceMgtUnitOfWork } from '../../core/services/resource-mgt-unit-of-work';
 import { ItemSelectorComponent } from '../item-selector.component';
@@ -35,13 +37,20 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
  *  - `LoadDataAsync` awaited `States.AllAsync(...)` before starting, so the ComboBox would not bind
  *    against an empty ItemsSource.  The states are preloaded into the EntityManager cache (see
  *    `EntityManagerProvider`), so they can be read synchronously from the cached repository.
+ *
+ * New here: Address 1 suggests U.S. addresses as the user types, and picking one fills the form
+ * (`suggest`, `fill`).  The original had nothing like it.
  */
+/** No state: the empty Guid a new address starts with, which the `STATE_REQUIRED` rule refuses. */
+const NO_STATE = '00000000-0000-0000-0000-000000000000';
+
 @Component({
   selector: 'app-resource-address-list',
   imports: [
     ValidationFormsDirectives,
     FieldErrorsDirective,
     FormsModule,
+    AutoCompleteModule,
     ButtonDirective,
     InputTextModule,
     MessageModule,
@@ -74,15 +83,29 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
             <div class="address__body">
               <div class="address__fields" ngForm [validationModel]="address">
                 <label [for]="'address1-' + address.id">Address 1:</label>
-                <input
-                  pInputText
-                  [id]="'address1-' + address.id"
+                <p-autocomplete
+                  [inputId]="'address1-' + address.id"
                   name="address1"
-                  [readOnly]="readOnly()"
-                  [(ngModel)]="address.address1"
+                  [readonly]="readOnly()"
+                  [ngModel]="address.address1"
+                  (ngModelChange)="address1Changed(address, $event)"
                   #address1="fieldErrors"
                   [invalid]="address1.invalid()"
-                />
+                  [suggestions]="suggestions()"
+                  optionLabel="label"
+                  [delay]="300"
+                  [minQueryLength]="3"
+                  [showEmptyMessage]="false"
+                  (completeMethod)="suggest($event.query)"
+                  (onSelect)="fill(address, $event.value)"
+                  appendTo="body"
+                  class="address__address1"
+                  inputStyleClass="address__address1-input"
+                >
+                  <ng-template #footer>
+                    <div class="address__credit">{{ attribution() }}</div>
+                  </ng-template>
+                </p-autocomplete>
 
                 <label [for]="'address2-' + address.id">Address 2:</label>
                 <input
@@ -219,8 +242,16 @@ import { FieldErrorsDirective } from '../../core/validation/field-errors.directi
         max-width: 8rem;
       }
 
-      :host ::ng-deep .address__state {
+      :host ::ng-deep .address__state,
+      :host ::ng-deep .address__address1,
+      :host ::ng-deep .address__address1-input {
         width: 100%;
+      }
+
+      .address__credit {
+        padding: 0.25rem 0.75rem 0.4rem;
+        font-size: 0.75rem;
+        color: var(--p-text-muted-color, #6b7280);
       }
 
       .address__actions {
@@ -262,6 +293,50 @@ export class ResourceAddressListComponent {
   });
 
   readonly states = computed(() => this.unitOfWork().states.allInCache('name'));
+
+  private readonly addressSuggestions = inject(AddressSuggestionService);
+
+  /** The addresses suggested for what the user typed last, in the Address 1 field they are in. */
+  readonly suggestions = signal<AddressSuggestion[]>([]);
+
+  /** The credit the suggestions' data asks for, shown under them. */
+  readonly attribution = signal('');
+
+  /**
+   * Asks for addresses that start with `text`.  The autocomplete calls it once the user has typed
+   * three characters and paused for 300 ms; the server asks Photon (see `AddressSuggestionService`).
+   */
+  async suggest(text: string): Promise<void> {
+    if (this.readOnly()) {
+      return;
+    }
+
+    const found = await this.addressSuggestions.suggest(text);
+    this.attribution.set(found.attribution);
+    this.suggestions.set(found.suggestions);
+  }
+
+  /**
+   * What the user typed into Address 1.  Picking a suggestion reports the suggestion itself here
+   * too, before `fill`: that one is left to `fill`, which writes its first line instead.
+   */
+  address1Changed(address: Address, value: string | AddressSuggestion | null): void {
+    if (typeof value === 'string' || value === null) {
+      address.address1 = value ?? '';
+    }
+  }
+
+  /**
+   * Fills the address with the suggestion the user picked: Address 1, City, State and Zipcode, and
+   * clears any of them the suggestion doesn't know, rather than keep a value from the address that
+   * was there before.  The address rules then show what is missing.  Address 2 (a unit, say) stays.
+   */
+  fill(address: Address, suggestion: AddressSuggestion): void {
+    address.address1 = suggestion.address1;
+    address.city = suggestion.city ?? '';
+    address.stateId = this.states().some((s) => s.id === suggestion.stateId) ? suggestion.stateId! : NO_STATE;
+    address.zipcode = suggestion.zipcode ?? '';
+  }
 
   /**
    * The resource's "at least one address" rule, when it is broken.  It is a rule of the validation
