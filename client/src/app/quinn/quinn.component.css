@@ -179,6 +179,57 @@
   border-top-right-radius: 0.2rem;
 }
 
+/* A tool's question: the question, its choices as radio buttons, and OK or Confirm, and Cancel. */
+.quinn-question {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-left: 3px solid #2f6fa8;
+}
+
+.quinn-question__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.quinn-question__choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #d6e2ee;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.quinn-question__choice:has(input:checked) {
+  border-color: #2f6fa8;
+  background: #eef3f8;
+}
+
+.quinn-question__choices:disabled .quinn-question__choice {
+  cursor: default;
+}
+
+.quinn-question__choice input {
+  margin-top: 0.2rem;
+}
+
+.quinn-question__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.quinn-question__status {
+  color: #5b6b7a;
+  font-size: 0.85rem;
+}
+
 .quinn-message--error .quinn-message__bubble {
   color: #8a1c1c;
   background: #fdecec;

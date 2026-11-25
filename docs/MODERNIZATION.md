@@ -141,7 +141,10 @@ application:
   models tools; TempHire's tools are read-only queries - search people, get one person, rate
   statistics, counts by location - written in **EF Core LINQ, not SQL**, through the same
   `DbContext` as the rest of the application.  So the tenant filter and the user's role apply to
-  the AI exactly as to the screens.
+  the AI exactly as to the screens.  One experiment goes further: an editor can have Quinn change
+  an existing address.  The user, not the model, picks the address and confirms the change, in the
+  chat pane (MCP elicitation), and the change is saved through the same save interceptor as the
+  screens' saves.
 - **The agent calls those tools as the user**, with the user's own access token.  Nothing the
   model asks for can reach another company's data or more than the user may see.
 - **The model is a setting**: a small local model through Ollama, running on a laptop with 4 GB of
@@ -410,7 +413,8 @@ that work:
 - **Sign in with Microsoft Entra ID**, with each company assigning roles in its own directory.
 - **Client ID Metadata Documents**, the newest MCP specification's preferred way for MCP clients
   to identify themselves, once OpenIddict supports them.
-- **Write tools for Quinn**, for editors, with a confirmation step before anything changes.
+- **More write tools for Quinn**, for editors, on the pattern of the address update: the user
+  confirms in the chat pane, and the change goes through the save interceptor.
 - **Administration**: managing users and roles, and the MCP clients users have authorized.
 - **Paging in the search**, now that a query returns at most 1000 rows: a larger company would see
   only the first thousand people, without being told there are more.

@@ -20,6 +20,7 @@ import { StaffingResource } from '../core/model';
 import { BusyService } from '../core/services/busy.service';
 import { AuthService } from '../core/services/auth.service';
 import { AppDialogService } from '../core/services/dialog.service';
+import { EventAggregator, SavedElsewhere } from '../core/services/event-aggregator';
 import { ResourceMgtUnitOfWork } from '../core/services/resource-mgt-unit-of-work';
 import { SaveHandler, type SaveOptions } from '../core/services/save-handler';
 import { ToolbarGroup, registerToolbarGroup } from '../core/services/toolbar.service';
@@ -85,6 +86,7 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
   /** The app's global handler (`AppErrorHandler`), for the one failure this screen catches: see `confirmDiscardPendingChanges`. */
   private readonly errorHandler = inject(ErrorHandler);
   private readonly router = inject(Router);
+  private readonly events = inject(EventAggregator);
 
   /** Only editors may add, change or delete; readers see the same screens read-only. */
   readonly mayEdit = inject(AuthService).canEditStaffing;
@@ -221,6 +223,18 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       const id = this.resource();
       if (id) {
         untracked(() => void this.openFromLink(id));
+      }
+    });
+
+    // A change saved elsewhere - by Quinn - while this screen is open: refresh what it shows.  Only
+    // saves from now on; this screen loads everything saved before.  Runs after the unit-of-work
+    // manager's own effect has dropped the shared cache (a root effect runs before a component's).
+    const earlierSave = untracked(this.events.lastSave);
+    effect(() => {
+      const save = this.events.lastSave();
+      if (save && save !== earlierSave && save.elsewhere) {
+        const elsewhere = save.elsewhere;
+        untracked(() => void this.refreshAfterChangeElsewhere(elsewhere));
       }
     });
   }
@@ -440,6 +454,57 @@ export class ResourceMgtComponent implements CanComponentDeactivate {
       unitOfWork.clear();
       await this.loadDetail(id, this.editMode());
     });
+  }
+
+  /**
+   * After a change saved elsewhere, such as an address Quinn changed.  The search list reloads by
+   * itself (it reads `EventAggregator.lastSave`); the resource on screen is reloaded here.
+   *
+   * - **Viewing:** the shared cache has been dropped, so the resource is read again, whichever it is.
+   * - **Editing another resource:** its sandbox is untouched; nothing to do.
+   * - **Editing this resource, nothing changed yet:** the sandbox is read again.
+   * - **Editing this resource, with unsaved changes:** the user decides.  Discard: the changes go
+   *   and the sandbox is read again.  Keep: the resource is read again into the sandbox, which keeps
+   *   their changes (Breeze merges a query with `PreserveChanges`) and takes the new data and row
+   *   versions of everything they didn't change.  Their save then goes through, unless they changed
+   *   what was changed elsewhere too: that save is a concurrency conflict, as any other would be.
+   *   After the save, the view shows the saved data, the change made elsewhere included.
+   */
+  private async refreshAfterChangeElsewhere(elsewhere: SavedElsewhere): Promise<void> {
+    const id = this.staffingResourceId();
+    const resource = this.staffingResource();
+    const unitOfWork = this.unitOfWork();
+    if (!id || !resource || !unitOfWork) {
+      return;
+    }
+
+    if (this.isReadOnly()) {
+      await this.loadDetail(id, 'view');
+      return;
+    }
+
+    if (!elsewhere.staffingResourceIds.includes(id)) {
+      return;
+    }
+
+    if (unitOfWork.hasChanges()) {
+      const answer = await this.dialogs.confirmYesNo(
+        `${elsewhere.by} has just changed ${resource.fullName}'s data, while you are editing it.\n\n` +
+          'Discard your unsaved changes and show the new data? Choose No to keep your changes: ' +
+          'the rest is refreshed, and you can still save them.',
+      );
+      if (this.unitOfWork() !== unitOfWork) {
+        return; // The screen has moved on meanwhile.
+      }
+      if (answer === 'yes') {
+        unitOfWork.rollback();
+        unitOfWork.clear();
+      }
+    } else {
+      unitOfWork.clear();
+    }
+
+    await this.loadDetail(id, 'edit');
   }
 
   // ------------------------------------------------------------------------------------------
