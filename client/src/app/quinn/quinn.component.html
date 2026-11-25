@@ -52,10 +52,82 @@
         @if (message.role !== 'user') {
           <app-quinn-logo class="quinn-message__avatar" />
         }
-        <div
-          class="quinn-message__bubble quinn-md"
-          [innerHTML]="message.content | linkPeople: message.people | markdown"
-        ></div>
+        @if (message.question; as question) {
+          <!-- A tool's question: the choices and the buttons under it, answered here, not by Quinn. -->
+          <form
+            class="quinn-message__bubble quinn-question"
+            [attr.aria-label]="question.choices?.length ? 'Choose one' : 'Confirm'"
+            (submit)="$event.preventDefault(); quinn.answer(message.id, true)"
+          >
+            <div
+              class="quinn-md"
+              [innerHTML]="message.content | linkPeople: message.people | markdown"
+            ></div>
+
+            @if (question.choices?.length) {
+              <fieldset class="quinn-question__choices" [disabled]="question.state !== 'open'">
+                @for (choice of question.choices; track choice.value) {
+                  <label class="quinn-question__choice">
+                    <input
+                      type="radio"
+                      [name]="'quinn-question-' + message.id"
+                      [value]="choice.value"
+                      [checked]="question.selected === choice.value"
+                      (change)="quinn.select(message.id, choice.value)"
+                    />
+                    <span>{{ choice.label }}</span>
+                  </label>
+                }
+              </fieldset>
+            }
+
+            <div class="quinn-question__actions">
+              @switch (question.state) {
+                @case ('accepted') {
+                  <span class="quinn-question__status">
+                    <i class="pi pi-check" aria-hidden="true"></i>
+                    {{ question.choices?.length ? 'Chosen' : 'Confirmed' }}
+                  </span>
+                }
+                @case ('cancelled') {
+                  <span class="quinn-question__status">Cancelled</span>
+                }
+                @case ('closed') {
+                  <span class="quinn-question__status">No longer open</span>
+                }
+                @default {
+                  <button
+                    pButton
+                    type="submit"
+                    size="small"
+                    [disabled]="
+                      question.state !== 'open' ||
+                      (!!question.choices?.length && !question.selected)
+                    "
+                  >
+                    {{ question.choices?.length ? 'OK' : 'Confirm' }}
+                  </button>
+                  <button
+                    pButton
+                    type="button"
+                    size="small"
+                    severity="secondary"
+                    [outlined]="true"
+                    [disabled]="question.state !== 'open'"
+                    (click)="quinn.answer(message.id, false)"
+                  >
+                    Cancel
+                  </button>
+                }
+              }
+            </div>
+          </form>
+        } @else {
+          <div
+            class="quinn-message__bubble quinn-md"
+            [innerHTML]="message.content | linkPeople: message.people | markdown"
+          ></div>
+        }
       </div>
 
       @if (message.intro) {

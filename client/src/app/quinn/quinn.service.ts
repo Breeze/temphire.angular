@@ -1,4 +1,4 @@
-import { HttpClient, HttpEventType, httpResource } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpEventType, httpResource } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
@@ -24,13 +24,47 @@ export interface QuinnMessage {
    * when the answer is shown (see `LinkPeoplePipe`); `content` itself stays as Quinn wrote it.
    */
   readonly people?: readonly MentionedPerson[];
+  /**
+   * A question a tool asks the user while Quinn answers, such as which address to change or
+   * whether to save the change.  `content` is the question; the pane adds the choices and the
+   * buttons.  Not sent to the server as part of the conversation: the answer goes to the tool.
+   */
+  readonly question?: QuinnQuestion;
+}
+
+/**
+ * A question from a tool (MCP elicitation, see `QuinnAgent` on the server): pick one of the
+ * choices and OK, or with no choices, Confirm; or Cancel.  The answer goes to
+ * `api/agent/answer`, and from there to the tool, not to the model.
+ */
+export interface QuinnQuestion {
+  readonly id: string;
+  /** The choices, as radio buttons; none for a confirmation. */
+  readonly choices?: readonly QuinnChoice[];
+  /** The choice selected so far, and then the one answered with. */
+  readonly selected?: string;
+  /**
+   * `open` until answered; `sending` while the answer is on its way; then `accepted` (OK or
+   * Confirm) or `cancelled`; or `closed` if it can no longer be answered (it timed out, or the
+   * answer ended).
+   */
+  readonly state: 'open' | 'sending' | 'accepted' | 'cancelled' | 'closed';
+}
+
+/** One choice of a question: the value to answer with, and what the user sees. */
+export interface QuinnChoice {
+  readonly value: string;
+  readonly label: string;
 }
 
 /** One line of the streamed answer from `api/agent/chat`. */
 interface QuinnUpdate {
-  readonly type: 'text' | 'people' | 'done' | 'error';
+  readonly type: 'text' | 'people' | 'input' | 'inputClosed' | 'done' | 'error';
   readonly content?: string;
   readonly people?: readonly MentionedPerson[];
+  /** The question's id, for `input` and `inputClosed`. */
+  readonly id?: string;
+  readonly choices?: readonly QuinnChoice[];
 }
 
 /** An example question offered under the introduction. */
@@ -101,8 +135,17 @@ export class QuinnService {
   readonly isOpen = signal(false);
   readonly busy = signal(false);
 
-  /** Busy, and no answer streaming in yet: the model is still thinking or running tools. */
-  readonly thinking = computed(() => this.busy() && !this._messages().some((m) => m.streaming));
+  /**
+   * Busy, no answer streaming in yet, and no question waiting for the user: the model is still
+   * thinking or running tools.
+   */
+  readonly thinking = computed(
+    () =>
+      this.busy() &&
+      !this._messages().some(
+        (m) => m.streaming || m.question?.state === 'open' || m.question?.state === 'sending',
+      ),
+  );
 
   /** Quinn's name and model, loaded once from the server. */
   readonly info = httpResource<AgentInfo>(() => `${environment.agentApiRoot}/info`);
@@ -178,7 +221,9 @@ export class QuinnService {
    * The server answers with one JSON object per line (see `AgentController.Chat`): `text` pieces
    * as the model writes them, the `people` the answer can mention as the tools return them, and
    * `done` at the end.  The pieces grow the answer as they arrive; the people go with it, so their
-   * names become links as soon as they appear.  `HttpClient` reports the response so far with each
+   * names become links as soon as they appear.  A tool may ask the user something on the way
+   * (`input`): it becomes a message of its own, with the question, and the text after it a new
+   * message below it, once the user has answered (see `answer`).  `HttpClient` reports the response so far with each
    * download progress event, so the lines are read from that, which keeps the request going
    * through the interceptors like any other.
    */
@@ -197,6 +242,8 @@ export class QuinnService {
     let people = this.knownPeople;
     let received = 0;
     let pending = '';
+    // Whether a tool asked the user something: then an answer without text of its own is fine.
+    let asked = false;
 
     const handle = (line: string) => {
       if (!line.trim()) {
@@ -215,8 +262,23 @@ export class QuinnService {
         if (answerId !== undefined) {
           this.change(answerId, (m) => ({ ...m, people }));
         }
+      } else if (update.type === 'input' && update.id) {
+        // The text so far is complete; what Quinn writes after the user answers goes below the question.
+        if (answerId !== undefined) {
+          this.change(answerId, (m) => ({ ...m, content: m.content.trim(), streaming: false }));
+          answerId = undefined;
+        }
+        asked = true;
+        this.add('assistant', update.content ?? '', {
+          people,
+          question: { id: update.id, choices: update.choices, state: 'open' },
+        });
+      } else if (update.type === 'inputClosed') {
+        this.closeQuestions((q) => q.id === update.id);
       } else if (update.type === 'done') {
-        if (answerId === undefined) {
+        if (answerId === undefined && asked) {
+          // Nothing more to say.
+        } else if (answerId === undefined) {
           answerId = this.add('assistant', "Sorry, I don't have an answer for that.");
         } else {
           this.change(answerId, (m) => ({ ...m, content: m.content.trim(), streaming: false }));
@@ -239,7 +301,7 @@ export class QuinnService {
 
     try {
       const conversation = this._messages()
-        .filter((m) => !m.intro && m.role !== 'error')
+        .filter((m) => !m.intro && !m.question && m.role !== 'error')
         .map(({ role, content }) => ({ role, content }));
 
       await lastValueFrom(
@@ -268,6 +330,8 @@ export class QuinnService {
       if (answerId !== undefined) {
         this.change(answerId, (m) => ({ ...m, streaming: false }));
       }
+      // A question still waiting can't be answered once the answer has ended.
+      this.closeQuestions(() => true);
       this.knownPeople = people;
       this.busy.set(false);
 
@@ -278,10 +342,70 @@ export class QuinnService {
     }
   }
 
+  /** Selects one of a question's choices, before OK. */
+  select(messageId: number, value: string): void {
+    this.changeQuestion(messageId, (q) => (q.state === 'open' ? { ...q, selected: value } : q));
+  }
+
+  /**
+   * Answers a question: OK (with the selected choice) or Confirm when `accept`, otherwise Cancel.
+   * The answer goes to the tool that asked; Quinn's answer then goes on in the stream.  A question
+   * that can no longer be answered (404) is shown as closed.
+   */
+  async answer(messageId: number, accept: boolean): Promise<void> {
+    const question = this._messages().find((m) => m.id === messageId)?.question;
+    if (
+      !question ||
+      question.state !== 'open' ||
+      (accept && question.choices?.length && !question.selected)
+    ) {
+      return;
+    }
+
+    this.changeQuestion(messageId, (q) => ({ ...q, state: 'sending' }));
+    try {
+      await lastValueFrom(
+        this.http.post(`${environment.agentApiRoot}/answer`, {
+          id: question.id,
+          accept,
+          choice: accept ? question.selected : undefined,
+        }),
+      );
+      this.changeQuestion(messageId, (q) => ({ ...q, state: accept ? 'accepted' : 'cancelled' }));
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        this.changeQuestion(messageId, (q) => ({ ...q, state: 'closed' }));
+      } else {
+        this.changeQuestion(messageId, (q) => ({ ...q, state: 'open' }));
+        this.add('error', AppErrorHandler.describe(error).detail);
+      }
+    }
+  }
+
+  /** Marks the questions still waiting for the user that match as closed. */
+  private closeQuestions(matches: (question: QuinnQuestion) => boolean): void {
+    this._messages.update((messages) =>
+      messages.map((m) =>
+        m.question &&
+        (m.question.state === 'open' || m.question.state === 'sending') &&
+        matches(m.question)
+          ? { ...m, question: { ...m.question, state: 'closed' } }
+          : m,
+      ),
+    );
+  }
+
+  private changeQuestion(
+    messageId: number,
+    update: (question: QuinnQuestion) => QuinnQuestion,
+  ): void {
+    this.change(messageId, (m) => (m.question ? { ...m, question: update(m.question) } : m));
+  }
+
   private add(
     role: QuinnMessage['role'],
     content: string,
-    flags: Pick<QuinnMessage, 'intro' | 'streaming' | 'people'> = {},
+    flags: Pick<QuinnMessage, 'intro' | 'streaming' | 'people' | 'question'> = {},
   ): number {
     const id = this.nextId++;
     this._messages.update((messages) => [...messages, { id, role, content, ...flags }]);

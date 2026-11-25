@@ -223,6 +223,15 @@ Ask Quinn about their name, and they tell you where it comes from: *Punch*, the 
 after the Hindi *panch*, five, for its five ingredients, and TempHire began on IdeaBlade's Punch
 framework.  *Quinn* comes from the Latin *quinque*, five as well.
 
+An **editor** can also ask Quinn to change an existing address of a staffing resource (*Change Ann
+Lee's home address to 908 W Capital Way, Tacoma*), an experiment in letting Quinn change data.  If
+the person has several addresses, or the address service finds several matches, the pane shows them
+as radio buttons with OK and Cancel; before anything is saved, it shows the current and the new
+address with Confirm and Cancel.  Those questions come from the server's tools, and the user
+answers them, not Quinn: see
+[Changing an address through Quinn](https://github.com/Breeze/temphire.server#changing-an-address-through-quinn)
+in the server's README.
+
 On the client (`client/src/app/quinn/`):
 
 - **The pane only shows the conversation.**  It sends the conversation so far to
@@ -239,6 +248,11 @@ On the client (`client/src/app/quinn/`):
   clicks on links into the app and routes them; `ResourceMgtComponent` receives the id as its
   `resource` input (the router binds query parameters to inputs), opens the person, with the usual
   prompt if there are unsaved edits, and searches for them.
+- **A tool's questions.**  A question arrives in the answer stream as an `input` line, and becomes a
+  message of its own (`QuinnMessage.question`) with its choices and buttons; the answer stream
+  pauses until the user answers, and `QuinnService.answer` posts the answer to
+  `POST /api/agent/answer`.  The questions aren't sent back as part of the conversation: their
+  answers went to the tool.
 
 ### Budgets and the usage page
 
