@@ -98,7 +98,7 @@ describe('the server validation rules on the client', () => {
     resource.setProperty('hireDate', new Date(2020, 0, 6));
     expect(errors()).toEqual([
       [
-        'DATE_OF_BIRTH_REQUIRE_WITH_HIRE_DATE',
+        'DATE_OF_BIRTH_REQUIRED_WITH_HIRE_DATE',
         'Date of birth is required if Hire date is specified.',
         ['dateOfBirth'],
       ],

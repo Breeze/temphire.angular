@@ -18,7 +18,7 @@ import {
  */
 
 /** The resource's own rules shown in the summary above the tabs: its fields are there. */
-const RESOURCE_RULES_IN_SUMMARY = ['ADULT_WHEN_HIRED', 'DATE_OF_BIRTH_REQUIRE_WITH_HIRE_DATE'];
+const RESOURCE_RULES_IN_SUMMARY = ['ADULT_WHEN_HIRED', 'DATE_OF_BIRTH_REQUIRED_WITH_HIRE_DATE'];
 
 /** Just what `tabOf` reads of an error. */
 function error(modelType: string, id = 'required_name'): ValidationError {
