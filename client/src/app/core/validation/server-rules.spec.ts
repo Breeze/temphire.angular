@@ -84,6 +84,33 @@ describe('the server validation rules on the client', () => {
     expect(ids(new Date(2030, 0, 1))).toEqual([]);
   });
 
+  it('wants a date of birth once there is a hire date, and reports it on the date of birth', () => {
+    const { resource, addAddress, addPhoneNumber, service } = setUp();
+    addAddress();
+    addPhoneNumber();
+    const errors = () =>
+      service
+        .validateModelSync(resource, 'StaffingResource')
+        .map((e) => [e.id, e.errorMessage, e.propertyNames]);
+
+    expect(errors()).toEqual([]); // neither date
+
+    resource.setProperty('hireDate', new Date(2020, 0, 6));
+    expect(errors()).toEqual([
+      [
+        'DATE_OF_BIRTH_REQUIRED_WITH_HIRE_DATE',
+        'Date of birth is required if Hire date is specified.',
+        ['dateOfBirth'],
+      ],
+    ]);
+
+    resource.setProperty('dateOfBirth', new Date(1990, 2, 14));
+    expect(errors()).toEqual([]);
+
+    resource.setProperty('hireDate', null);
+    expect(errors()).toEqual([]); // a date of birth alone is fine
+  });
+
   it('wants a plausible date of birth: not in the future, not more than 123 years ago', () => {
     const { resource, addAddress, addPhoneNumber, ruleIds } = setUp();
     addAddress();

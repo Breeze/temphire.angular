@@ -483,7 +483,8 @@ The validation rules are written once, on the server, in two places:
   dots or spaces between its parts; the area code in parentheses; a leading 1 or +1), rewritten as
   `(206) 555-1234` when the user leaves the field; a rate is a valid amount and not negative; dates are valid dates; a date of birth is
   neither in the future nor more than 123 years ago; and a staffing resource has at least one
-  address and one phone number, and it is at least 18 years old when hired.  These use
+  address and one phone number, has a date of birth once it has a hire date, and is at least 18
+  years old when hired.  These use
   [IdeaBlade.Validation / `ideablade-validation`](https://github.com/Breeze/ideablade-validation),
   which reads the same metadata on both sides.
 
