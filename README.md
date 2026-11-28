@@ -334,6 +334,13 @@ Server, shared with the React version.  It lives in its own repository,
 - runs Quinn, with an MCP server that other MCP clients such as Claude Code can use as well;
 - creates, migrates and seeds its databases on startup.
 
+**Architecture diagrams.**  The server repository also documents the whole application as a
+[C4 model](https://github.com/Breeze/temphire.server/blob/main/docs/ARCHITECTURE.md): its system
+context, its containers (both clients, the server, the two databases) and the server's components.
+[Quinn's architecture](https://github.com/Breeze/temphire.server/blob/main/docs/QUINN-ARCHITECTURE.md)
+shows the assistant's components, the flow of a question and of a change, and why it is built that
+way.
+
 The sections of its README:
 
 - [Running it](https://github.com/Breeze/temphire.server#running-it), with the
