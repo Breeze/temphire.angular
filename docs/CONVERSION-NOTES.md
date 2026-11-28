@@ -164,6 +164,12 @@ Each workspace's unit-of-work manager (`ResourceMgtUnitOfWorkManager` here, a `U
   `EntityManager`, so the edits are invisible to everything else on screen and `Cancel` is one
   `rejectChanges()` with no side effects.
 
+Breeze keeps an entity Modified once a property has changed, even when the user types the old value
+back.  The unit of work watches its manager's property changes and returns such an entity to
+Unchanged once `entityAspect.getChangedProperties()` is empty (Breeze compares dates by time, and
+complex and array properties by content).  Each entity is judged on its own: a resource whose fields
+are back to their originals is Unchanged while an edited address still keeps `hasChanges` true.
+
 `ResourceMgtComponent.loadDetail` picks the key from the edit mode, exactly as
 `StaffingResourceDetailViewModel.UnitOfWork` did:
 

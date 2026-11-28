@@ -456,7 +456,8 @@ The client is meant to show current Angular, not just to run on it:
 - **Breeze entities and signals.** Entities are plain mutable objects, so a unit of work turns its
   `EntityManager`'s change events into a counter signal, `UnitOfWork.changes`, plus a `hasChanges`
   signal.  The toolbar's Save and Cancel derive from those, so an edit anywhere in a sandbox
-  enables Save without any subscription.
+  enables Save without any subscription.  An edit typed back to the loaded value is no edit: the
+  unit of work returns the entity to Unchanged, so Save is disabled again.
 - **`resource()`** loads the search results; its params are the search text and the latest save
   (`EventAggregator.lastSave`), so a save anywhere reloads the list.
 - **Signal Forms** (`@angular/forms/signals`) for the forms over plain data: login, the search box
