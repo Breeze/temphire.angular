@@ -111,7 +111,7 @@ The look - cards with layered shadows on a soft gradient, in one blue - comes fr
 ## Prerequisites
 
 - [.NET SDK](https://dotnet.microsoft.com/download) — the 10.0 SDK or later
-- [Node.js](https://nodejs.org) **26.13.0**, the version pinned in `.node-version` (with npm 11.20.0).
+- [Node.js](https://nodejs.org) **26.13.1**, the version pinned in `.node-version` (with npm 11.20.0).
   With [nvs](https://github.com/jasongin/nvs), `nvs auto` (or `nvs auto on`) selects it, and adds
   it if it is missing, in any directory of the repository; fnm reads the file as well.  The
   Angular 22 CLI itself accepts 22.22.3+, 24.15+ or 26+.
@@ -469,7 +469,7 @@ The client is meant to show current Angular, not just to run on it:
 
 ### Validation comes from the server
 
-> Validation uses IdeaBlade Validation 0.1.0: [`ideablade-validation`](https://www.npmjs.com/package/ideablade-validation)
+> Validation uses IdeaBlade Validation 0.1.1: [`ideablade-validation`](https://www.npmjs.com/package/ideablade-validation)
 > on npm and [`IdeaBlade.Validation`](https://www.nuget.org/packages/IdeaBlade.Validation) on NuGet.
 > As with any 0.x version, its API may still change between minor versions.
 
